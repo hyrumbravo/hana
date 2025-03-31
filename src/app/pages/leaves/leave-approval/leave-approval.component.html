@@ -1,0 +1,879 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Leaves</li>
+              <li class="breadcrumb-item active" aria-current="page">Leave Approval</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-list-columns mr-2"></i>LEAVE MASTERLIST</h1>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+          <!-- Start of Date Filters -->
+          <div class="col-md-12">
+            <div class="row">
+              <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{ filterbyDay ? 'Filter By Day' : 'Filter By Range' }}
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" (click)="setFilterMode(true)">Filter By Day</a>
+                  <a class="dropdown-item"  (click)="setFilterMode(false)">Filter By Range</a>
+                </div>
+              </div>&nbsp;
+                <button class="btn btn-outline-secondary" (click)="clearDateFilter()" type="button">Clear</button>
+                <!-- Per day filter -->
+                <div class="col-md-4" *ngIf="filterbyDay">
+                  <div class="input-group">
+                    <input
+                      class="form-control"
+                      placeholder="yyyy-mm-dd"
+                      name="dp"
+                      [(ngModel)]="dateFilter"
+                      ngbDatepicker
+                      #d="ngbDatepicker"
+                      [maxDate]="today"
+                      (dateSelect)="filterLeaveApprovals()"
+                      readonly
+                    />
+                    <button class="btn btn-outline-secondary bi bi-calendar3" (click)="d.toggle()" type="button"></button>
+                  </div>
+                </div>
+                
+                <!-- Date Range Filter -->
+                <div class="col-md-4" *ngIf="!filterbyDay">
+                  <div class="dp-hidden position-absolute">
+                    <div class="input-group">
+                      <input
+                        name="datepicker"
+                        class="form-control"
+                        ngbDatepicker
+                        #datepicker="ngbDatepicker"
+                        [autoClose]="'outside'"
+                        (dateSelect)="onDateSelection($event)"
+                        [displayMonths]="2"
+                        [dayTemplate]="t"
+                        outsideDays="hidden"
+                        [startDate]="fromDate!"
+                        tabindex="-1"
+                      />
+                      <ng-template #t let-date let-focused="focused">
+                        <span
+                          class="custom-day"
+                          [class.focused]="focused"
+                          [class.range]="isRange(date)"
+                          [class.faded]="isHovered(date) || isInside(date)"
+                          (mouseenter)="hoveredDate = date"
+                          (mouseleave)="hoveredDate = null"
+                        >
+                          {{ date.day }}
+                        </span>
+                      </ng-template>
+                    </div>
+                  </div>
+                  <div class="input-group">
+                    <input
+                      #dpFromDate
+                      class="form-control"
+                      placeholder="yyyy-mm-dd"
+                      name="dpFromDate"
+                      [value]="formatter.format(fromDate)"
+                      (input)="fromDate = validateInput(fromDate, dpFromDate.value)"
+                      readonly
+                    />
+                    <!-- <button class="btn btn-outline-secondary bi bi-calendar3" (click)="datepicker.toggle()" type="button"></button> -->
+                    <input
+                      #dpToDate
+                      class="form-control"
+                      placeholder="yyyy-mm-dd"
+                      name="dpToDate"
+                      [value]="formatter.format(toDate)"
+                      (input)="toDate = validateInput(toDate, dpToDate.value)"
+                      readonly
+                    />
+                    <button class="btn btn-outline-secondary bi bi-calendar3" (click)="datepicker.toggle()" type="button"></button>
+                    <!-- <button class="btn btn-outline-secondary" (click)="clearDateFilter()" type="button">Clear</button> -->
+                  </div>
+                </div>
+
+                <!-- Per Type -->
+                <div class="col-md-3">
+                  <select class="form-control" name="currentLeaveFilter" [(ngModel)]="currentLeaveFilter" (change)="filterLeaveApprovals()">
+                    <option value="All">All Types</option>
+                    <option *ngFor="let leave of leaveTypes" [value]="leave.doc.leave_name">{{leave.doc.leave_name}}</option>
+                  </select>
+                </div>
+
+                <!-- Per Status -->
+                <div class="col-md-2">
+                  <select class="form-control" name="currentStatusFilter" [(ngModel)]="currentStatusFilter" (change)="filterLeaveApprovals()">
+                    <option *ngFor="let status of statusFilters" [value]="status">{{ (status == 'All')? "All Status": status }}</option>
+                  </select>
+                </div>
+
+            </div>
+          </div>
+      </div>
+      <div class="table-responsive pt-2 mt-2">
+        <table id="approvalDatatable" class="table-striped" datatable [dtOptions]="dtOptions" *ngIf="leaves.length">
+          <thead>
+            <tr>
+              <th class="noExport">
+                Actions
+                <!-- <input type="checkbox" id="selectAll" [checked]="allChecked" (change)="toggleAllCheckboxes()">&nbsp; -->
+              </th>
+              <th>Date Filed</th>
+              <th>ID No.</th>
+              <th>Employee Name</th>
+              <th>Reference No.</th>
+              <th>Department</th>
+              <th>Leave Type</th>
+              <th>Leave Details</th>
+              <th>Period Covered</th>
+              <th>Total(Days)</th>
+              <th>With Commutation?</th>
+              <th>Status</th>
+              <th class="noExport"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of leaves; let i = index;">
+              <td class="p-0" style="width: 120px;">
+                <ng-container *ngIf="data.doc.status !='approved' && data.doc.status !='denied'">
+
+                  <ng-container *ngIf="hideLeaveActions()">
+                    <a class="pl-2 btn btn-md" style="cursor:pointer"
+                      placement="right" ngbTooltip="Certify Leave"
+                      (click)="toCertifyLeave(data.doc) ? openApproval(data, certifySign) : null"
+                      [ngClass]="{ 'disabled-link': !toCertifyLeave(data.doc) }">
+                      <i class="fa-solid fa-book fa-2xl" style="color: blue;"></i>
+                    </a>
+                    <span class="pl-2" style="cursor:pointer" placement="right" ngbTooltip="Approved"><i class="fa-solid fa-check-circle" style="color: green;"
+                      *ngIf="toCertifyLeave(data.doc)"></i></span>
+                    <span *ngIf="!toCertifyLeave(data.doc)" class="pl-2" style="cursor:pointer" placement="right" ngbTooltip="Waiting for Approval"><i class="fa-regular fa-circle" style="color: grey;"></i></span>
+                  </ng-container>
+                  
+                  <ng-container *ngIf="showLeaveActions(data.doc)" style="display: flex; align-items: center; justify-content: center;">
+                    <input type="checkbox" id="myCheckbox{{i}}" [checked]="toApproveChecks.includes(i)" (change)="onCheckboxChange(i)">&nbsp;
+                    <a class="pr-2" style="cursor:pointer" placement="right" ngbTooltip="Approve" (click)="openApproval(data, approvalsign)"
+                    ><i class="fa-solid fa-check fa-2xl" style="color: green;"></i></a>
+                    <a class="pr-2" style="cursor:pointer" placement="right" ngbTooltip="Reject" (click)="openApproval(data, denySign)"
+                    ><i class="fa-solid fa-times fa-2xl" style="color: red;"></i></a>
+                  </ng-container>
+                  
+                </ng-container>
+              </td>
+              <td>{{ data.doc.dateFiled | date:'yyyy-MM-dd' }}</td>
+              <td>{{ data.doc.id_no }}</td>
+              <td style="cursor: pointer;" class="text-primary" (click)="editLeaveApproval(data.doc, leave)">{{ getEmployeeName(data.doc) }}</td>
+              <td>{{ data.doc.referenceNumber }}</td>
+              <td>{{ data.doc.department }}</td>
+              <td>{{ data.doc.leaveName == null? 'Others':data.doc.leaveName }}</td>
+              <td> {{leaveDetails(data.doc)}}</td>
+              <td>
+                <span *ngIf="data.doc.startDateTime === data.doc.finishDateTime">
+                  {{ data.doc.startDateTime | date:'MMM dd, yyyy' }}
+                </span>
+                <span *ngIf="data.doc.startDateTime !== data.doc.finishDateTime">
+                  {{ data.doc.startDateTime | date:'MMM dd, yyyy' }} - {{ data.doc.finishDateTime | date:'MMM dd, yyyy' }}
+                </span>
+              </td>
+              <td>{{ data.doc.totalDays }}</td>
+              <td>{{ data.doc.commutation? 'Yes':'No'}}</td>
+              <td>{{ data.doc.status | titlecase }}</td>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div style="cursor: pointer;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" (click)="download(data.id,'print',data.doc.referenceNumber)">Print</a>
+                    <a class="dropdown-item" (click)="download(data.id,'download',data.doc.referenceNumber)">Download PDF</a>
+                    <a *ngIf="hideLeaveActions()" class="dropdown-item text-danger" (click)="deleteLeaveApproval(data.doc)">Delete</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+        <div *ngIf="leaves.length == 0" class="col-lg-12 pt-2 text-center">
+          <div *ngIf="!loading"><p>No Records Available</p></div>
+          <!-- <div *ngIf="loading"><p>Loading. . .</p></div> -->
+        </div>
+      </div>
+    </div>
+    <div class="card-footer" *ngIf="isUserDivisionChief() || isUserFinalApprove()">
+      <div class="col-md-12">
+        <button  type="button" id="reloadButton" (click)="multiSign('approve', multiSignApprove)" class="btn btn-outline-success" [disabled]="toApproveChecks.length==0">
+          <i class="fa-solid fa-check" style="color: green;"></i> Approve Selected
+        </button>&nbsp;
+        <button  type="button" id="reloadButton" (click)="multiSign('deny', multiSignApprove)" class="btn btn-outline-danger" [disabled]="toApproveChecks.length==0">
+          <i class="fa-solid fa-times" style="color: red;"></i> Reject Selected
+        </button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #leave>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Application For Leave</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismiss(); leaveForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="card-body pt-0">
+      <form [formGroup]="leaveForm" #ngForm >
+        <div class="alert alert-secondary" role="alert">
+          EMPLOYEE INFORMATION
+        </div>
+        <div class="row pb-2">
+          <div class="col-lg-6">
+            <b>NAME: </b> <span>{{f.get('empLastName').value}}, {{f.get('empFirstName').value}} {{f.get('empMiddleName').value}}</span> <br>
+            <b>OFFICE/DEPARTMENT: </b> <span>{{f.get('department').value}}</span> <br>
+            <b>POSITION: </b> <span>{{f.get('position_title').value}}</span> <br>
+            <b>SALARY: </b> <span>{{f.get('monthlyRate').value}}</span> <br>
+            <b>DATE OF FILING: </b> <span>{{f.get('dateFiled').value | date}}</span> <br>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group pl-2" *ngIf="f.get('applicantSignature').value != null">
+                <label class="form-label">APPLICANT SIGNATURE:</label><br>
+                <div class=" center-div-items ">
+                  <img style="width: 200px; height: 100px;" [src]="appendImageBase64(f.get('applicantSignature').value)">
+                </div>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-secondary" role="alert">
+          LEAVE DETAILS
+        </div>
+        <div class="row pb-2">
+          <div class="col-lg-12">
+            <b>TYPE OF LEAVE TO BE AVAILED OF: </b><span>{{ f.get('leaveType').value === 'others'?"Others":getLeaveTypeName(f.get('leaveType').value)}}</span><br>
+            <b>DETAILS OF LEAVE: </b> <span>{{leaveDetails(f.value)}}</span> <br>
+            <b>NUMBER OF WORKING DAYS: </b> <span>{{f.get('totalDays').value}} {{f.get('totalDays').value == 1?"day":"days"}}</span> <br>
+            <b>INCLUSIVE DATE/S: </b>
+            <span *ngIf="f.get('startDateTime').value === f.get('finishDateTime').value">
+              {{ f.get('startDateTime').value | date:'MMM dd, yyyy' }}
+            </span>
+            <span *ngIf="f.get('startDateTime').value !== f.get('finishDateTime').value">
+              {{ f.get('startDateTime').value | date:'MMM dd, yyyy' }} - {{ f.get('finishDateTime').value | date:'MMM dd, yyyy' }}
+            </span><br> 
+            <b>COMMUTATION: </b> <span>{{ f.get('commutation').value? "Requested":"Not Requested" }}</span> <br>
+          </div>
+        </div>
+        <div class="alert alert-secondary" role="alert">
+          ACTION ON APPLICATION
+        </div>
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="form-group pl-2">
+              <label for="approverB" class="form-label">RECOMMENDATION:</label><br>
+              <div class=" center-div-items" *ngIf="f.get('approverBSignature').value != null">
+                <img style="width: 200px; height: 100px;" [src]="appendImageBase64(f.get('approverBSignature').value)"><br>
+              </div>
+              <span><b>{{f.get('approverB').value}}</b></span><br>
+              <span><i>{{f.get('approverBPosition').value}}</i></span>
+              <span *ngIf="f.get('approverB').value == null">N/A</span><br>
+
+              <div class="pt-2" *ngIf="f.get('recommendation').value != null">
+                <label class="form-label">Details:</label>&nbsp;
+                <span [ngClass]="{'red-text': f.get('recommendation').value === false, 'green-text': f.get('recommendation').value === true}">
+                  {{f.get('recommendation').value ? "For Approval" : "For Disapproval"}}&nbsp;
+                  {{f.get('recommendation').value === false ? "(Reason: " + f.get('recommendationDisapprovalReason').value + ")" : ""}}
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group  pl-2">
+              <label for="approverC" class="form-label">APPROVAL:</label><br>  
+              <div class=" center-div-items" *ngIf="f.get('approverCSignature').value != null">
+                <img style="width: 200px; height: 100px;" [src]="appendImageBase64(f.get('approverCSignature').value)"><br>
+              </div>
+              <span><b>{{f.get('approverC').value}}</b></span><br>
+              <span><i>{{f.get('approverCPosition').value}}</i></span>
+              <span *ngIf="f.get('approverC').value == null">N/A</span>
+
+              <div class="pt-2" *ngIf="f.get('approverC').value != null">
+                <label class="form-label">Details:</label>&nbsp;
+                <span [ngClass]="{'red-text': f.get('approverC').value != null && f.get('status').value == 'denied', 'green-text': f.get('approverC').value != null && f.get('status').value == 'approved'}">
+                  {{f.get('status').value == 'processing' && f.get('disapprovalReason').value == null? "Approved For Certification": f.get('status').value | titlecase}}
+                  &nbsp;{{f.get('status').value == 'denied' ? "(Reason: " + f.get('disapprovalReason').value + ")" : (f.get('dateOfApproval').value ? "(Date: " + f.get('dateOfApproval').value + ")" : "")}}
+                </span>
+              </div>
+            </div>
+          </div>
+          <!-- certification -->
+          <!-- CERTIFICATION START -->
+          <div *ngIf="f.get('status').value != 'denied'" class="col-lg-12 alert alert-secondary" role="alert">
+            CERTIFICATION OF LEAVE CREDITS
+          </div>
+          <div class="col-lg-6">
+            <div class="pl-2 pb-2">
+              <ng-container *ngIf="f.get('status').value != 'denied' && f.get('status').value != 'approved'">
+                <span>As of: {{dateToday | date}}</span><br>
+                <div class="table-responsive mt-2">
+                  <table class="table-striped" border="1" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                    <tr class="text-center">
+                        <td></td>
+                        <td>Vacation</td>
+                        <td>Sick</td>
+                    </tr>
+                    <tr>
+                        <td>Total Earned</td>
+                        <td class="text-center">{{currentLeaveCardData.doc.vlBalance}}</td>
+                        <td class="text-center">{{currentLeaveCardData.doc.slBalance}}</td>
+                    </tr>
+                    <tr>
+                        <td>To be deducted</td>
+                        <td class="text-center">
+                          {{(f.get('leaveType').value === '001' || f.get('leaveType').value === '002')?f.get('totalDays').value: "-"}}
+                        </td>
+                        <td class="text-center">
+                          {{f.get('leaveType').value === '003'? f.get('totalDays').value: '-'}}</td>
+                    </tr>
+                  </table>
+                </div>
+                <br>
+              </ng-container>
+              <ng-container *ngIf="f.get('status').value == 'approved'">
+                <span>As of: {{ f.get('credit').value.as_of | date}}</span><br>
+                <div class="table-responsive mt-2">
+                  <table class="table-striped" border="1" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                    <tr class="text-center">
+                        <td></td><td>Vacation</td><td>Sick</td>
+                    </tr>
+                    <tr>
+                        <td>Total Earned</td>
+                        <td class="text-center">{{ f.get('credit').value.earnedVlBalance }}</td>
+                        <td class="text-center"> {{ f.get('credit').value.earnedSlBalance }} </td>
+                    </tr>
+                    <tr>
+                        <td>To be deducted</td>
+                        <td class="text-center">{{ f.get('credit').value.toDeductVl }}</td>
+                        <td class="text-center">{{f.get('credit').value.toDeductSl}}</td>
+                    </tr>
+                    <tr>
+                      <td>Balance</td>
+                      <td class="text-center">{{ f.get('credit').value.newVlBalance }}</td>
+                      <td class="text-center">{{ f.get('credit').value.newSlBalance }}</td>
+                  </tr>
+                  </table>
+                </div>
+                <br>
+              </ng-container>
+            </div>
+          </div>
+          <div class="col-lg-6" *ngIf="f.get('status').value != 'denied'">
+            <div class="form-group  pl-2">
+              <ng-container *ngIf="f.get('approverASignature').value != null">
+                <label for="approverA" class="form-label">Certification By:</label><br>
+                <div class=" center-div-items" *ngIf="f.get('approverASignature').value != null">
+                  <img style="width: 200px; height: 100px;" [src]="appendImageBase64(f.get('approverASignature').value)"><br>
+                </div>
+                <span><b>{{f.get('approverA').value}}</b></span><br>
+                <span><i>{{f.get('approverAPosition').value}}</i></span>
+              </ng-container>
+              
+              <span *ngIf="!isApproved && approvalRequirement.divchief"><small><i class="text-danger">*Waiting Approval from Authorized Officer (Division Chief)</i></small></span><br>
+              <span *ngIf="!isFinalApproved && approvalRequirement.depthead"><small><i class="text-danger">*Waiting Approval from Authorized Officer (Department Head)</i></small></span>
+              <span *ngIf="!isFinalApproved && approvalRequirement.mayor"><small><i class="text-danger">*Waiting Approval from Authorized Officer (Mayor)</i></small></span>
+              <span *ngIf="isFinalApproved && !isCertified"><small><i class="text-danger">*Waiting for Certification from HRM</i></small></span>
+            </div>
+          </div>
+          <!-- CERTIFICATION END -->
+        </div>
+      </form>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #approvalsign>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Approve Leave</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismissSignForm();removeFile(fileInput)">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <!-- add details -->
+      <div class="col-lg-6 pb-2">
+        <ng-container  *ngIf="isUserDivisionChief()">
+          <label>Approved for Recommendation By: </label><br>
+          <select name="approverB" id="approverB" [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" class="form-control" placeholder="Authorized Officer">
+            <option [value]="null">Select Officer</option>
+            <ng-container *ngFor="let approver of approvers" >
+              <option [value]="approver.doc._id" *ngIf="approver.doc.formApproval === '7B' || approver.doc.formApproval === '7A'">{{ approver.doc.approverName }}</option>
+            </ng-container> 
+          </select>
+        </ng-container>
+        
+        <ng-container *ngIf="!isUserDivisionChief()">
+          <label for="approverC" class="form-label">Approved By:</label>
+            <select name="approverC" id="approverC" class="form-control"  [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" placeholder="Approval Officer">
+              <option [value]=null>Select Officer</option>
+              <ng-container *ngFor="let approver of approvers">
+                <option *ngIf="isUserMayor(approver.doc.position) && approver.doc.formApproval === '7C'" [value]="approver.doc._id">{{ approver.doc.approverName }}</option>
+              </ng-container>
+            </select>
+        </ng-container>
+        <div class="text-danger">{{formWarning}}</div>
+
+        <div class="pt-3">
+          <!-- <span><b>Name: {{approverName}}</b></span><br> -->
+          <span><b>Position: {{approverPosition}}</b></span><br>
+          <span><b>Date: {{dateToday}}</b></span>
+        </div>
+    
+      </div>
+      <!-- signature pad -->
+      <div class="col-lg-6">
+        <div>
+          <div class="form-group mb-0">
+            <label class="form-label">
+            Use Profile signature 
+            <input type="checkbox" name="usersign" [disabled]="userSignature == null"
+            [(ngModel)]="useUserSignaturePreset" (click)="removeFile(fileInput)">
+            </label>&nbsp;<small class="text-danger" *ngIf="userSignature==null">No signature saved.</small>
+          </div>
+          <label class="form-label">Upload Image: </label>
+          <div class="form-group">  
+            <input type="file" (change)="onFileSelected($event)" #fileInput placeholder="Upload Signature" accept="image/*" [disabled]="useUserSignaturePreset"/>
+            <button type="button" *ngIf="base64Image" class="close" aria-label="Remove Image" (click)="removeFile(fileInput)">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>          
+        </div>
+        <div class="text-center"  *ngIf="!base64Image && !useUserSignaturePreset">
+          -- or --
+        </div>
+        <div class="col-lg-12">
+          <span *ngIf="useUserSignaturePreset">
+            <label class="form-label">Signature Preview: </label>
+            <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+              <img class="img-preview" height="200px" width="350px" [src]="userSignature" alt="Uploaded Image" /><br>
+            </div>
+            <button class="col-lg-12 mb-1 sign-button" disabled>Remove</button>
+            <button class="col-lg-12 sign-button" (click)="saveSignature(userSignature);removeFile(fileInput)">Save</button>
+          </span>
+          <span *ngIf="base64Image && !useUserSignaturePreset">
+            <label class="form-label">Signature Preview: </label>
+            <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+              <img class="img-preview" height="200px" width="350px" [src]="base64Image" alt="Uploaded Image" /><br>
+            </div>
+            <button class="col-lg-12 mb-1 sign-button" (click)="removeFile(fileInput)">Remove</button>
+            <button class="col-lg-12 sign-button" [disabled]="approverName == null || this.approverPosition==null" 
+            (click)="saveSignature(base64Image);removeFile(fileInput)">Save</button>
+          </span>
+        </div>
+
+        <div *ngIf="!base64Image && !useUserSignaturePreset" class="col-md-12" style="width: 400px;">
+          <label class="form-label">Sign Form: </label>
+          <app-signing-pad (signatureSaved)="saveSignature($event)"></app-signing-pad>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #denySign>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Reject Leave</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismissSignForm();removeFile(fileInput)">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <!-- add details -->
+      <div class="col-lg-6 pb-2">
+        <ng-container  *ngIf="isUserDivisionChief()">
+          <label>Rejected for Recommendation By<span class="text-danger">*</span>: </label><br>
+          <select name="approverB" id="approverB" [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" class="form-control" placeholder="Authorized Officer">
+            <option [value]="null">Select Officer</option>
+            <ng-container *ngFor="let approver of approvers" >
+              <option [value]="approver.doc._id" *ngIf="approver.doc.formApproval === '7B' || approver.doc.formApproval === '7A'">{{ approver.doc.approverName }}</option>
+            </ng-container> 
+          </select>
+          <br>
+          <label>Disapproved due to<span class="text-danger">*</span>: </label><br>
+          <textarea name="denyReason" id="denyReason" cols="30" rows="3" class="form-control" (input)="isReasonTextAreaEmpty()"
+            [(ngModel)]="denyReason" placeholder="State Reason"></textarea>
+            <div class="text-danger">{{formWarning}}</div>
+        </ng-container>
+        
+        <ng-container *ngIf="!isUserDivisionChief()">
+          <label for="approverC" class="form-label">Leave Disapproved By:</label>
+            <select name="approverC" id="approverC" class="form-control"  [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" placeholder="Approval Officer">
+              <option [value]=null>Select Officer</option>
+              <ng-container *ngFor="let approver of approvers">
+                <option *ngIf="isUserMayor(approver.doc.position) && approver.doc.formApproval === '7C'" [value]="approver.doc._id">{{ approver.doc.approverName }}</option>
+              </ng-container>
+            </select><br>
+            <label>Disapproved due to<span class="text-danger">*</span>: </label><br>
+            <textarea name="denyReason" id="denyReason" cols="30" rows="3" class="form-control" (input)="isReasonTextAreaEmpty()"
+            [(ngModel)]="denyReason" placeholder="State Reason"></textarea>
+            <div class="text-danger">{{formWarning}}</div>
+        </ng-container>          
+            
+        <div class="pt-3">
+          <span><b>Position: {{approverPosition}}</b></span><br>
+          <span><b>Date: {{dateToday}}</b></span>
+        </div>
+            
+      </div>
+      <!-- signature pad -->
+      <div class="col-lg-6">
+        <div>
+          <div class="form-group mb-0">
+            <label class="form-label">
+            Use Profile signature 
+            <input type="checkbox" name="usersign" [disabled]="userSignature == null"
+            [(ngModel)]="useUserSignaturePreset" (click)="removeFile(fileInput)">
+            </label>&nbsp;<small class="text-danger" *ngIf="userSignature==null">No signature saved.</small>
+          </div>
+          <label for="dateFiled" class="form-label">Upload Image: </label>
+          <div class="form-group">  
+            <input type="file" (change)="onFileSelected($event)" #fileInput placeholder="Upload Signature" accept="image/*" [disabled]="useUserSignaturePreset"/>
+            <button type="button" *ngIf="base64Image" class="close" aria-label="Remove Image" (click)="removeFile(fileInput)">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>          
+        </div>
+        <div class="text-center"  *ngIf="!base64Image && !useUserSignaturePreset">
+          -- or --
+        </div>
+        <div class="col-lg-12">
+          <div *ngIf="useUserSignaturePreset">
+            <label class="form-label">Signature Preview: </label>
+            <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+              <img class="img-preview" height="200px" width="350px" [src]="userSignature" alt="Uploaded Image" /><br>
+            </div>
+            <button class="col-lg-12 mb-1 sign-button" disabled>Remove</button>
+            <button class="col-lg-12 sign-button" [disabled]="approverName == null || approverPosition==null || denyReason == ''" 
+            (click)="saveSignatureReject(userSignature);removeFile(fileInput)">Save</button>
+          </div>
+          <div *ngIf="base64Image">
+            <label for="dateFiled" class="form-label">Signature Preview: </label>
+            <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+              <img class="img-preview" height="200px" width="350px" [src]="base64Image" alt="Uploaded Image" /><br>
+            </div>
+            <button class="col-lg-12 mb-1 sign-button" (click)="removeFile(fileInput)">Remove</button>
+            <button class="col-lg-12 sign-button" [disabled]="approverName == null || approverPosition==null || denyReason == ''" 
+            (click)="saveSignatureReject(base64Image);removeFile(fileInput)">Save</button>
+          </div>
+        </div>
+        <div *ngIf="!base64Image && !useUserSignaturePreset" class="col-md-12" style="width: 400px;">
+          <label class="form-label">Sign Form: </label>
+          <app-signing-pad (signatureSaved)="saveSignatureReject($event)"></app-signing-pad>
+        </div>
+      </div>
+  </div>
+  </div>
+</ng-template>
+
+<ng-template #certifySign>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Certification of Credits</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismissSignForm();removeFile(fileInput)">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <div class="col-lg-6">
+        <div class="pl-2 pb-2">
+          <div class="pb-2">
+            <b>NAME: </b> <span>{{f.get('empLastName').value}}, {{f.get('empFirstName').value}} {{f.get('empMiddleName').value}}</span> <br>
+            <b>POSITION: </b> <span>{{f.get('position_title').value}}</span> <br>
+            <b>DATE OF FILING: </b> <span>{{f.get('dateFiled').value | date}}</span> <br>
+            <b>TYPE OF LEAVE: </b><span>{{ f.get('leaveType').value === 'others'?"Others":getLeaveTypeName(f.get('leaveType').value)}}</span><br>
+            <b>INCLUSIVE DATE/S: </b>
+            <span *ngIf="f.get('startDateTime').value === f.get('finishDateTime').value">
+              {{ f.get('startDateTime').value | date:'MMM dd, yyyy' }}
+            </span>
+            <span *ngIf="f.get('startDateTime').value !== f.get('finishDateTime').value">
+              {{ f.get('startDateTime').value | date:'MMM dd, yyyy' }} - {{ f.get('finishDateTime').value | date:'MMM dd, yyyy' }}
+            </span>&nbsp; <span>({{f.get('totalDays').value}} {{f.get('totalDays').value == 1?"day":"days"}})</span>
+            <br> 
+          </div>
+
+          <label for="approverA" class="form-label">Certification By<span class="text-danger">*</span>:</label><br>
+          <select name="approverA" id="approverA" class="form-control" [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" placeholder="Certified Officer">
+            <option [value]=null>Select Certified Officer</option>
+            <ng-container *ngFor="let approver of approvers" >
+              <option  *ngIf="approver.doc.formApproval === '7A'" [value]="approver.doc._id">{{ approver.doc.approverName }}</option>
+            </ng-container>
+          </select>
+          <div class="text-danger">{{formWarning}}</div>
+
+          <div class="pt-3">
+            <ng-container *ngIf="f.get('status').value != 'denied' && f.get('status').value != 'approved'">
+              <b>AS OF: {{dateToday | date}}</b><br>
+              <div class="table-responsive mt-2">
+                <table class="table-striped" border="1" style="width: 100%; border-collapse: collapse; table-layout: fixed;">
+                  <tr class="text-center">
+                      <td></td>
+                      <td>Vacation</td>
+                      <td>Sick</td>
+                  </tr>
+                  <tr>
+                      <td>Total Earned</td>
+                      <td class="text-center">{{currentLeaveCardData.doc.vlBalance}}</td>
+                      <td class="text-center">{{currentLeaveCardData.doc.slBalance}}</td>
+                  </tr>
+                  <tr>
+                      <td>To be deducted</td>
+                      <td class="text-center">
+                        {{(f.get('leaveType').value === '001' || f.get('leaveType').value === '002')?f.get('totalDays').value: "-"}}
+                      </td>
+                      <td class="text-center">
+                        {{f.get('leaveType').value === '003'? f.get('totalDays').value: '-'}}</td>
+                  </tr>
+                </table>
+              </div>
+              <br>
+            </ng-container>
+          </div>
+        </div>
+        
+      </div>
+      <!-- signature pad -->
+      <div class="col-lg-6">
+        <div>
+          <div class="form-group mb-0">
+            <label class="form-label">
+            Use Profile signature 
+            <input type="checkbox" name="usersign" [disabled]="userSignature == null"
+            [(ngModel)]="useUserSignaturePreset" (click)="removeFile(fileInput)">
+            </label>&nbsp;<small class="text-danger" *ngIf="userSignature==null">No signature saved.</small>
+          </div>
+          <label class="form-label">Upload Image: </label>
+          <div class="form-group">  
+            <input type="file" (change)="onFileSelected($event)" #fileInput placeholder="Upload Signature" accept="image/*" [disabled]="useUserSignaturePreset"/>
+            <button type="button" *ngIf="base64Image" class="close" aria-label="Remove Image" (click)="removeFile(fileInput)">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>          
+        </div>
+        <div class="text-center"  *ngIf="!base64Image && !useUserSignaturePreset">
+          -- or --
+        </div>
+        <div *ngIf="useUserSignaturePreset">
+          <label class="form-label">Signature Preview: </label>
+          <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+            <img class="img-preview" height="200px" width="350px" [src]="userSignature" alt="Uploaded Image" /><br>
+          </div>
+          <button class="col-lg-12 mb-1 sign-button" disabled>Remove</button>
+          <button class="col-lg-12 sign-button" [disabled]="approverName == null || this.approverPosition==null" 
+          (click)="saveSignature(userSignature);removeFile(fileInput)">Save</button>
+        </div>
+        <div *ngIf="base64Image && !useUserSignaturePreset">
+          <label for="dateFiled" class="form-label">Signature Preview: </label>
+          <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+            <img class="img-preview" height="200px" width="350px" [src]="base64Image" alt="Uploaded Image" /><br>
+          </div>
+          <button class="col-lg-12 mb-1 sign-button" (click)="removeFile(fileInput)">Remove</button>
+          <button class="col-lg-12 sign-button" [disabled]="approverName == null || this.approverPosition==null" 
+          (click)="saveSignature(base64Image);removeFile(fileInput)">Save</button>
+        </div>
+        <div *ngIf="!base64Image && !useUserSignaturePreset" class="col-md-12" style="width: 400px;">
+          <label for="dateFiled" class="form-label">Sign Form: </label>
+          <app-signing-pad (signatureSaved)="saveSignature($event)"></app-signing-pad>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  </ng-template>
+
+<ng-template #multiSignApprove>
+  <div class="modal-header">
+    <h1 class="modal-title" *ngIf="approveMode" id="modal-basic-title">Approve Leaves</h1>
+    <h1 class="modal-title" *ngIf="!approveMode" id="modal-basic-title">Reject Leaves</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismissSignForm();">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="row" *ngIf="approveMode">
+      <div class="col-lg-6 pb-2">
+        <ng-container  *ngIf="isUserDivisionChief()">
+          <label>Approved for Recommendation By: </label><br>
+          <select name="approverB" id="approverB" [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" class="form-control" placeholder="Authorized Officer">
+            <option [value]="null">Select Officer</option>
+            <ng-container *ngFor="let approver of approvers" >
+              <option [value]="approver.doc._id" *ngIf="approver.doc.formApproval === '7B' || approver.doc.formApproval === '7A'">{{ approver.doc.approverName }}</option>
+            </ng-container> 
+          </select>
+        </ng-container>
+        
+        <ng-container *ngIf="!isUserDivisionChief()">
+          <label for="approverC" class="form-label">Approved By:</label>
+            <select name="approverC" id="approverC" class="form-control"  [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" placeholder="Approval Officer">
+              <option [value]=null>Select Officer</option>
+              <ng-container *ngFor="let approver of approvers">
+                <option *ngIf="isUserMayor(approver.doc.position) && approver.doc.formApproval === '7C'" [value]="approver.doc._id">{{ approver.doc.approverName }}</option>
+              </ng-container>
+            </select>
+        </ng-container>
+        <div class="text-danger">{{formWarning}}</div>
+
+        <div class="pt-3">
+          <span><b>Position: {{approverPosition}}</b></span><br>
+          <span><b>Date: {{dateToday}}</b></span><br>
+          <span><b>To be approved: {{toApproveChecks.length}} {{toApproveChecks.length == 1?"leave":"leaves"}} selected</b></span>
+        </div>
+      </div>
+      <div class="col-lg-6">
+        <div>
+        <div class="form-group mb-0">
+          <label class="form-label">
+          Use Profile signature 
+          <input type="checkbox" name="usersign" [disabled]="userSignature == null"
+          [(ngModel)]="useUserSignaturePreset" (click)="removeFile(fileInput)">
+          </label>&nbsp;<small class="text-danger" *ngIf="userSignature==null">No signature saved.</small>
+        </div>
+        <label class="form-label">Upload Image: </label>
+        <div class="form-group">  
+          <input type="file" (change)="onFileSelected($event)" #fileInput placeholder="Upload Signature" accept="image/*" [disabled]="useUserSignaturePreset"/>
+          <button type="button" *ngIf="base64Image" class="close" aria-label="Remove Image" (click)="removeFile(fileInput)">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>          
+      </div>
+      <div class="text-center"  *ngIf="!base64Image && !useUserSignaturePreset">
+        -- or --
+      </div>
+      <div class="col-lg-12">
+        <div *ngIf="useUserSignaturePreset">
+          <label class="form-label">Signature Preview: </label>
+          <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+            <img class="img-preview" height="200px" width="350px" [src]="userSignature" alt="Uploaded Image" /><br>
+          </div>
+          <button class="col-lg-12 mb-1 sign-button" disabled>Remove</button>
+          <button class="col-lg-12 sign-button"[disabled]="approverName == null || approverPosition == null" 
+          (click)="saveSignatureMultiple('approve', userSignature);removeFile(fileInput)">Save</button>
+        </div>
+        <div *ngIf="base64Image && !useUserSignaturePreset">
+          <label for="dateFiled" class="form-label">Signature Preview: </label>
+          <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+            <img class="img-preview" height="200px" width="350px" [src]="base64Image" alt="Uploaded Image" /><br>
+          </div>
+          <button class="col-lg-12 mb-1 sign-button" (click)="removeFile(fileInput)">Remove</button>
+          <button class="col-lg-12 sign-button" 
+          [disabled]="approverName == null || approverPosition == null" 
+          (click)="saveSignatureMultiple('approve', base64Image); removeFile(fileInput)">Save</button>
+        </div>
+        </div>
+        <div class="col-lg-12" *ngIf="!base64Image && !useUserSignaturePreset" style="width: 400px;">
+          <app-signing-pad (signatureSaved)="saveSignatureMultiple('approve', $event)"></app-signing-pad>
+        </div>
+      </div>
+    </div>
+
+    <div class="row" *ngIf="!approveMode">
+      <!-- add details -->
+      <div class="col-lg-6 pb-2">
+        <ng-container  *ngIf="isUserDivisionChief()">
+          <label>Rejected for Recommendation By<span class="text-danger">*</span>: </label><br>
+          <select name="approverB" id="approverB" [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" class="form-control" placeholder="Authorized Officer">
+            <option [value]="null">Select Officer</option>
+            <ng-container *ngFor="let approver of approvers" >
+              <option [value]="approver.doc._id" *ngIf="approver.doc.formApproval === '7B' || approver.doc.formApproval === '7A'">{{ approver.doc.approverName }}</option>
+            </ng-container> 
+          </select>
+          <br>
+          <label>Disapproved due to<span class="text-danger">*</span>: </label><br>
+          <textarea name="denyReason" id="denyReason" cols="30" rows="3" class="form-control" (input)="isReasonTextAreaEmpty()"
+            [(ngModel)]="denyReason" placeholder="State Reason"></textarea>
+            <div class="text-danger">{{formWarning}}</div>
+        </ng-container>
+        
+        <ng-container *ngIf="!isUserDivisionChief()">
+          <label for="approverC" class="form-label">Leave Disapproved By:</label>
+            <select name="approverC" id="approverC" class="form-control"  [(ngModel)]="approverId" (change)="selectApprover($event.target.value)" placeholder="Approval Officer">
+              <option [value]=null>Select Officer</option>
+              <ng-container *ngFor="let approver of approvers">
+                <option *ngIf="isUserMayor(approver.doc.position) && approver.doc.formApproval === '7C'" [value]="approver.doc._id">{{ approver.doc.approverName }}</option>
+              </ng-container>
+            </select><br>
+            <label>Disapproved due to<span class="text-danger">*</span>: </label><br>
+            <textarea name="denyReason" id="denyReason" cols="30" rows="3" class="form-control" (input)="isReasonTextAreaEmpty()"
+            [(ngModel)]="denyReason" placeholder="State Reason"></textarea>
+            <div class="text-danger">{{formWarning}}</div>
+        </ng-container>          
+            
+        <div class="pt-3">
+          <span><b>Position: {{approverPosition}}</b></span><br>
+          <span><b>Date: {{dateToday}}</b></span><br>
+          <span><b>To be Rejected: {{toApproveChecks.length}} {{toApproveChecks.length == 1?"leave":"leaves"}} selected</b></span>
+        </div>
+      </div>
+      <!-- signature pad -->
+      <div class="col-lg-6">
+        <div>
+          <div class="form-group mb-0">
+            <label class="form-label">
+            Use Profile signature 
+            <input type="checkbox" name="usersign" [disabled]="userSignature == null"
+            [(ngModel)]="useUserSignaturePreset" (click)="removeFile(fileInput)">
+            </label>&nbsp;<small class="text-danger" *ngIf="userSignature==null">No signature saved.</small>
+          </div>
+          <label class="form-label">Upload Image: </label>
+          <div class="form-group">  
+            <input type="file" (change)="onFileSelected($event)" #fileInput placeholder="Upload Signature" accept="image/*" [disabled]="useUserSignaturePreset"/>
+            <button type="button" *ngIf="base64Image" class="close" aria-label="Remove Image" (click)="removeFile(fileInput)">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>          
+        </div>
+        <div class="text-center"  *ngIf="!base64Image && !useUserSignaturePreset">
+          -- or --
+        </div>
+        <div class="col-lg-12">
+          <div *ngIf="useUserSignaturePreset">
+            <label class="form-label">Signature Preview: </label>
+            <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+              <img class="img-preview" height="200px" width="350px" [src]="userSignature" alt="Uploaded Image" /><br>
+            </div>
+            <button class="col-lg-12 mb-1 sign-button" disabled>Remove</button>
+            <button class="col-lg-12 sign-button"[disabled]="approverName == null || approverPosition == null || denyReason == ''" 
+            (click)="saveSignatureMultiple('deny', userSignature);removeFile(fileInput)">Save</button>
+          </div>
+          <div *ngIf="base64Image && !useUserSignaturePreset">
+            <label for="dateFiled" class="form-label">Signature Preview: </label>
+            <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+              <img class="img-preview" height="200px" width="350px" [src]="base64Image" alt="Uploaded Image" /><br>
+            </div>
+            <button class="col-lg-12 mb-1 sign-button" (click)="removeFile(fileInput)">Remove</button>
+            <button class="col-lg-12 sign-button" 
+            [disabled]="approverName == null || approverPosition == null || denyReason == ''" 
+            (click)="saveSignatureMultiple('deny', base64Image); removeFile(fileInput)">Save</button>
+          </div>
+        </div>
+        <div class="col-lg-12" *ngIf="!base64Image && !useUserSignaturePreset" style="width: 400px;">
+          <app-signing-pad (signatureSaved)="saveSignatureMultiple('deny', $event)"></app-signing-pad>
+        </div>
+      </div>
+    </div>
+  </div>
+</ng-template>
+<iframe #pdfIframe style="display:none;"></iframe>

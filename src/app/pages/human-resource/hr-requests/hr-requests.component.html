@@ -1,0 +1,1050 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">Human Resources</li>
+                <li class="breadcrumb-item active" aria-current="page">Requests</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+  </section>
+  
+  <ngx-loading [show]="loading"></ngx-loading>
+  
+  <section class="content">
+    <div class="card">
+      <div class="card-header row">
+        <div class="col-lg-6 mt-2">
+          <h1 class="text-primary"><i class="bi bi-megaphone-fill mr-2"></i>Requests</h1>
+        </div>
+        <div class="col-lg-6 text-right">
+          <button (click)="refresh()" class="btn btn-default mr-2">
+            <i class="bi bi-arrow-clockwise"></i>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <div class="card-body">
+        <div class="table-responsive mt-2" *ngIf="allRequests.length">
+          <table class="table-striped" datatable [dtOptions]="dtOptions">
+            <thead>
+                <tr>
+                    <th>Date</th>
+                    <th>Employee ID</th>
+                    <th>Employee Name</th>
+                    <th>Request</th>
+                    <th>Status</th>
+                    <th class="noExport"></th>
+                </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let data of allRequests | orderBy: '-doc.date'; let i = index;">
+                <td>{{ data.doc.date }}</td>
+                <td>{{ data.doc.id_no }}</td>
+                <td>{{ data.doc.lastName }}, {{ data.doc.firstName }} {{ data.doc.middleName }}</td>
+                <td>{{ data.doc.request }}</td>
+                <td [ngClass]="{'text-danger': data.doc.status === 'Declined', 'text-primary': data.doc.status === 'Accepted', 'text-success': data.doc.status === 'Certified'}">{{ data.doc.status }}</td>
+                <td>
+                  <div class="dropdown">
+                    <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                      <i class="fa fa-ellipsis-v"></i>
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                      <a class="dropdown-item" (click)="viewRequest(data.doc,editRequestModal)">View</a>
+                    </div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  
+<input
+  type="file"
+  #fileInput
+  style="display: none"
+  (change)="onFileSelected($event)"
+  accept="image/*"
+/>
+
+  <ng-template #createAnnouncement>
+      <div class="modal-header">
+          <h1 class="modal-title" id="modal-basic-title">Announcement Sheet</h1>
+          <button type="button" class="close" aria-label="Close" (click)="dismiss(); createForm.reset()">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      </div>
+      <div class="modal-body">
+          <form [formGroup]="createForm" #ngForm (ngSubmit)="addAnnouncement()">
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="purpose" class="form-label">Purpose<span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="purpose" placeholder="Purpose">
+              <div class="text-danger" *ngIf="!createForm.get('purpose').valid && createForm.get('purpose').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="date" class="form-label">Date<span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="date" placeholder="date">
+              <div class="text-danger" *ngIf="!createForm.get('date').valid && createForm.get('date').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="place" class="form-label">Place<span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="place" placeholder="Place">
+              <div class="text-danger" *ngIf="!createForm.get('place').valid && createForm.get('place').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="department" class="form-label">Department<span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="department" placeholder="Department">
+              <div class="text-danger" *ngIf="!createForm.get('department').valid && createForm.get('department').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label for="description" class="form-label">Description<span class="text-danger">*</span></label>
+              <textarea name="description" id="description" cols="30" rows="3" class="form-control" formControlName="description" placeholder="Description"></textarea>
+              <div class="text-danger" *ngIf="!createForm.get('description').valid && createForm.get('description').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+        </div>
+          </form>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-outline-dark" (click)="dismiss(); createForm.reset()">Cancel</button>
+          <button type="submit" class="btn btn-success" (click)="addAnnouncement()">Save</button>
+      </div>
+  </ng-template>
+  
+  <ng-template #editModal>
+      <div class="modal-header">
+          <h1 class="modal-title" id="modal-basic-title">Announcement Sheet</h1>
+          <button type="button" class="close" aria-label="Close" (click)="dismiss(); createForm.reset()">
+        <span aria-hidden="true">&times;</span>
+      </button>
+      </div>
+      <div class="modal-body">
+          <form [formGroup]="editForm" #ngForm (ngSubmit)="editEval()">
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="purpose" class="form-label">Purpose<span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="purpose" placeholder="Purpose">
+              <div class="text-danger" *ngIf="!createForm.get('purpose').valid && createForm.get('purpose').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="date" class="form-label">Date<span class="text-danger">*</span></label>
+              <input type="date" class="form-control" formControlName="date" placeholder="date">
+              <div class="text-danger" *ngIf="!createForm.get('date').valid && createForm.get('date').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="place" class="form-label">Place<span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="place" placeholder="Place">
+              <div class="text-danger" *ngIf="!createForm.get('place').valid && createForm.get('place').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="department" class="form-label">Department<span class="text-danger">*</span></label>
+              <input type="text" class="form-control" formControlName="department" placeholder="Department">
+              <div class="text-danger" *ngIf="!createForm.get('department').valid && createForm.get('department').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label for="description" class="form-label">Description<span class="text-danger">*</span></label>
+              <textarea name="description" id="description" cols="30" rows="3" class="form-control" formControlName="description" placeholder="Description"></textarea>
+              <div class="text-danger" *ngIf="!createForm.get('description').valid && createForm.get('description').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+        </div>
+          </form>
+      </div>
+      <div class="modal-footer">
+          <button type="button" class="btn btn-outline-dark" (click)="dismiss(); editForm.reset()">Cancel</button>
+          <button type="submit" class="btn btn-success" (click)="updateAnnouncement(editForm.get('_id').value)">Save</button>
+      </div>
+  </ng-template>
+  
+  <ng-template #editRequestModal>
+    <div class="modal-header">
+        <h1 class="modal-title" id="modal-basic-title">Form</h1>
+        <button type="button" class="close" aria-label="Close" (click)="dismiss()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+    </div>
+    <div class="modal-body">
+      <div class="card card-primary">
+        <div class="card-header" 
+          type="button"
+          class="btn btn-outline-primary ms-2"
+          (click)="reqFormisCollapsed = ! reqFormisCollapsed"
+          [attr.aria-expanded]="!reqFormisCollapsed"
+          aria-controls="collapseExample">
+          <h3 class="card-title">Request Form</h3>
+        </div>
+        
+        <div class="card-body" #collapse="ngbCollapse" [(ngbCollapse)]="reqFormisCollapsed">
+          <form [formGroup]="editRequestForm" #ngForm>
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="id_no" class="form-label">Employee ID<span class="text-danger"></span></label>
+                  <input type="text" class="form-control form-control-sm" formControlName="id_no" placeholder="Complaint">
+                  <!-- <div class="text-danger" *ngIf="!requestForm.get('id_no').valid && requestForm.get('id_no').touched">
+                    Please provide valid input.
+                  </div> -->
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="date" class="form-label">Date</label>
+                  <input type="date" name="date" id="date" class="form-control form-control-sm" formControlName="date" placeholder="Date">
+                  <!-- <div class="text-danger" *ngIf="!requestForm.get('date').valid && requestForm.get('date').touched">
+                    Please provide valid input.
+                  </div> -->
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="lastName" class="form-label">Last Name</label>
+                  <input type="text" class="form-control form-control-sm" formControlName="lastName" placeholder="Last Name">
+                  <!-- <div class="text-danger" *ngIf="!requestForm.get('lastName').valid && requestForm.get('lastName').touched">
+                    Please provide valid input.
+                  </div> -->
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="firstName" class="form-label">First Name</label>
+                  <input type="text" class="form-control form-control-sm" formControlName="firstName" placeholder="First Name">
+                  <!-- <div class="text-danger" *ngIf="!requestForm.get('firstName').valid && requestForm.get('lastName').touched">
+                    Please provide valid input.
+                  </div> -->
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="middleName" class="form-label">Middle Name</label>
+                  <input type="text" class="form-control form-control-sm" formControlName="middleName" placeholder="">
+                  <!-- <div class="text-danger" *ngIf="!requestForm.get('middleName').valid && requestForm.get('lastName').touched">
+                    Please provide valid input.
+                  </div> -->
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="request" class="form-label">Request</label>
+                  <select name="request" id="request" class="form-control form-control-sm" formControlName="request">
+                    <option [value]="null">Select Request</option>
+                    <option>Certificate of Employment</option>
+                    <option>Service Record</option>
+                    <option>Certification Record</option>
+                    <option>Certification Medical</option>
+                  </select>
+                  <div class="text-danger" *ngIf="!editRequestForm.get('request').valid && editRequestForm.get('request').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-12">
+                <div class="form-group">
+                  <label for="purpose">Purpose of Request</label>
+                  <textarea class="form-control form-control-sm" rows="3" placeholder="Enter Purpose" formControlName="purpose" name="purpose"></textarea>
+                  <div class="text-danger" *ngIf="!editRequestForm.get('purpose').valid && editRequestForm.get('purpose').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+            </div>
+          </form>
+        </div>
+        
+      </div>
+
+      <div class="card card-info">
+        <div class="card-header" 
+        type="button"
+        class="btn btn-outline-primary ms-2"
+        (click)="formIsCollapsed = ! formIsCollapsed"
+        [attr.aria-expanded]="!formIsCollapsed"
+        aria-controls="collapseExample">
+          <h3 class="card-title">Employee Form</h3>
+        </div>
+        
+        <div class="card-body" #collapse="ngbCollapse" [(ngbCollapse)]="formIsCollapsed">
+          <form [formGroup]="form">
+            <h4>Basic Informations</h4>
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="lastName" class="form-label">Last Name<span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" formControlName="lastName" placeholder="Last Name">
+                  <div class="text-danger" *ngIf="!f.get('lastName').valid && f.get('lastName').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="firstName" class="form-label">First Name<span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" formControlName="firstName" placeholder="First Name">
+                  <div class="text-danger" *ngIf="!f.get('firstName').valid && f.get('firstName').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="middleName" class="form-label">Middle Name</label>
+                  <input type="text" class="form-control" formControlName="middleName" placeholder="Middle Name">
+                  <div class="text-danger" *ngIf="!f.get('middleName').valid && f.get('middleName').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6" *ngIf="editRequestForm.get('request').value == 'Service Record'">
+                <div class="form-group">
+                  <label for="birthDate" class="form-label">Date of Birth<span class="text-danger">*</span></label>
+                  <input type="date" class="form-control" max="{{dateToday | date:'yyyy-MM-dd'}}" formControlName="birthDate" placeholder="Date of Birth">
+                  <div class="text-danger" *ngIf="!f.get('birthDate').valid && f.get('birthDate').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-6" *ngIf="editRequestForm.get('request').value == 'Service Record'">
+                <div class="form-group">
+                  <label for="placeOfBirth" class="form-label">Place of Birth<span class="text-danger">*</span></label>
+                  <input type="text" class="form-control" formControlName="placeOfBirth" placeholder="Place of Birth">
+                  <div class="text-danger" *ngIf="!f.get('placeOfBirth').valid && f.get('placeOfBirth').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div formGroupName="serviceInformation" *ngIf="editRequestForm.get('request').value != 'Service Record'">
+              <div class="row">
+                <div class="col-lg-6">
+                  <div class="alert alert-primary" role="alert">
+                    Service Designation
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-12">
+                      <div class="form-group">
+                        <label for="branch" class="form-label">Branch Name<span class="text-danger">*</span></label>
+                        <select class="form-control" formControlName="branch">
+                          <option [value]="null">Select Branch</option>
+                          <option *ngFor="let brc of branches" [value]="brc.doc.branchName">{{ brc.doc.branchName }}</option>
+                          <!-- <option [value]="'Davao City Office'">Davao City Office</option>
+                          <option [value]="'Manila Branch'">Manila Branch</option> -->
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.branch').valid && f.get('serviceInformation.branch').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-12">
+                      <div class="form-group">
+                        <label for="department" class="form-label">Department<span class="text-danger">*</span></label>
+                        <select class="form-control" formControlName="department">
+                          <option [value]="null">Select Department</option>
+                          <option *ngFor="let dept of departments" [value]="dept.doc.departmentName">{{ dept.doc.departmentName }}</option>
+                          <!-- <option [value]="'Human Resource Management & Development'">Human Resource Management & Development</option>
+                          <option [value]="'Administration Department'">Administration Department</option>
+                          <option [value]="'Quality Management System Department'">Quality Management System Department</option> -->
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.department').valid && f.get('serviceInformation.department').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="division" class="form-label">Division</label>
+                        <select class="form-control" formControlName="division">
+                          <option [value]="null">Select Division</option>
+                          <!-- <option [value]="'Davao City Office'">Davao City Office</option>
+                          <option [value]="'Manila Branch'">Manila Branch</option> -->
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.division').valid && f.get('serviceInformation.division').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="position" class="form-label">Position<span class="text-danger">*</span></label>
+                        <select class="form-control" formControlName="position">
+                          <option [value]="null">Select Position</option>
+                          <option *ngFor="let position of positions" [value]="position.doc.position_name">{{ position.doc.position_name }}</option>
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.position').valid && f.get('serviceInformation.position').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="type" class="form-label">Type<span class="text-danger">*</span></label>
+                        <select class="form-control" formControlName="type">
+                          <option [value]="null">Select Type</option>
+                          <option [value]="'Casual'">Casual</option>
+                          <option [value]="'Consultant'">Consultant</option>
+                          <option [value]="'Fixed Term / Contractual'">Fixed Term / Contractual</option>
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.type').valid && f.get('serviceInformation.type').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="status" class="form-label">Status<span class="text-danger">*</span></label>
+                        <select class="form-control" formControlName="status">
+                          <option [value]="null">Select Status</option>
+                          <option [value]="'AWOL'">AWOL</option>
+                          <option [value]="'Full-Time'">Full-Time</option>
+                          <option [value]="'Internship'">Internship</option>
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.status').valid && f.get('serviceInformation.status').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="dateHired" class="form-label">Date Hired<span class="text-danger">*</span></label>
+                        <input type="date" max="{{dateToday | date:'yyyy-MM-dd'}}" name="dateHired" id="dateHired" class="form-control" formControlName="dateHired" placeholder="Date Hired">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.dateHired').valid && f.get('serviceInformation.dateHired').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="appointedDate" class="form-label">Appointed Date</label>
+                        <input type="date" name="appointedDate" id="appointedDate" class="form-control" formControlName="appointedDate" placeholder="Appointed Date">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.appointedDate').valid && f.get('serviceInformation.appointedDate').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="separationDate" class="form-label">Separation Date</label>
+                        <input type="date" name="separationDate" id="separationDate" class="form-control" formControlName="separationDate" placeholder="Separation Date">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.separationDate').valid && f.get('serviceInformation.separationDate').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-3">
+                      <div class="form-group">
+                        <label for="salaryGrade" class="form-label">Salary Grade<span class="text-danger">*</span></label>
+                        <input type="number" name="salaryGrade" id="salaryGrade" class="form-control" formControlName="salaryGrade" placeholder="Salary Grade">
+                        <!-- <div class="text-danger" *ngIf="!f.get('serviceInformation.salaryGrade').valid && f.get('serviceInformation.salaryGrade').touched">
+                          Please provide valid input.
+                        </div> -->
+                        <div class="text-danger" *ngIf="f.get('serviceInformation.salaryGrade').invalid && f.get('serviceInformation.salaryGrade').touched">
+                          Please enter a valid salary grade between 1 and 33.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-3">
+                      <div class="form-group">
+                        <label for="salaryStep" class="form-label">SG Step<span class="text-danger">*</span></label>
+                        <select class="form-control" formControlName="salaryStep">
+                          <option [value]="null">Select Grade Step</option>
+                          <option [value]="1">Step 1</option>
+                          <option [value]="2">Step 2</option>
+                          <option [value]="3">Step 3</option>
+                          <option [value]="4">Step 4</option>
+                          <option [value]="5">Step 5</option>
+                          <option [value]="6">Step 6</option>
+                          <option [value]="7">Step 7</option>
+                          <option [value]="8">Step 8</option>
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.salaryStep').valid && f.get('serviceInformation.salaryStep').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div class="col-lg-6">
+                  <div class="alert alert-secondary" role="alert">
+                    Basic Pay
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="payrollType" class="form-label">Payroll Type</label>
+                        <select class="form-control" formControlName="payrollType">
+                          <option [value]="null">Select Payroll Type</option>
+                          <option [value]="'Monthly'">Monthly</option>
+                          <option [value]="'Semi-Monthly'">Semi-Monthly</option>
+                          <option [value]="'Weekly'">Weekly</option>
+                          <option [value]="'Daily'">Daily</option>
+                          <option [value]="'Hourly'">Hourly</option>
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.payrollType').valid && f.get('serviceInformation.payrollType').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="costCenter" class="form-label">Cost Center</label>
+                        <select class="form-control" formControlName="costCenter">
+                          <option [value]="null">Select Cost Center</option>
+                          <option [value]="'No Cost Center'">No Cost Center</option>
+                          <option [value]="'GAA (101)'">GAA (101)</option>
+                          <option [value]="'Income (164)'">Income (164)</option>
+                          <option [value]="'Trust Fund (184)'">Trust Fund (184)</option>
+                        </select>
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.costCenter').valid && f.get('serviceInformation.costCenter').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="monthlyRate" class="form-label">Monthly Rate<span class="text-danger">*</span></label>
+                        <input type="number" name="monthlyRate" id="monthlyRate" class="form-control" formControlName="monthlyRate" placeholder="Monthly Rate">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.monthlyRate').valid && f.get('serviceInformation.monthlyRate').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="dailyRate" class="form-label">Daily Rate</label>
+                        <input type="number" name="dailyRate" id="dailyRate" class="form-control" formControlName="dailyRate" placeholder="Daily Rate">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.dailyRate').valid && f.get('serviceInformation.dailyRate').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="hourlyRate" class="form-label">Hourly Rate</label>
+                        <input type="number" name="hourlyRate" id="hourlyRate" class="form-control" formControlName="hourlyRate" placeholder="Hourly Rate">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.hourlyRate').valid && f.get('serviceInformation.hourlyRate').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="ecola" class="form-label">ECOLA</label>
+                        <input type="number" name="ecola" id="ecola" class="form-control" formControlName="ecola" placeholder="ECOLA">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.ecola').valid && f.get('serviceInformation.ecola').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="allowance" class="form-label">Allowance</label>
+                        <input type="number" name="allowance" id="allowance" class="form-control" formControlName="allowance" placeholder="Allowance">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.allowance').valid && f.get('serviceInformation.allowance').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="deminimis" class="form-label">Deminimis</label>
+                        <input type="number" name="deminimis" id="deminimis" class="form-control" formControlName="deminimis" placeholder="Deminimis">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.deminimis').valid && f.get('serviceInformation.deminimis').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="basicPayBankAccountNumber" class="form-label">Bank Account Number</label>
+                        <input type="number" name="basicPayBankAccountNumber" id="basicPayBankAccountNumber" class="form-control" formControlName="basicPayBankAccountNumber" placeholder="Bank Account Number">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.basicPayBankAccountNumber').valid && f.get('serviceInformation.basicPayBankAccountNumber').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="others" class="form-label">Others</label>
+                        <input type="number" name="others" id="others" class="form-control" formControlName="others" placeholder="Others">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.others').valid && f.get('serviceInformation.others').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="clothingAllowance" class="form-label">Clothing Allowance</label>
+                        <input type="number" name="clothingAllowance" id="clothingAllowance" class="form-control" formControlName="clothingAllowance" placeholder="Clothing Allowance">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.clothingAllowance').valid && f.get('serviceInformation.clothingAllowance').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="laundryAllowance" class="form-label">Laundy Allowance (per month)</label>
+                        <input type="number" name="laundryAllowance" id="laundryAllowance" class="form-control" formControlName="laundryAllowance" placeholder="Laundry Allowance">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.laundryAllowance').valid && f.get('serviceInformation.laundryAllowance').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="cashGift" class="form-label">Cash Gift</label>
+                        <input type="number" name="cashGift" id="cashGift" class="form-control" formControlName="cashGift" placeholder="Cash Gift">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.cashGift').valid && f.get('serviceInformation.cashGift').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="performanceEhcIncentive" class="form-label">Performance Enhancement Incentive</label>
+                        <input type="number" name="performanceEhcIncentive" id="performanceEhcIncentive" class="form-control" formControlName="performanceEhcIncentive" placeholder="Clothing Allowance">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.performanceEhcIncentive').valid && f.get('serviceInformation.performanceEhcIncentive').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="cnaIncentive" class="form-label">CNA Incentive</label>
+                        <input type="number" name="cnaIncentive" id="cnaIncentive" class="form-control" formControlName="cnaIncentive" placeholder="CNA Incentive">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.cnaIncentive').valid && f.get('serviceInformation.cnaIncentive').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="subsistence" class="form-label">Subsistence (per month)</label>
+                        <input type="number" name="subsistence" id="subsistence" class="form-control" formControlName="subsistence" placeholder="Subsistence">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.subsistence').valid && f.get('serviceInformation.subsistence').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="row">
+                    <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="rata" class="form-label">RATA</label>
+                        <input type="number" name="rata" id="rata" class="form-control" formControlName="rata" placeholder="RATA">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.rata').valid && f.get('serviceInformation.rata').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div>
+                    <!-- <div class="col-lg-6">
+                      <div class="form-group">
+                        <label for="pera" class="form-label">Personnel Economic Relief Allowance (PERA)</label>
+                        <input type="number" name="ecola" id="pera" class="form-control" formControlName="pera" placeholder="Personnel Economic Relief Allowance (PERA)">
+                        <div class="text-danger" *ngIf="!f.get('serviceInformation.pera').valid && f.get('serviceInformation.pera').touched">
+                          Please provide valid input.
+                        </div>
+                      </div>
+                    </div> -->
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="editRequestForm.get('request').value === 'Service Record'" class="col-md-12">
+                <div class="card">
+                  <div class="card-header row">
+                    <div class="col-lg-6 mt-2">
+                      <h1 class="text-primary"><i class="bi bi-card-list mr-2"></i>SERVICE RECORDS</h1>
+                    </div>
+                    <div class="col-lg-6 text-right" *ngIf="editRequestForm.get('status').value == 'Pending'">
+                      <button type="button" (click)="open(serviceRecord)" class="btn btn-primary mr-2">
+                        <i class="fa-solid fa-plus"></i>
+                        Create
+                      </button>
+                    </div>
+                  </div>
+                  <div class="card-body">
+                    <div class="row">
+                      <div class="col-lg-12">
+                        <div class="table-responsive mt-2" *ngIf="serviceRecords.length">
+                          <table class="table-striped" datatable [dtOptions]="dtOptions">
+                            <thead>
+                              <tr>
+                                <th>Office/Entity/Place Assignment</th>
+                                <th>From</th>
+                                <th>To</th>
+                                <th>Designation</th>
+                                <th>Status</th>
+                                <th>Salary</th>
+                                <th>Branch</th>
+                                <th>V/L Without Pay</th>
+                                <th>Separation</th>
+                                <th class="noExport"></th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr *ngFor="let data of serviceRecords.value; let i = index;">
+                                <td>{{ data.placeOfAssignment }}</td>
+                                <td>{{ data.from }}</td>
+                                <td>{{ data.to }}</td>
+                                <td>{{ data.designation }}</td>
+                                <td>{{ data.status }}</td>
+                                <td>{{ data.salary }}</td>
+                                <td>{{ data.branch }}</td>
+                                <td>{{ data.vlWithoutPay }}</td>
+                                <td>{{ data.separationCause }}</td>
+                                <td>
+                                  <div class="dropdown">
+                                    <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                      <i class="fa fa-ellipsis-v"></i>
+                                    </button>
+                                    <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                      <a class="dropdown-item" (click)="editServiceRecord(data, serviceRecord, i)">{{editRequestForm.get('status').value == 'Pending' ? 'Edit' : 'View'}}</a>
+                                      <a class="dropdown-item text-danger" (click)="deleteServiceRecord(i)" *ngIf="editRequestForm.get('status').value == 'Pending'">Delete</a>
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+            </div>
+          </form>
+        </div>
+        
+      </div>
+
+    </div>
+    <div class="modal-footer">
+        <button type="submit" class="btn btn-success" (click)="updateRequest('accept')" *ngIf="editRequestForm.get('status').value == 'Pending'">Accept</button>
+        <button type="button" class="btn btn-outline-dark" (click)="updateRequest('decline')"*ngIf="editRequestForm.get('status').value == 'Pending'">Decline</button>
+        <button type="submit" class="btn btn-success" (click)="checkSignature()" *ngIf="editRequestForm.get('status').value == 'Accepted'">Certify</button>
+        <button type="button" class="btn btn-outline-dark" (click)="dismiss()" *ngIf="editRequestForm.get('status').value != 'Pending'">Close</button>
+    </div>
+</ng-template>
+
+<ng-template #serviceRecord>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Service Record</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismissSingle(); serviceRecordForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="serviceRecordForm" #ngForm (ngSubmit)="submitServiceRecord()">
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="from" class="form-label">From<span class="text-danger">*</span></label>
+            <input type="date" max="{{dateToday | date:'yyyy-MM-dd'}}" name="from" id="from" class="form-control" formControlName="from" placeholder="From">
+            <div class="text-danger" *ngIf="!sr.get('from').valid && sr.get('from').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="to" class="form-label">To<span class="text-danger">*</span></label>
+            <input type="date" name="to" id="to" class="form-control" formControlName="to" placeholder="To">
+            <div class="text-danger" *ngIf="!sr.get('to').valid && sr.get('to').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="present" id="present" class="form-check-input" formControlName="present" placeholder="Present">
+            <label for="present" class="form-check-label">Present</label>
+            <div class="text-danger" *ngIf="!sr.get('present').valid && sr.get('present').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <label for="type" class="form-label">Type<span class="text-danger">*</span></label>
+          <select class="form-control" formControlName="type">
+            <option [value]="null">Select Type</option>
+            <option [value]="'Current Employer'">Current Employer</option>
+            <option [value]="'Previous Employer'">Previous Employer</option>
+          </select>
+          <div class="text-danger" *ngIf="!sr.get('type').valid && sr.get('type').touched">
+            Please provide valid input.
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="isGovernmentOffice" id="isGovernmentOffice" class="form-check-input" formControlName="isGovernmentOffice" placeholder="Government Office">
+            <label for="isGovernmentOffice" class="form-check-label">Government Office</label>
+            <div class="text-danger" *ngIf="!sr.get('isGovernmentOffice').valid && sr.get('isGovernmentOffice').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="placeOfAssignment" class="form-label">Office/Entity/Place of Assignment<span class="text-danger">*</span></label>
+            <input type="text" name="placeOfAssignment" id="placeOfAssignment" class="form-control" formControlName="placeOfAssignment" placeholder="Office/Entity/Place of Assignment">
+            <div class="text-danger" *ngIf="!sr.get('placeOfAssignment').valid && sr.get('placeOfAssignment').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="branch" class="form-label">Branch<span class="text-danger">*</span></label>
+            <select class="form-control" formControlName="branch">
+              <option [value]="null">Select Branch</option>
+              <option *ngFor="let brc of branches" [value]="brc.doc.branchName">{{ brc.doc.branchName }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!sr.get('branch').valid && sr.get('branch').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="designation" class="form-label">Designation<span class="text-danger">*</span></label>
+            <select class="form-control" formControlName="designation">
+              <option [value]="null">Select Designation</option>
+              <option *ngFor="let position of positions" [value]="position.doc.position_name">{{ position.doc.position_name }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!sr.get('designation').valid && sr.get('designation').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="status" class="form-label">Status<span class="text-danger">*</span></label>
+            <select class="form-control" formControlName="status">
+              <option [value]="null">Select Status</option>
+              <option [value]="'Casual'">Casual</option>
+              <option [value]="'Consultant'">Consultant</option>
+              <option [value]="'Fixed Term / Contractual'">Fixed Term / Contractual</option>
+              <option [value]="'Probationary'">Probationary</option>
+              <option [value]="'Project-based'">Project-based</option>
+              <option [value]="'Regular / Permanent'">Regular / Permanent</option>
+              <option [value]="'Seasonal'">Seasonal</option>
+            </select>
+            <div class="text-danger" *ngIf="!sr.get('status').valid && sr.get('status').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="salaryType" class="form-label">Salary<span class="text-danger">*</span></label>
+            <input type="number" class="form-control" formControlName="salary" placeholder="Salary">
+            <div class="text-danger" *ngIf="!sr.get('salary').valid && sr.get('salary').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="salaryType" class="form-label">Salary Type</label>
+            <select class="form-control" formControlName="salaryType">
+              <option [value]="null">Select Salary Type</option>
+              <option [value]="'Per Annum'">Per Annum</option>
+              <option [value]="'Per Month'">Per Month</option>
+              <option [value]="'Per Week'">Per Week</option>
+              <option [value]="'Per Day'">Per Day</option>
+              <option [value]="'Per Hour'">Per Hour</option>
+            </select>
+            <div class="text-danger" *ngIf="!sr.get('salaryType').valid && sr.get('salaryType').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="vlWithoutPay" class="form-label">Vacation/Leave Without Pay</label>
+            <input type="text" name="vlWithoutPay" id="vlWithoutPay" class="form-control" formControlName="vlWithoutPay" placeholder="Vacation/Leave Without Pay">
+            <div class="text-danger" *ngIf="!sr.get('vlWithoutPay').valid && sr.get('vlWithoutPay').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="separationDate" class="form-label">Separation Date</label>
+            <input type="date" name="separationDate" id="separationDate" class="form-control" formControlName="separationDate" placeholder="Separation Date">
+            <div class="text-danger" *ngIf="!sr.get('separationDate').valid && sr.get('separationDate').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="separationCause" class="form-label">Separation Cause</label>
+            <textarea name="separationCause" id="separationCause" cols="30" rows="3" class="form-control" formControlName="separationCause" placeholder="Separation Cause"></textarea>
+            <div class="text-danger" *ngIf="!sr.get('separationCause').valid && sr.get('separationCause').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismissSingle(); serviceRecordForm.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitServiceRecord()" *ngIf="editRequestForm.get('status').value == 'Pending'">Save</button>
+	</div>
+</ng-template>
+
+
+<ng-template #signaturePad let-modal>
+  <div class="modal-header">
+      <h1 class="modal-title" id="modal-basic-title">Draw Signature</h1>
+      <button
+          type="button"
+          class="close"
+          aria-label="Close"
+          (click)="dismissModal('signaturePad')"
+      >
+          <span aria-hidden="true">&times;</span>
+      </button>
+  </div>
+  <div class="modal-body">
+      <div class="row">
+          <!-- add details -->
+          <!-- <div class="col-lg-12 pb-2">
+    
+      </div> -->
+          <!-- signature pad -->
+          <div class="col-lg-12" style="width: 400px">
+              <app-signing-pad
+                  (signatureSaved)="saveSignature($event)"
+              ></app-signing-pad>
+          </div>
+      </div>
+  </div>
+</ng-template>
+
+<ng-template #previewSignature let-modal>
+  <div class="modal-header">
+      <h4 class="modal-title">{{newSignatureFile ? 'New' : 'Existing'}} Signature</h4>
+      <button
+          type="button"
+          class="close"
+          (click)="dismissModal('preview')"
+          aria-label="Close"
+      >
+          <span aria-hidden="true">×</span>
+      </button>
+  </div>
+  <div class="modal-body text-center">
+    <div class="alert alert-warning" (click)="clearSignature()" *ngIf="newSignatureImg && signatureImg">
+      Click me to use remove drawn/attached signature.
+    </div>
+    <img
+    *ngIf="signatureImg || newSignatureImg"
+    [src]="newSignatureImg ? newSignatureImg :  signatureImg | safe"
+    class="img-fluid img-thumbnail"
+    style="max-height:250px;"
+    />
+  </div>
+  <div class="card-footer">
+    <button type="button" class="btn btn-success" (click)="certifyRequest()">Sign</button>
+    <div class="btn-group float-right">
+      <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-expanded="false">
+        Change
+      </button>
+      <ul class="dropdown-menu">
+        <li><a class="dropdown-item" type="button" (click)="openMd(signaturePad, 'signaturePad')">Draw</a></li>
+        <li>
+          <a class="dropdown-item" href="javascript:void(0);" type="button" (click)="triggerFileInput()">Attachment</a>
+        </li>
+      </ul>
+    </div>
+    <!-- <button type="submit" class="btn btn-success" (click)="addAnnouncement()">Draw New</button>
+    <button type="submit" class="btn btn-success" (click)="addAnnouncement()">Attach New</button> -->
+  </div>
+</ng-template>

@@ -1,0 +1,108 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Recruitment</li>
+              <li class="breadcrumb-item active" aria-current="page">Applications</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-people mr-2"></i>Applications</h1>
+      </div>
+      <div class="col-lg-6 text-right">
+        <button class="btn btn-default mr-2">
+          <i class="bi bi-arrow-clockwise"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="branchId" class="form-label">Branch</label>
+            <select name="branchId" id="branchId" class="form-control" [(ngModel)]="branchId">
+              <option [value]="null">All</option>
+              <option [value]="'Manila Office'">Manila Office</option>
+              <option [value]="'Davao Office'">Davao Office</option>
+            </select>
+          </div>
+        </div>
+        <!-- <div class="col-lg-4">
+          <div class="form-group">
+            <label for="jobOpeningId" class="form-label">Job Opening</label>
+            <select name="jobOpeningId" id="jobOpeningId" class="form-control" [(ngModel)]="jobOpeningId">
+              <option [value]="null">All</option>
+              <option *ngFor="let data of jobOpenings" [value]="data.doc._id">{{ data.doc.positionName }}</option>
+            </select>
+          </div>
+        </div> -->
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="statusId" class="form-label">Status</label>
+            <select name="statusId" id="statusId" class="form-control" [(ngModel)]="statusId">
+              <option [value]="null">All Applicants</option>
+            </select>
+          </div>
+        </div>
+      </div>
+      <div class="table-responsive mt-2">
+        <table class="table-striped" datatable [dtOptions]="dtOptions">
+          <thead>
+            <tr>
+              <th>Branch</th>
+              <th>Position Applied</th>
+              <th>Employment</th>
+              <th>Applicant Name</th>
+              <th>Sex</th>
+              <th>Mobile #</th>
+              <th>Email</th>
+              <th>Interview Date</th>
+              <th>Rating</th>
+              <th>Summary</th>
+              <th>Status</th>
+              <!-- <th class="noExport"></th> -->
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let post of applications; let i = index;">
+              <td>{{ post.doc.branch }}</td>
+              <td>{{ post.doc.position }}</td>
+              <td>{{ post.doc.employment }}</td>
+              <td>{{ post.doc.name }}</td>
+              <td>{{ post.doc.sex }}</td>
+              <td>{{ post.doc.mobileNumber }}</td>
+              <td>{{ post.doc.email }}</td>
+              <td>{{ post.doc.interviewDate }}</td>
+              <td>{{ post.doc.rating }}</td>
+              <td>{{ post.doc.summary }}</td>
+              <td>{{ post.doc.status }}</td>
+              <!-- <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" (click)="edit(post.doc, editPerformanceEvaluation)">Edit</a>
+                    <a class="dropdown-item text-danger" (click)="deleteApp(post.doc._id, post.doc._rev)">Delete</a>
+                  </div>
+                </div>
+              </td> -->
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>

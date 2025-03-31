@@ -1,0 +1,102 @@
+<div class="row">
+    <!-- When user has no setting, they will need to set it up first -->
+    <div class="col-6" *ngIf="currentUser?.smsNotification && noSettings">
+        <div class="col-lg-10">
+            <div class="form-group">
+                <p><b>Instructions:</b> A SMS broadcast message will be sent to this mobile number when a Employee files a leave that requires approval through HANA's Leave Module. Users in Office Head groups will recieve SMS notification based on their designation and respective departments. Users with SMS Enabled from other group will recieve notifications once the leave application is ready for certification.
+                    Enable/Disable settings to allow this feature. If SMS Broadcast fails to send, re-verify or update mobile number continue SMS sending.
+                </p><br>
+            </div>
+            <div *ngIf="step0">
+                <p><i>SMS setting not set.</i></p><br>
+                <button class="btn btn-outline-secondary" (click)="step1 = true; step0=false;">Get Started</button>
+            </div>
+            <div *ngIf="step1">
+                <div class="card" *ngIf="!verifyOTP">
+                    <div class="card-body form-group">
+                        <h2 class="mb-0">STEP 1</h2>
+                        <p>Enter your mobile number.</p><br>
+                        <input type="text" name="mobile" id="mobile" class="form-control" [(ngModel)]="numberToVerify" (input)="checkValidMobileNumber($event)"
+                        placeholder="Enter Mobile Number">
+                        <div class="text-danger">{{numberError}}</div>
+                    </div>
+                    <div class="card-footer">
+                        <button class="btn btn-primary float-right" [disabled]="(numberToVerify=='' || numberToVerify == null) || numberError != ''" (click)="sendOTP()">
+                            Send OTP
+                            <span *ngIf="loader" class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                        </button>
+                    </div>
+                </div>
+        
+                <div class="card" *ngIf="verifyOTP">
+                    <div class="card-body form-group">
+                        <h2 class="mb-0">STEP 2</h2>
+                        <p>Verify OTP sent to {{numberToVerify}}. OTP is only valid for five (5) minutes.</p><br>
+                        <input name="otp" id="otp" class="form-control" [(ngModel)]="otp" placeholder="Enter OTP">
+                        <small>Time left: {{ formatTime() }}</small>
+                    </div>
+                    <div class="card-footer">
+                        <div class="row">
+                            <button class="btn btn-primary float-right" [disabled]="otp=='' || otp == null"  (click)="verifyOtpCode(otp)">Confirm</button>
+                            <button class="btn btn-secondary float-right" style="margin-left: 2px;" (click)="verifyOTP=false;step1=true">Go Back</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <br>
+    </div>
+
+
+
+    <!-- sms setting page for user to toggle on/off feature or set rules -->
+    <div class="col-12" *ngIf="!noSettings">
+    <div class="col-7">
+        <form [formGroup]="form" #ngForm>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-lg-10">
+                        <div class="form-group">
+                            <p><b>Instructions:</b> A SMS broadcast message will be sent to this mobile number when a Employee files a leave that requires approval through HANA's Leave Module. Users in Office Head groups will recieve SMS notification based on their designation and respective departments. Users with SMS Enabled from other group will recieve notifications once the leave application is ready for certification.
+                                Enable/Disable settings to allow this feature. If SMS Broadcast fails to send, re-verify or update mobile number continue SMS sending.
+                            </p><br>
+    
+                            <span> <b>Current Status:</b></span>
+                            <h2>
+                                <span class="badge" [ngClass]="{'badge-success': form.get('isEnabled').value, 'badge-danger': !form.get('isEnabled').value}">
+                                {{form.get('isEnabled').value ? 'ENABLED' : 'DISABLED'}}
+                                </span>&nbsp;
+                                <span class="badge" [ngClass]="{'badge-secondary': form.get('isVerified').value, 'badge-danger': !form.get('isVerified').value}">
+                                    {{form.get('isVerified').value ? 'VERIFIED' : 'NOT VERIFIED'}}
+                                </span>
+                            </h2>
+                            <span><b>User Group:</b> {{getUserGroupName(currentUser?.setting_id)}}</span><br>
+                            <span><b>User Position:</b> {{currentUser?.designation}}</span><br>
+                            <span><b>User Department:</b> {{currentUser?.department}}</span>
+                        </div>
+                    </div>
+                    <div class="col-lg-9">
+                        <div class="form-group">
+                            <label for="phoneNumber" class="form-label">Mobile Number: </label>
+                            <div class="input-with-button">
+                                <input name="phoneNumber" id="phoneNumber" class="form-control" formControlName="phoneNumber" (input)="checkValidMobileNumber($event)">
+                                <button style="margin-left: 2px;" class="btn btn-outline-info" [disabled]="!form.valid|| numberError != ''" (click)="remove()">Remove</button>
+                                <button style="margin-left: 2px;" class="btn btn-outline-info" *ngIf="form.get('isVerified').value && !checkChangeNumber()" [disabled]="!form.valid|| numberError != ''" (click)="reVerify()">Save & Verify</button>
+                                <button style="margin-left: 2px;" *ngIf="!form.get('isVerified').value" class="btn btn-outline-info" [disabled]="!form.valid|| numberError != ''" (click)="reVerify()">Verify</button>
+                            </div>
+                            <div class="text-danger">{{numberError}}</div>
+                            <div class="text-danger" *ngIf="!form.get('phoneNumber').valid && form.get('phoneNumber').touched">
+                                Please provide valid input.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-10 card-footer">
+                <button type="submit"  style="margin-left: 2px;" *ngIf="form.get('isEnabled').value" class="btn btn-danger float-right" (click)="disable()">Disable</button>
+                <button type="submit" *ngIf="!form.get('isEnabled').value" class="btn btn-success float-right" [disabled]="!form.valid|| numberError != ''" (click)="enable()">Enable</button>
+            </div>
+          </form>
+        </div>
+    </div>
+</div>

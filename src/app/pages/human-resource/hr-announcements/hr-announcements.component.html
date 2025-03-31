@@ -1,0 +1,213 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Human Resources</li>
+              <li class="breadcrumb-item active" aria-current="page">Announcements</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-megaphone-fill mr-2"></i>Announcements</h1>
+      </div>
+      <div class="col-lg-6 text-right">
+        <button (click)="refresh()" class="btn btn-default mr-2">
+          <i class="bi bi-arrow-clockwise"></i>
+          Refresh
+        </button>
+        <!-- <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#ratingModal">
+          <i class="bi bi-table"></i>
+          Rating Table
+        </button> -->
+        <button type="button" class="btn btn-primary" (click)="open(createAnnouncement)">
+          <i class="bi bi-file-earmark-plus"></i>
+          Create
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive mt-2" *ngIf="announcements?.length">
+        <table class="table-striped" datatable [dtOptions]="dtOptions">
+          <thead>
+            <tr>
+              <!-- <th>#</th> -->
+              <th>No.</th>
+              <th>Purpose</th>
+              <th>Date</th>
+              <th>Place</th>
+              <th>Department</th>
+              <!-- <th>Description</th> -->
+              <th class="noExport"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let post of announcements; let i = index;">
+              <td>{{i + 1}}</td>
+              <td>{{ post.doc.purpose }}</td>
+              <td>{{ post.doc.date | date: 'longDate' }}</td>
+              <td>{{ post.doc.place }}</td>
+              <td>{{ post.doc.department }}</td>
+              <!-- <td>{{ post.doc.description }}</td> -->
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" (click)="editAnnouncement(editModal, post.doc)">Edit</a>
+                    <a class="dropdown-item text-danger" (click)="deleteAnnouncement(post.doc._id, post.doc._rev)">Delete</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #createAnnouncement>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Announcement Sheet</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); createForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="createForm" #ngForm (ngSubmit)="addAnnouncement()">
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="purpose" class="form-label">Purpose<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="purpose" placeholder="Purpose">
+            <div class="text-danger" *ngIf="!createForm.get('purpose').valid && createForm.get('purpose').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="date" class="form-label">Date<span class="text-danger">*</span></label>
+            <input type="date" class="form-control" formControlName="date" placeholder="date">
+            <div class="text-danger" *ngIf="!createForm.get('date').valid && createForm.get('date').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="place" class="form-label">Place<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="place" placeholder="Place">
+            <div class="text-danger" *ngIf="!createForm.get('place').valid && createForm.get('place').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="department" class="form-label">Department<span class="text-danger">*</span></label>
+            <select class="form-control" name="department" formControlName="department">
+              <option [ngValue]="null">Select Department</option>
+              <option *ngFor="let dept of departments" [ngValue]="dept.doc.departmentName">{{ dept.doc.departmentName }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!createForm.get('department').valid && createForm.get('department').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="description" class="form-label">Description<span class="text-danger">*</span></label>
+            <textarea name="description" id="description" cols="30" rows="3" class="form-control" formControlName="description" placeholder="Description"></textarea>
+            <div class="text-danger" *ngIf="!createForm.get('description').valid && createForm.get('description').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); createForm.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="addAnnouncement()" [disabled]="isSubmitting">Save</button>
+	</div>
+</ng-template>
+
+<ng-template #editModal>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Announcement Sheet</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); createForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="editForm" #ngForm (ngSubmit)="editEval()">
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="purpose" class="form-label">Purpose<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="purpose" placeholder="Purpose">
+            <div class="text-danger" *ngIf="!createForm.get('purpose').valid && createForm.get('purpose').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="date" class="form-label">Date<span class="text-danger">*</span></label>
+            <input type="date" class="form-control" formControlName="date" placeholder="date">
+            <div class="text-danger" *ngIf="!createForm.get('date').valid && createForm.get('date').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="place" class="form-label">Place<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="place" placeholder="Place">
+            <div class="text-danger" *ngIf="!createForm.get('place').valid && createForm.get('place').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="department" class="form-label">Department<span class="text-danger">*</span></label>
+            <select class="form-control" name="department" formControlName="department">
+              <option [ngValue]="null">Select Department</option>
+              <option *ngFor="let dept of departments" [ngValue]="dept.doc" [selected]="dept.doc.departmentName === currentDept">{{ dept.doc.departmentName }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!createForm.get('department').valid && createForm.get('department').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="description" class="form-label">Description<span class="text-danger">*</span></label>
+            <textarea name="description" id="description" cols="30" rows="3" class="form-control" formControlName="description" placeholder="Description"></textarea>
+            <div class="text-danger" *ngIf="!createForm.get('description').valid && createForm.get('description').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); editForm.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="updateAnnouncement(editForm.get('_id').value)">Save</button>
+	</div>
+</ng-template>
+

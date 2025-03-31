@@ -1,0 +1,130 @@
+[
+    {
+        "Id": "sha256:45e6976e9f817c00652a689b5005e46c75b6b8539e776ccd054dcf5eeef3890c",
+        "RepoTags": [
+            "crdusi/hana-db:latest",
+            "couchdb:latest"
+        ],
+        "RepoDigests": [
+            "crdusi/hana-db@sha256:6923f6f55f0db481b594159b57441f3e7cc041f8e3aee8968e744dded4acbd4d",
+            "couchdb@sha256:5b40a7890201020d6f7e91b277080edc2a4a2f3dc46acfb9ce741fcac1787f4e"
+        ],
+        "Parent": "",
+        "Comment": "",
+        "Created": "2023-10-11T21:42:49.177962539Z",
+        "Container": "9770c0fc9d0fc6ff1e5e4108e1bd86076455b4cb15f40f541db1cc4a1657a3d5",
+        "ContainerConfig": {
+            "Hostname": "9770c0fc9d0f",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "4369/tcp": {},
+                "5984/tcp": {},
+                "9100/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GPG_COUCH_KEY=390EF70BB1EA12B2773962950EE62FB37A00258D",
+                "COUCHDB_VERSION=3.3.2"
+            ],
+            "Cmd": [
+                "/bin/sh",
+                "-c",
+                "#(nop) ",
+                "CMD [\"/opt/couchdb/bin/couchdb\"]"
+            ],
+            "Image": "sha256:c80672a213dbcdc1b3a3e78b6d056aca4c595f4ea43f42ec325ad42b8577afad",
+            "Volumes": {
+                "/opt/couchdb/data": {}
+            },
+            "WorkingDir": "",
+            "Entrypoint": [
+                "tini",
+                "--",
+                "/docker-entrypoint.sh"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "maintainer": "CouchDB Developers dev@couchdb.apache.org"
+            }
+        },
+        "DockerVersion": "20.10.23",
+        "Author": "",
+        "Config": {
+            "Hostname": "",
+            "Domainname": "",
+            "User": "",
+            "AttachStdin": false,
+            "AttachStdout": false,
+            "AttachStderr": false,
+            "ExposedPorts": {
+                "4369/tcp": {},
+                "5984/tcp": {},
+                "9100/tcp": {}
+            },
+            "Tty": false,
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Env": [
+                "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+                "GPG_COUCH_KEY=390EF70BB1EA12B2773962950EE62FB37A00258D",
+                "COUCHDB_VERSION=3.3.2"
+            ],
+            "Cmd": [
+                "/opt/couchdb/bin/couchdb"
+            ],
+            "Image": "sha256:c80672a213dbcdc1b3a3e78b6d056aca4c595f4ea43f42ec325ad42b8577afad",
+            "Volumes": {
+                "/opt/couchdb/data": {}
+            },
+            "WorkingDir": "",
+            "Entrypoint": [
+                "tini",
+                "--",
+                "/docker-entrypoint.sh"
+            ],
+            "OnBuild": null,
+            "Labels": {
+                "maintainer": "CouchDB Developers dev@couchdb.apache.org"
+            }
+        },
+        "Architecture": "amd64",
+        "Os": "linux",
+        "Size": 203359267,
+        "VirtualSize": 203359267,
+        "GraphDriver": {
+            "Data": {
+                "LowerDir": "/var/lib/docker/overlay2/45a8ec7ac0e76fb7f98ffb97e65f65973b39091371d83b55ab1d90c06df28291/diff:/var/lib/docker/overlay2/f988b267b1c50a44c5e47b2806f9e3e1e002cd3f612b444c92839f13c573c704/diff:/var/lib/docker/overlay2/5f921e1c8318ec1d3487ca3f6f622a2849a7bdea285454fe70f8c1470b47984f/diff:/var/lib/docker/overlay2/f849eb06a11f05640e1f50b218c744b9ce99ecfa653f1044220c6c1a5f54c26a/diff:/var/lib/docker/overlay2/1eb2f3a36914f59a1f8118c7b72da5a287258c825f5acf8c283650ad14c0aece/diff:/var/lib/docker/overlay2/2e74ebafcc493979718901942cdd28d930f31e685aab3e41057d56a85d6c2529/diff:/var/lib/docker/overlay2/5993ac23ecbfc87ae43c5aef4c31ba96a49a5b46f565f6025cbde13a977c0a77/diff:/var/lib/docker/overlay2/63de7ec5ae8400ce16ccf8cd9b455cc14955b2209b53ca16ecddb0cbc8c83b9e/diff:/var/lib/docker/overlay2/cab3dc4de3b6740ef4ce4a77b36da2616efbdc7d74157e12a82a6c7ee555f4a5/diff:/var/lib/docker/overlay2/1dd482b4debf43766be83b490fc9103ee10a116925ffcf7e99641c3bc3ded061/diff",
+                "MergedDir": "/var/lib/docker/overlay2/26d86d3e31821946e6615fc0c57787c8621983aa43f44179f33abc1c35444655/merged",
+                "UpperDir": "/var/lib/docker/overlay2/26d86d3e31821946e6615fc0c57787c8621983aa43f44179f33abc1c35444655/diff",
+                "WorkDir": "/var/lib/docker/overlay2/26d86d3e31821946e6615fc0c57787c8621983aa43f44179f33abc1c35444655/work"
+            },
+            "Name": "overlay2"
+        },
+        "RootFS": {
+            "Type": "layers",
+            "Layers": [
+                "sha256:633f5bf471f7595b236a21e62dc60beef321db45916363a02ad5af02d794d497",
+                "sha256:43139593b068483488b893fafa17894169355443fd350951dc5e58e840108b8a",
+                "sha256:7dd234239407dff2111fb53e1224b8328b060d042e719b76bb3c11b0b45398e5",
+                "sha256:69cf8762068032bcb677edb771a790f8e32c41e7e9706b2a6e08c77c24a6b1c5",
+                "sha256:515be70fa88f422100e78bf9c2944d31062d7b0a642d7fcb69cb7d13e1b800ec",
+                "sha256:c7474f893ab440312a810c3fc6d3325fdc9b80a0913d337d28f1af4f956eab9c",
+                "sha256:3764c36370b1de00b6a3ba3402caff0447710456168532c04eeace99e51f2042",
+                "sha256:2d94bb316505a9c24a2801a8a1adb3088dfcc7ebd2a540a4b2405ad1b3bb8547",
+                "sha256:cd9de6e4db3150e4c090267c1dfcb4264552e571f9f31864cba516b43d3606e8",
+                "sha256:e6eca0192a0da1f762852004c8f0d751bda219ba8dcc012eca3c35497d9820f5",
+                "sha256:8c8b923a7ff0e402f1ac61511b4d4a0b74413b585d0fbe79cfaaff4cf993b887"
+            ]
+        },
+        "Metadata": {
+            "LastTagTime": "2023-10-13T12:11:34.524725417Z"
+        }
+    }
+]

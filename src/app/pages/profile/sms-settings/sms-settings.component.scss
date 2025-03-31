@@ -1,0 +1,8 @@
+.input-with-button {
+    display: flex;
+    align-items: center; /* Vertically align items */
+}
+
+.input-with-button input {
+    flex: 1; /* Take up remaining space */
+}

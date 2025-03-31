@@ -1,0 +1,103 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Recruitment</li>
+              <li class="breadcrumb-item active" aria-current="page">Required Documents</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-files mr-2"></i>Required Documents</h1>
+      </div>
+      <div class="col-lg-6 text-right">
+        <button type="button" class="btn btn-primary mr-2" (click)="open(requiredDocument)">
+          <i class="bi bi-file-earmark-plus"></i>
+          Create
+        </button>
+        <button class="btn btn-default mr-2">
+          <i class="bi bi-arrow-clockwise"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive mt-2">
+        <table class="table-striped" datatable [dtOptions]="dtOptions" *ngIf="requiredDocuments.length">
+          <thead>
+            <tr>
+              <th>Document Name</th>
+              <th>Status</th>
+              <th class="noExport"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of requiredDocuments; let i = index;">
+              <td>{{ data.doc.fileName }}</td>
+              <td>{{ data.doc.openForAdmission? 'Open':'Closed' }}</td>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item text-danger" (click)="deleteRequiredDocument(data.doc)">Delete</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #requiredDocument>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Required Document</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); f.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="form" #ngForm (ngSubmit)="submitRequiredDocument()">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="fileName" class="form-label">File Name<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="fileName" placeholder="File Name">
+            <div class="text-danger" *ngIf="!f.get('fileName').valid && f.get('fileName').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="openForAdmission" id="openForAdmission" class="form-check-input" formControlName="openForAdmission">
+            <label for="openForAdmission" class="form-check-label">Open for Admission</label>
+            <div class="text-danger" *ngIf="!f.get('openForAdmission').valid && f.get('openForAdmission').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); f.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitRequiredDocument()">Save</button>
+	</div>
+</ng-template>

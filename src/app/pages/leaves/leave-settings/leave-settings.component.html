@@ -1,0 +1,458 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Leaves</li>
+              <li class="breadcrumb-item active" aria-current="page">Leave Settings</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-gear mr-2"></i>LEAVE SETTINGS</h1>
+      </div>
+    </div>
+    <mat-tab-group>
+      <!-- Leave Types -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <i class="fa-solid fa-table-list" style="padding-right: 2px;"></i>
+          Leave Types
+        </ng-template> 
+        <div class="row pt-2 pr-3">
+          <div class="col-lg-12 text-right">
+            <button type="button" (click)="open(leaveType)" class="btn btn-primary mr-2">
+              <i class="fa-solid fa-plus"></i>
+              Create
+            </button>
+            <button type="button" (click)="getLeaveTypes()" class="btn btn-secondary">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              Refresh
+            </button>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive mt-2" *ngIf="leaveTypes.length">
+            <table class="table-striped" datatable [dtOptions]="dtOptions">
+              <thead>
+                <tr>
+                  <th>Code</th>
+                  <th>Leave Name</th>
+                  <th>Description</th>
+                  <th>Classification</th>
+                  <th>Monetize</th>
+                  <th>Inactive</th>
+                  <th class="noExport"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let data of leaveTypes; let i = index;">
+                  <td>{{ data.doc.code }}</td>
+                  <td>{{ data.doc.leave_name }}</td>
+                  <td>{{ data.doc.description }}</td>
+                  <td>{{ data.doc.classification }}</td>
+                  <td>{{ data.doc.monetization === 'Convertible'? 'Yes' : 'No' }}</td>
+                  <td>{{ data.doc.inactive? 'Yes' : 'No' }}</td>
+                  <td>
+                    <div class="dropdown">
+                      <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-ellipsis-v"></i>
+                      </button>
+                      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" (click)="editLeaveType(data.doc, leaveType)">Edit</a>
+                        <a class="dropdown-item text-danger" (click)="deleteLeaveType(data.doc)">Delete</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </mat-tab>
+      <!-- Leave Types -->
+      
+      <!-- Leave Approvers -->
+      <mat-tab>
+        <ng-template mat-tab-label>
+          <i class="fa-solid fa-user-gear" style="padding-right: 2px;"></i>
+          Leave Approvers
+        </ng-template> 
+        <div class="row pt-2">
+          <div class="col-lg-10 text-right">
+            <button type="button" (click)="open(approverModal)" class="btn btn-primary mr-2">
+              <i class="fa-solid fa-plus"></i>
+              Add
+            </button>
+            <button type="button" (click)="getLeaveApprovers()" class="btn btn-secondary">
+              <i class="fa-solid fa-arrows-rotate"></i>
+              Refresh
+            </button>
+          </div>
+          <div class="col-md-2">
+            <select class="form-control" name="currentTypeFilter" [(ngModel)]="currentTypeFilter" (change)="applyTypeFilter()">
+              <option *ngFor="let type of typeFilters" [value]="type">{{ (type == 'All')? "All Types": type }}</option>
+            </select>
+        </div>
+        </div>
+        <div class="card-body">
+          <div class="table-responsive mt-2" *ngIf="approvers.length">
+            <table id="approversTable" class="table-striped" datatable  [dtOptions]="dtOptions">
+              <thead>
+                <tr>
+                  <th>No.</th>
+                  <th>Approver Name</th>
+                  <th>Approver Position</th>
+                  <th>Approver Type</th>
+                  <th>is User?</th>
+                  <th class="noExport"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let data of approvers; let i = index;">
+                  <td>{{ i + 1 }}</td>
+                  <td>{{ data.doc.approverName }}</td>
+                  <td>{{ data.doc.position }}</td>
+                  <td>{{ getTypeDescription(data.doc.formApproval) }}</td>
+                  <td>{{ data.doc.userId? "Yes": "No" }}</td>
+                  <td class="text-right">
+                    <div class="dropdown">
+                      <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        <i class="fa fa-ellipsis-v"></i>
+                      </button>
+                      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                        <a class="dropdown-item" (click)="editApprover(data.doc, approverModal)">Edit</a>
+                        <a class="dropdown-item text-danger" (click)="deleteApprover(data.doc)">Delete</a>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </mat-tab>
+      <!-- Leave Approvers -->
+    </mat-tab-group> 
+
+  </div>
+</section>
+
+<ng-template #leaveType>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Leave Type</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); form.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="form" #ngForm (ngSubmit)="submitLeaveType()">
+      <div class="row" *ngIf="f.get('referenceNumber').value">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="referenceNumber" class="form-label">Reference Number</label>
+            <input type="number" min="0" class="form-control" formControlName="referenceNumber" placeholder="Reference Number">
+            <div class="text-danger" *ngIf="!f.get('referenceNumber').valid && f.get('referenceNumber').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="code" class="form-label">Leave Code<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="code" placeholder="Leave Code">
+            <div class="text-danger" *ngIf="!f.get('code').valid && f.get('code').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="leave_name" class="form-label">Leave Name<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="leave_name" placeholder="Leave Name">
+            <div class="text-danger" *ngIf="!f.get('leave_name').valid && f.get('leave_name').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="classification" class="form-label">Classification<span class="text-danger">*</span></label>
+            <select name="classification" id="classification" class="form-control" formControlName="classification">
+              <option [value]="null">Select Classification</option>
+              <option [value]="'Sick Leave'">Sick Leave</option>
+              <option [value]="'Vacation Leave'">Vacation Leave</option>
+              <option [value]="'Mandated Leave'">Mandated Leave</option>
+              <option [value]="'Special Leave'">Special Leave</option>
+              <option [value]="'Leave w/o Pay'">Leave w/o Pay</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('classification').valid && f.get('classification').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="description" class="form-label">Description<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="description" placeholder="Description">
+            <div class="text-danger" *ngIf="!f.get('description').valid && f.get('description').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="increment" class="form-label">Increment<span class="text-danger">*</span></label>
+            <select name="increment" id="increment" class="form-control" formControlName="increment">
+              <option [value]="null">Select Increment</option>
+              <option [value]="'Manual'">Manual</option>
+              <option [value]="'Template'">Template</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('increment').valid && f.get('increment').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-8">
+          <div class="form-group">
+            <label for="incrementSummary" class="form-label">Summary<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="incrementSummary" placeholder="Summary">
+            <div class="text-danger" *ngIf="!f.get('incrementSummary').valid && f.get('incrementSummary').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="autoReset" class="form-label">Auto Reset<span class="text-danger">*</span></label>
+            <select name="autoReset" id="autoReset" class="form-control" formControlName="autoReset">
+              <option [value]="null">Select Reset</option>
+              <option [value]="'No Reset'">No Reset</option>
+              <option [value]="'Annually'">Annually</option>
+              <option [value]="'Quarterly'">Quarterly</option>
+              <option [value]="'Monthly'">Monthly</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('autoReset').valid && f.get('autoReset').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-8">
+          <div class="form-group">
+            <label for="autoResetSummary" class="form-label">Summary<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="autoResetSummary" placeholder="Summary">
+            <div class="text-danger" *ngIf="!f.get('autoResetSummary').valid && f.get('autoResetSummary').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="monetization" class="form-label">Monetization<span class="text-danger">*</span></label>
+            <select name="monetization" id="monetization" class="form-control" formControlName="monetization">
+              <option [value]="null">Select Monetization</option>
+              <option [value]="'Convertible'">Convertible</option>
+              <option [value]="'Non-convertible'">Non-convertible</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('monetization').valid && f.get('monetization').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="conversion" class="form-label">Conversion<span class="text-danger">*</span></label>
+            <select name="conversion" id="conversion" class="form-control" formControlName="conversion">
+              <option [value]="null">Select Conversion</option>
+              <option [value]="'Hourly Rate'">Hourly Rate</option>
+              <option [value]="'Daily Rate'">Daily Rate</option>
+              <option [value]="'Fixed Rate'">Fixed Rate</option>
+              <option [value]="'Percentage'">Percentage</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('conversion').valid && f.get('conversion').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="amount" class="form-label">Amount<span class="text-danger">*</span></label>
+            <input type="number" min="0" class="form-control" formControlName="amount" placeholder="Amount">
+            <div class="text-danger" *ngIf="!f.get('amount').valid && f.get('amount').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="remarks" class="form-label">Remarks<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="remarks" placeholder="Remarks">
+            <div class="text-danger" *ngIf="!f.get('remarks').valid && f.get('remarks').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row" *ngIf="isEdit">
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="leaveReset" class="form-label">Leave Reset</label>
+            <select name="leaveReset" id="leaveReset" class="form-control" formControlName="leaveReset">
+              <option [value]="null">Select Reset</option>
+              <option [value]="'Activate'">Activate</option>
+              <option [value]="'Disabled'">Disabled</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('leaveReset').valid && f.get('leaveReset').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="leaveApproval" class="form-label">Leave Approval</label>
+            <select name="leaveApproval" id="leaveApproval" class="form-control" formControlName="leaveApproval">
+              <option [value]="null">Select Approval</option>
+              <option [value]="'Level 1'">Level 1</option>
+              <option [value]="'Level 2'">Level 2</option>
+              <option [value]="'Level 3'">Level 3</option>
+              <option [value]="'Level 4'">Level 4</option>
+              <option [value]="'Level 5'">Level 5</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('leaveApproval').valid && f.get('leaveApproval').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="approverCount" class="form-label">Approver Count</label>
+            <input type="number" min="0" class="form-control" formControlName="approverCount" placeholder="Approver Count">
+            <div class="text-danger" *ngIf="!f.get('approverCount').valid && f.get('approverCount').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="checkIfAttachmentIsRequired" id="checkIfAttachmentIsRequired" class="form-check-input" formControlName="checkIfAttachmentIsRequired">
+            <label for="checkIfAttachmentIsRequired" class="form-check-label">Check if attachment is required.</label>
+            <div class="text-danger" *ngIf="!f.get('checkIfAttachmentIsRequired').valid && f.get('checkIfAttachmentIsRequired').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-3">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="viewInReport" id="viewInReport" class="form-check-input" formControlName="viewInReport" placeholder="View in Report">
+            <label for="viewInReport" class="form-check-label">View in Report</label>
+            <div class="text-danger" *ngIf="!f.get('viewInReport').valid && f.get('viewInReport').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="inactive" id="inactive" class="form-check-input" formControlName="inactive" placeholder="Inactive">
+            <label for="inactive" class="form-check-label">Inactive</label>
+            <div class="text-danger" *ngIf="!f.get('inactive').valid && f.get('inactive').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); form.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitLeaveType()">Save</button>
+	</div>
+</ng-template>
+
+
+<ng-template #approverModal>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Add New Approver</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); approverForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="approverForm" #ngForm (ngSubmit)="submitApprover()">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="approverName" class="form-label">Approver Name<span class="text-danger">*</span>&nbsp;<small>(Name that will appear on Leave Application Form)</small></label>
+            <input type="text" class="form-control" formControlName="approverName" placeholder="Approver Name">
+            <div class="text-danger" *ngIf="!af.get('approverName').valid && af.get('approverName').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="position" class="form-label">Position<span class="text-danger">*</span>&nbsp;<small>(Position that will appear on Leave Application Form)</small></label>
+            <input type="text" class="form-control" formControlName="position" placeholder="Position">
+            <div class="text-danger" *ngIf="!af.get('position').valid && af.get('position').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="formApproval" class="form-label">Approval Type<span class="text-danger">*</span></label>
+            <select name="formApproval" id="formApproval" class="form-control" formControlName="formApproval">
+              <option [value]="null">Select Type</option>
+              <option [value]="'7B'">Can Recommend for Approval</option>
+              <option [value]="'7C'">Can Final Approve</option>
+              <option [value]="'7A'">Can Certify Leave Credits</option>
+            </select>
+            <div class="text-danger" *ngIf="!af.get('formApproval').valid && af.get('formApproval').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="userId" class="form-label">User</label>
+            <select name="userId" id="userId" class="form-control" formControlName="userId">
+             <option [value]="null">No User</option>
+             <option *ngFor="let user of users" [value]="user.id">{{user.doc.email}} ({{user.doc.firstName}} {{user.doc.lastName}})</option>
+            </select>
+            <div class="text-danger" *ngIf="af.get('userId').hasError('userIdApprovalTypeConflict') && af.get('userId').touched">
+              User already has an approver data with the same type!
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); approverForm.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitApprover()">Save</button>
+	</div>
+</ng-template>

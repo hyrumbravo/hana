@@ -1,0 +1,152 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Human Resources</li>
+              <li class="breadcrumb-item active" aria-current="page">Templates</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+<section class="content">
+  <div class="row">
+    <div class="col-lg-3">
+      <div class="card">
+        <div class="card-body">
+          <div class="list-group" id="myList" role="tablist">
+            <a class="list-group-item list-group-item-action active" data-toggle="list" href="#evaluationTemplates" role="tab"><i class="bi bi-house mr-2"></i>Evaluation Templates</a>
+            <a class="list-group-item list-group-item-action" data-toggle="list" href="#evaluationFactors" role="tab"><i class="bi bi-code mr-2"></i>Evaluation Factors</a>
+            <a class="list-group-item list-group-item-action" data-toggle="list" href="#evaluationCriteria" role="tab"><i class="bi bi-diagram-2 mr-2"></i>Evaluation Criteria</a>
+            <a class="list-group-item list-group-item-action" data-toggle="list" href="#evaluationSubCriteria" role="tab"><i class="bi bi-diagram-2 mr-2"></i>Evaluation Sub-Criteria</a>
+            <a class="list-group-item list-group-item-action" data-toggle="list" href="#employeeRatings" role="tab"><i class="bi bi-star mr-2"></i>Employee Ratings</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="tab-content col-lg-9">
+      <div id="evaluationFactors" class="tab-pane">
+        <div class="card">
+          <div class="card-header row">
+            <div class="col-lg-6 mt-2">
+              <h1 class="text-primary"><i class="bi bi-code mr-2"></i>Evaluation Factors</h1>
+            </div>
+            <div class="col-lg-6 text-right">
+              <button type="button" class="btn btn-primary mr-2" (click)="open(evaluationFactor)">
+                <i class="bi bi-file-earmark-plus"></i>
+                Create
+              </button>
+              <button (click)="getEvaluationFactors()" class="btn btn-default mr-2">
+                <i class="bi bi-arrow-clockwise"></i>
+                Refresh
+              </button>
+            </div>
+          </div>
+          <div class="card-body">
+            <ngx-loading [show]="loading"></ngx-loading>
+            <div class="table-responsive mt-2" *ngIf="evaluationFactors.length">
+              <table class="table-striped" datatable [dtOptions]="dtOptions">
+                <thead>
+                  <tr>
+                    <th>Code</th>
+                    <th>Description</th>
+                    <th>Inactive</th>
+                    <th class="noExport"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let data of evaluationFactors; let i = index;">
+                    <td>{{ data.doc.code }}</td>
+                    <td>{{ data.doc.description }}</td>
+                    <td>{{ data.doc.inactive? 'Yes': 'No' }}</td>
+                    <td>
+                      <div class="dropdown">
+                        <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <i class="fa fa-ellipsis-v"></i>
+                        </button>
+                        <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                          <a class="dropdown-item" (click)="editEvaluationFactor(data.doc, evaluationFactor)">Edit</a>
+                          <a class="dropdown-item text-danger" (click)="deleteEvaluationFactor(data.doc)">Delete</a>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div id="evaluationCriteria" class="tab-pane">
+        <app-evaluation-criteria></app-evaluation-criteria>
+      </div>
+
+      <div id="evaluationSubCriteria" class="tab-pane">
+        <app-evaluation-subcriteria></app-evaluation-subcriteria>
+      </div>
+
+      <div id="employeeRatings" class="tab-pane">
+        <app-employee-ratings></app-employee-ratings>
+      </div>
+
+      <div id="evaluationTemplates" class="tab-pane active">
+        <app-evaluation-templates></app-evaluation-templates>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<ng-template #evaluationFactor>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Evaluation Factor</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); ef.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="evaluationFactorForm" #ngForm (ngSubmit)="submitEvaluationFactor()">
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="code" class="form-label">Code<span class="text-danger">*</span></label>
+            <input type="text" min="0" class="form-control" formControlName="code" placeholder="Code">
+            <div class="text-danger" *ngIf="!ef.get('code').valid && ef.get('code').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="inactive" id="inactive" class="form-check-input" formControlName="inactive">
+            <label for="inactive" class="form-check-label">Inactive</label>
+            <div class="text-danger" *ngIf="!ef.get('inactive').valid && ef.get('inactive').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="description" class="form-label">Description<span class="text-danger">*</span></label>
+            <textarea name="description" id="description" cols="30" rows="3" class="form-control" formControlName="description" placeholder="Description"></textarea>
+            <div class="text-danger" *ngIf="!ef.get('description').valid && ef.get('description').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); ef.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitEvaluationFactor()">Save</button>
+	</div>
+</ng-template>

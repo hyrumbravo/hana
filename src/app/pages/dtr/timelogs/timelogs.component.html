@@ -1,0 +1,96 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">Daily Time Record</li>
+                <li class="breadcrumb-item active" aria-current="page">Timelogs</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+</section>
+
+<ngx-loading [show]="loading"></ngx-loading>
+
+ <section class="content">
+    <div class="card">
+      <div class="card-header row">
+        <div class="col-lg-12 mt-2">
+          <h1 class="text-primary"><i class="bi bi-clock-fill mr-2"></i>Timelogs</h1>
+        </div>
+         
+          <!-- Time In endpoint-->
+          <!--<input type="text" class="form-control w-auto mr-2" id="employee-id-in" placeholder="Enter Employee ID" />-->
+          <!--<button class="btn btn-primary mr-3" (click)="timeInEmployee()">-->
+          <!--<i class="bi bi-clock-fill"></i>-->
+          <!--Time In-->
+          <!--</button>-->
+    
+          <!-- Time Out endpoint-->
+          <!--<input type="text" class="form-control w-auto mr-2" id="employee-id-out" placeholder="Enter Employee ID" />-->
+          <!--<button class="btn btn-primary mr-3" (click)="timeOutEmployee()">-->
+          <!--<i class="bi bi-clock-history"></i>-->
+          <!--TimeOut-->
+          <!--</button>-->
+          
+          <!--<div class="col-lg-2 text-right"></div>-->
+          <!--<div class="col-md text-right"></div>-->
+          
+          <div class="col-lg-12 text-right">
+            <!-- Refresh Section -->
+            <button (click)="refresh()" class="btn btn-default float-right">
+            <i class="bi bi-arrow-clockwise"></i> Refresh
+            </button>
+          </div>
+      </div>
+      
+      <div class="card-body">
+        <div class="table-responsive mt-2" *ngIf="allRequests.length"> 
+          <table class="table-striped" datatable [dtOptions]="dtOptions">
+            
+            <thead>
+                <tr>
+                    <th>Employee ID</th>
+                    <th>Employee Name</th>
+                    <th>Designation</th>
+                    <th>Date</th>
+                    <th>Time In</th>
+                    <th>Time out</th>
+                    <th>Late</th>
+                    <th>Overtime</th>
+                    <th>Work Hours</th>
+                    <!--<th class="noExport">Action</th>-->
+                </tr>
+            </thead>
+            
+            <tbody>
+            <tr *ngFor="let data of allRequests | orderBy: '-doc.timestamp'; let i = index;">
+                
+              <td>{{ data.doc.employee_id }}</td>
+              <td>{{ data.doc.employee_name }}</td>
+              <td>{{ data.doc.designation }}</td>
+              <td>{{ data.doc.date }}</td>
+              <td [ngClass]="{'text-danger': isLate(data.doc.timeIn)}">{{ data.doc.timeIn }}</td>
+              <td>
+                <span *ngIf="callNoTimeOut(data.doc.date, data.doc.timeOut)">
+                  <span class="text-danger">No Time Out</span>
+                </span>
+                <span *ngIf="!callNoTimeOut(data.doc.date, data.doc.timeOut)">
+                  {{ data.doc.timeOut }}
+                </span>
+              </td>
+              <td>{{ data.doc.late }}</td>
+              <td>{{ data.doc.overtime }}</td>
+              <td>{{ data.doc.workhours }}</td>
+              
+            </tr>
+            </tbody> 
+         </table>
+        </div>
+      </div>
+    </div>
+ </section>

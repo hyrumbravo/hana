@@ -1,0 +1,530 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Payroll</li>
+              <li class="breadcrumb-item active" aria-current="page">Payroll Information</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+
+<!--profile search-->
+<div class="FlexContainer alert-secondary w-100 pt-3 position-relative text-white z-index-0">
+  <div class="profile container t-3">
+    <div class="card card-primary card-outline p-4 shadow bg-light">
+        <div class="container">
+          <div class="row align-items-center">
+
+            <!-- Employee Picture and Selection -->
+            <div class="col-md-3 text-center">
+              <img
+                *ngIf="imageUrl"
+                class="user-img rounded-circle img-fluid"
+                style="width: 100px; height: 100px;"
+                [src]="imageUrl | safe2"
+                alt="User profile picture"
+              >
+              <form [formGroup]="form" #ngForm (ngSubmit)="updateEmployee()">
+                <h3 class="profile-username text-center">
+                  {{ f.get('firstName').value }} {{ f.get('middleName').value }} {{ f.get('lastName').value }} {{ f.get('ext').value }}
+                </h3>
+                <mat-form-field class="example-full-width mt-3">
+                  <mat-label id="dataText" class="">Select Employee</mat-label>
+                  <input #input
+                    type="text"
+                    placeholder="Select Employee"
+                    matInput
+                    formControlName="id_no"
+                    [matAutocomplete]="auto"
+                    (input)="filter()"
+                    (focus)="filter()">
+                  <mat-autocomplete requireSelection #auto="matAutocomplete" panelWidth="auto">
+                    <mat-option *ngFor="let employee of filteredOptions" [value]="employee.doc.id_no" (onSelectionChange)="selectEmp($event)">
+                      <a class="text-primary">{{employee.doc.id_no}}</a> - {{employee.doc.lastName}}, {{employee.doc.firstName}} {{employee.doc.middleName}}
+                    </mat-option>
+                  </mat-autocomplete>
+                </mat-form-field>
+              </form>
+            </div>
+        
+            <!-- Employee Information -->
+            <div class="col-md-9">
+              <form [formGroup]="form" (ngSubmit)="updateEmployee()" #ngForm>
+                <div class="row" formGroupName="serviceInformation">
+
+                  <div class="col-md-6 mb-2 d-flex align-items-center">
+                    <span class="font-weight-bold text-warning text-nowrap mr-2">Branch: </span>
+                    <input id="dataText0" type="text" class="form-control" value="{{ form.get('serviceInformation.branch').value }}" placeholder="-----">
+                  </div>
+
+                  <div class="col-md-6 mb-2 d-flex align-items-center">
+                    <span class="font-weight-bold text-warning text-nowrap mr-2">Type: </span>
+                    <input id="dataText1" type="text" class="form-control" value="{{ form.get('serviceInformation.type').value }}" placeholder="-----">
+                  </div>
+
+                  <div class="col-md-6 mb-2 d-flex align-items-center">
+                    <span class="font-weight-bold text-warning text-nowrap mr-2">Division: </span>
+                    <input id="dataText2" type="text" class="form-control" value="{{ form.get('serviceInformation.division').value }}" placeholder="-----">
+                  </div>
+
+                  <div class="col-md-6 mb-2 d-flex align-items-center">
+                    <span class="font-weight-bold text-warning text-nowrap mr-2">Status: </span>
+                    <input id="dataText3" type="text" class="form-control" value="{{ form.get('serviceInformation.status').value }}" placeholder="-----">
+                  </div>
+
+                  <div class="col-md-6 mb-2 d-flex align-items-center">
+                    <span class="font-weight-bold text-warning text-nowrap mr-2">Department: </span>
+                    <input id="dataText4" type="text" class="form-control" value="{{ form.get('serviceInformation.department').value }}" placeholder="-----">
+                  </div>
+
+                  <div class="col-md-6 mb-2 d-flex align-items-center">
+                    <span class="font-weight-bold text-warning text-nowrap mr-2">Salary Grade: </span>
+                    <input id="dataText5" type="text" class="form-control" value="{{ form.get('serviceInformation.salaryGrade').value }}" placeholder="-----">
+                  </div>
+
+                  <div class="col-md-6 mb-2 d-flex align-items-center">
+                    <span class="font-weight-bold text-warning text-nowrap mr-2">Position Title: </span>
+                    <input id="dataText6" type="text" class="form-control" value="{{ form.get('serviceInformation.position').value }}" placeholder="-----">
+                  </div>
+
+                  <div class="col-md-6 mb-2 d-flex align-items-center">
+                    <span class="font-weight-bold text-warning text-nowrap mr-2">Salary Step: </span>
+                    <input id="dataText7" type="text" class="form-control" value="{{ form.get('serviceInformation.salaryStep').value }}" placeholder="-----">
+                  </div>
+
+                </div>
+              </form>
+            </div>
+
+          </div>
+        </div>
+    </div>
+  </div>
+</div>
+
+<div class="container-fluid mt-5">
+  <form [formGroup]="form" (ngSubmit)="updateEmployee()" #ngForm>
+    <div class="card">
+      <div class="card-header row">
+        <div class="col-lg-4 mt-2">
+          <h2 class="text-primary"><i class="bi bi-gear mr-2"></i>Payroll Information</h2>
+        </div>
+        <div class="col-lg-8 text-right">
+          <!-- <button type="button" class="btn btn-primary mr-2">
+            <i class="fa-solid fa-print"></i>
+            Print
+          </button> -->
+          <button class="btn btn-success mr-2" type="submit">
+            <i class="fa-solid fa-floppy-disk"></i>
+            Save
+          </button>
+          <button type="button" (click)="getEmployees()" class="btn btn-secondary">
+            <i class="fa-solid fa-arrows-rotate"></i>
+            Refresh
+          </button>
+        </div>
+      </div>
+
+
+      <div class="card-body" formGroupName="serviceInformation">
+        <div class="alert alert-secondary" role="alert">
+          Payroll Information
+        </div>
+        <div class="row"><!-- row-payroll-info -->
+          <div class="col-lg-6">
+
+            <!-- <div class="form-group">
+              <label for="payrollNum" class="form-label">Payroll Number</label>
+              <input type="text" name="payrollNum" id="payrollNum" class="form-control" [value]="payrollNum || ''" placeholder="Payroll Number" readonly>
+            </div> -->
+
+            <div class="form-group">
+              <label for="payrollType" class="form-label">Payroll Type</label>
+              <select class="form-control" formControlName="payrollType">
+                <option [value]="null">Select Payroll Type</option>
+                <option [value]="'Monthly'">Monthly</option>
+                <option [value]="'Semi-Monthly'">Semi-Monthly</option>
+                <option [value]="'Weekly'">Weekly</option>
+                <option [value]="'Daily'">Daily</option>
+              </select>
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.payrollType').valid && f.get('serviceInformation.payrollType').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <!-- <div class="row">
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label for="dateFrom" class="form-label">Payroll Period From</label>
+                  <input type="date" name="dateFrom" id="dateFrom" class="form-control" formControlName="dateFrom">
+                </div>
+              </div>
+              <div class="col-lg-6">
+                <div class="form-group">
+                  <label for="dateTo" class="form-label">Payroll Period To</label>
+                  <input type="date" name="dateTo" id="dateTo" class="form-control" formControlName="dateTo">
+                </div>
+              </div>
+            </div> -->
+
+            <div class="form-group">
+              <label for="tin" class="form-label">TIN Number</label>
+              <input type="text" name="tin" id="tin" class="form-control" formControlName="tin" placeholder="TIN Number" pattern="[0-9\- ]*" oninput="this.value = this.value.replace(/[^0-9\- ]/g, '');">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.tin').valid && f.get('serviceInformation.tin').touched">
+                Please provide valid TIN (numbers, dashes, and spaces only).
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="bank" class="form-label">Depositor Bank</label>
+                  <select class="form-control" formControlName="bank">
+                    <option [value]="null">Select Bank</option>
+                    <option [value]="'Land Bank of Philippines [LBP]'">LBP</option>
+                    <option [value]="'Rizal Commercial Banking Corporation [RCBC]'">RCBC</option>
+                    <option [value]="'Banco de Oro [BDO]'">BDO</option>
+                    <option [value]="'Bank of the Philippine Islands [BPI]'">BPI</option>
+                  </select>
+                  <div class="text-danger" *ngIf="!f.get('serviceInformation.bank').valid && f.get('serviceInformation.bank').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-8">
+                <div class="form-group">
+                  <label for="basicPayBankAccountNumber" class="form-label">Bank Account Number</label>
+                  <input type="text" name="basicPayBankAccountNumber" id="basicPayBankAccountNumber" class="form-control" formControlName="basicPayBankAccountNumber" placeholder="Bank Account Number" pattern="[0-9\- ]*" oninput="this.value = this.value.replace(/[^0-9\- ]/g, '');">
+                  <div class="text-danger" *ngIf="!f.get('serviceInformation.basicPayBankAccountNumber').valid && f.get('serviceInformation.basicPayBankAccountNumber').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div class="row">
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="monthlyRate" class="form-label">Monthly Rate</label>
+                  <input type="number" name="monthlyRate" id="monthlyRate" class="form-control" Php formControlName="monthlyRate" placeholder="Monthly Rate" step="0.01">
+                  <div class="text-danger" *ngIf="!f.get('serviceInformation.monthlyRate').valid && f.get('serviceInformation.monthlyRate').touched">
+                    Please provide valid input.
+                  </div>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="dailyRate" class="form-label">Daily Rate</label>
+                  <input type="text" name="dailyRate" id="dailyRate" class="form-control" [value]="formatCurrency(dailyRate)" placeholder="Daily Rate" readonly>
+                </div>
+              </div>
+              <div class="col-lg-4">
+                <div class="form-group">
+                  <label for="hourlyRate" class="form-label">Hourly Rate</label>
+                  <input type="text" name="hourlyRate" id="hourlyRate" class="form-control" [value]="formatCurrency(hourlyRate)" placeholder="Hourly Rate" readonly>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="exemptionCode" class="form-label">Exemption Code</label>
+              <select class="form-control" formControlName="exemptionCode">
+                <option [value]="null">Select Exemption Code</option>
+                <option [value]="'Zero Exemption [Z]'">Zero Exemption [Z]</option>
+                <option [value]="'Single [S]'">Single [S]</option>
+                <option [value]="'Head of the family [HF]'">Head of the family [HF]</option>
+                <option [value]="'Married Employee [ME]'">Married Employee [ME]</option>
+              </select>
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.exemptionCode').valid && f.get('serviceInformation.exemptionCode').touched">
+                Please provide valid input.
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="costCenter" class="form-label">Cost Center</label>
+              <select class="form-control" formControlName="costCenter">
+                <option [value]="null">Select Cost Center</option>
+                <option [value]="'No Cost Center'">No Cost Center</option>
+                <option [value]="'GAA (101)'">GAA (101)</option>
+                <option [value]="'Income (164)'">Income (164)</option>
+                <option [value]="'Trust Fund (184)'">Trust Fund (184)</option>
+              </select>
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.costCenter').valid && f.get('serviceInformation.costCenter').touched">
+                Please provide valid input.
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="philhealth" class="form-label">Philhealth Number</label>
+              <input type="text" name="phicNumber" id="phicNumber" class="form-control" formControlName="phicNumber" placeholder="PhilHealth Contribution" pattern="[0-9\- ]*" oninput="this.value = this.value.replace(/[^0-9\- ]/g, '');">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.phicNumber').valid && f.get('serviceInformation.phicNumber').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="sss" class="form-label">SSS Number</label>
+              <input type="text" name="sssNumber" id="sssNumber" class="form-control" formControlName="sssNumber" placeholder="SSS Number" pattern="[0-9\- ]*" oninput="this.value = this.value.replace(/[^0-9\- ]/g, '');">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.sssNumber').valid && f.get('serviceInformation.sssNumber').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="pagibig" class="form-label">Pag-IBIG Number</label>
+              <input type="text" name="hdmfNumber" id="hdmfNumber" class="form-control" formControlName="hdmfNumber" placeholder="Pag-IBIG Number" pattern="[0-9\- ]*" oninput="this.value = this.value.replace(/[^0-9\- ]/g, '');">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.hdmfNumber').valid && f.get('serviceInformation.hdmfNumber').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+        </div><!-- row-payroll-info -->
+
+        <div class="alert alert-secondary" role="alert">
+          Earnings
+        </div>
+        <div class="row"><!-- row-earnings -->
+          <div class="col-lg-6"><!-- col-1 -->
+
+            <div class="form-group">
+              <label for="basicPay" class="form-label">Basic Pay</label>
+              <input type="text" name="basicPay" id="basicPay" class="form-control" [value]="formatCurrency(basicPay)" placeholder="Basic Pay" readonly>
+            </div> 
+
+            <div class="form-group">
+              <label for="overtime" class="form-label">Overtime Pay</label>
+              <input type="number" name="overtime" id="overtime" class="form-control" formControlName="overtime" placeholder="Overtime">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.overtime').valid && f.get('serviceInformation.overtime').touched">
+                Please provide valid input.
+              </div>
+            </div>                
+
+            <div class="form-group">
+              <label for="allowance" class="form-label">Allowance</label>
+              <input type="number" name="allowance" id="allowance" class="form-control" formControlName="allowance" placeholder="Allowance">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.allowance').valid && f.get('serviceInformation.allowance').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="cnaIncentive" class="form-label">CNA Incentive</label>
+              <input type="number" name="cnaIncentive" id="cnaIncentive" class="form-control" formControlName="cnaIncentive" placeholder="CNA Incentive">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.cnaIncentive').valid && f.get('serviceInformation.cnaIncentive').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <!-- <div class="form-group">
+              <label for="rata" class="form-label">RATA</label>
+              <input type="number" name="rata" id="rata" class="form-control" formControlName="rata" placeholder="RATA">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.rata').valid && f.get('serviceInformation.rata').touched">
+                Please provide valid input.
+              </div>
+            </div> -->
+          </div><!-- col-1 -->
+
+          <div class="col-lg-6"><!-- col-2 -->
+
+            <!-- <div class="form-group">
+              <label for="clothingAllowance" class="form-label">Clothing Allowance</label>
+              <input type="number" name="clothingAllowance" id="clothingAllowance" class="form-control" formControlName="clothingAllowance" placeholder="Clothing Allowance">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.clothingAllowance').valid && f.get('serviceInformation.clothingAllowance').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="laundryAllowance" class="form-label">Laundry Allowance</label>
+              <input type="number" name="laundryAllowance" id="laundryAllowance" class="form-control" formControlName="laundryAllowance" placeholder="Laundry Allowance">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.laundryAllowance').valid && f.get('serviceInformation.laundryAllowance').touched">
+                Please provide valid input.
+              </div>
+            </div> -->
+
+            <div class="form-group">
+              <label for="cashGift" class="form-label">Cash Gift</label>
+              <input type="number" name="cashGift" id="cashGift" class="form-control" formControlName="cashGift" placeholder="Cash Gift">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.cashGift').valid && f.get('serviceInformation.cashGift').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="performanceEhcIncentive" class="form-label">Performance Enhancement Incentive</label>
+              <input type="number" name="performanceEhcIncentive" id="performanceEhcIncentive" class="form-control" formControlName="performanceEhcIncentive" placeholder="Performance Enhancement Incentive">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.performanceEhcIncentive').valid && f.get('serviceInformation.performanceEhcIncentive').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="subsistence" class="form-label">Subsistence</label>
+              <input type="number" name="subsistence" id="subsistence" class="form-control" formControlName="subsistence" placeholder="Subsistence">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.subsistence').valid && f.get('serviceInformation.subsistence').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="ecola" class="form-label">ECOLA</label>
+              <input type="number" name="ecola" id="ecola" class="form-control" formControlName="ecola" placeholder="ECOLA">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.ecola').valid && f.get('serviceInformation.ecola').touched">
+                Please provide valid input.
+              </div>
+            </div>
+
+            <!-- <div class="form-group">
+              <label for="deminimis" class="form-label">De minimis</label>
+              <input type="number" name="deminimis" id="deminimis" class="form-control" formControlName="deminimis" placeholder="De minimis">
+              <div class="text-danger" *ngIf="!f.get('serviceInformation.deminimis').valid && f.get('serviceInformation.deminimis').touched">
+                Please provide valid input.
+              </div>
+            </div> -->
+          </div><!-- col-2 -->
+        </div><!-- row-earnings -->
+
+        <div class="alert alert-secondary" role="alert">
+          Deduction
+        </div>
+        <div class="row"><!-- row-deductions -->
+          <div class="col-lg-6"> <!-- col-1 -->
+
+            <label for="incomeTax" class="form-label">Income Tax</label>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                  <input type="text" name="incomeTax" id="incomeTax" class="form-control" [value]="incomeTax === 0 ? '₱ 0 - Tax Exempted' : formatCurrency(incomeTax)" placeholder="Income Tax" readonly>
+                  <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+
+            <label for="late" class="form-label">Late Deduction</label>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                  <input type="text" name="late" id="late" class="form-control" [value]="late" placeholder="Late Deduction" readonly>
+                  <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+
+            <label for="absent" class="form-label">Absent Deduction</label>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                  <input type="text" name="absent" id="absent" class="form-control" [value]="absent" placeholder="Absent Deduction" readonly>
+                  <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+
+            <label for="loan" class="form-label">Loan Deduction</label>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                  <input type="text" name="loan" id="loan" class="form-control" [value]="loan" placeholder="Loan Deduction" readonly>
+                  <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+
+          </div> <!-- col-1 -->
+        
+          <div class="col-lg-6"><!-- col-2 -->
+
+            <label for="gsis" class="form-label">GSIS Contribution</label>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                  <input type="text" name="gsisContribution" id="gsisContribution" class="form-control" [value]="formatCurrency(gsisContribution)" placeholder="GSIS Contribution" readonly>
+                  <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+
+            <label for="philhealth" class="form-label">Philhealth Contribution</label>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                    <input type="text" name="philHealthContribution" id="philHealthContribution" class="form-control" [value]="formatCurrency(philHealthContribution)" placeholder="Philhealth Contribution" readonly>
+                    <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+            <label for="sss" class="form-label">SSS Contribution</label>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                    <input type="text" name="sssContribution" id="sssContribution" class="form-control" [value]="formatCurrency(sssContribution)"  placeholder="SSS Contribution" readonly>
+                    <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+            <label for="pagibig" class="form-label">Pag-IBIG Contribution</label>
+            <div class="row">
+              <div class="col-lg-12">
+                <div class="form-group position-relative input-wrapper">
+                  <input type="text" name="pagibigContribution" id="pagibigContribution" class="form-control" [value]="formatCurrency(pagibigContribution)"  placeholder="Pag-IBIG Contribution" readonly>
+                  <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+          </div><!-- col-2 -->
+        </div><!-- row-deducitons -->
+
+        <div class="row"> <!-- total -->
+          <div class="col-lg-4">
+            <div class="alert alert-secondary" role="alert">
+              Total Gross Pay
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                    <input type="text" name="grossPayTotal" id="grossPayTotal" class="form-control" [value]="formatCurrency(grossPayTotal)" placeholder="Total Gross Pay" readonly>
+                    <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="alert alert-secondary" role="alert">
+              Total Deduction
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                    <input type="text" name="deductionTotal" id="deductionTotal" class="form-control" [value]="formatCurrency(deductionTotal)" placeholder="Total Deduction Total" readonly>
+                    <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-4">
+            <div class="alert alert-success" role="alert">
+              Net Pay
+            </div>
+            <div class="row">
+              <div class="col">
+                <div class="form-group position-relative input-wrapper">
+                    <input type="text" name="netPayTotal" id="netPayTotal" class="form-control" [value]="formatCurrency(netPayTotal)" placeholder="Net Pay" readonly>
+                    <div *ngIf="isLoading" class="loader">Calculating...</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div><!-- total -->
+      </div>
+    </div>
+  </form>
+</div>

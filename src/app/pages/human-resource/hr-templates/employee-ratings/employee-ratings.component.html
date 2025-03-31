@@ -1,0 +1,146 @@
+<div class="card">
+  <div class="card-header row">
+    <div class="col-lg-6 mt-2">
+      <h1 class="text-primary"><i class="bi bi-star mr-2"></i>Employee Ratings</h1>
+    </div>
+    <div class="col-lg-6 text-right">
+      <button type="button" class="btn btn-primary mr-2" (click)="open(employeeRating)">
+        <i class="bi bi-file-earmark-plus"></i>
+        Create
+      </button>
+      <button (click)="getEmployeeRatings()" class="btn btn-default mr-2">
+        <i class="bi bi-arrow-clockwise"></i>
+        Refresh
+      </button>
+    </div>
+  </div>
+  <div class="card-body">
+    <ngx-loading [show]="loading"></ngx-loading>
+    <div class="table-responsive mt-2" *ngIf="employeeRatings.length">
+      <table class="table-striped" datatable [dtOptions]="dtOptions">
+        <thead>
+          <tr>
+            <th>Classification</th>
+            <th>Min</th>
+            <th>Max</th>
+            <th>Description</th>
+            <th>Remarks</th>
+            <th>Inactive</th>
+            <th class="noExport"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let data of employeeRatings; let i = index;">
+            <td>{{ data.doc.classification }}</td>
+            <td>{{ data.doc.min }}</td>
+            <td>{{ data.doc.max }}</td>
+            <td>{{ data.doc.description }}</td>
+            <td>{{ data.doc.remarks }}</td>
+            <td>{{ data.doc.inactive? 'Yes': 'No' }}</td>
+            <td>
+              <div class="dropdown">
+                <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-ellipsis-v"></i>
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                  <a class="dropdown-item" (click)="editEmployeeRating(data.doc, employeeRating)">Edit</a>
+                  <a class="dropdown-item text-danger" (click)="deleteEmployeeRating(data.doc)">Delete</a>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<ng-template #employeeRating>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Employee Rating</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); f.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="form" #ngForm (ngSubmit)="submitEmployeeRating()">
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="classification" class="form-label">Classification<span class="text-danger">*</span></label>
+            <select name="classification" id="classification" class="form-control" formControlName="classification">
+              <option [value]="null">Select Classification</option>
+              <option [value]="'Administrative A'">Administrative A</option>
+              <option [value]="'Clerical & Services'">Clerical & Services</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('classification').valid && f.get('classification').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="inactive" id="inactive" class="form-check-input" formControlName="inactive">
+            <label for="inactive" class="form-check-label">Inactive</label>
+            <div class="text-danger" *ngIf="!f.get('inactive').valid && f.get('inactive').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="min" class="form-label">Min<span class="text-danger">*</span></label>
+            <input type="number" min="1" max="5" class="form-control" formControlName="min" placeholder="Min">
+            <div class="text-danger" *ngIf="!f.get('min').valid && f.get('min').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="max" class="form-label">Max<span class="text-danger">*</span></label>
+            <input type="number" min="1" max="5" class="form-control" formControlName="max" placeholder="Max">
+            <div class="text-danger" *ngIf="!f.get('max').valid && f.get('max').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="description" class="form-label">Description<span class="text-danger">*</span></label>
+            <textarea name="description" id="description" cols="30" rows="3" class="form-control" formControlName="description" placeholder="Description"></textarea>
+            <div class="text-danger" *ngIf="!f.get('description').valid && f.get('description').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="remarks" class="form-label">Remarks<span class="text-danger">*</span></label>
+            <select name="remarks" id="remarks" class="form-control" formControlName="remarks">
+              <option [value]="null">Select Remarks</option>
+              <option [value]="'Outstanding'">Outstanding</option>
+              <option [value]="'Very Good'">Very Good</option>
+              <option [value]="'Neutral'">Neutral</option>
+              <option [value]="'Somewhat Good'">Somewhat Good</option>
+              <option [value]="'Bad'">Bad</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('remarks').valid && f.get('remarks').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); f.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitEmployeeRating()">Save</button>
+	</div>
+</ng-template>

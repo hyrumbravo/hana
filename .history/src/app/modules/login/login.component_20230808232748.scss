@@ -1,0 +1,51 @@
+main {
+  background-image: url('../../../assets/img/mayon.jpg');
+  background-repeat: no-repeat;
+  background-size: 100% 100%;
+ 
+  opacity: 0.8;
+}
+
+
+
+footer {
+  position: fixed; /* Fix position */
+  bottom: 0; /* Align to the bottom */
+  width: 100%; /* Full width */
+}
+
+.header {
+    height: 80px;
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+  }
+  
+  .footer {
+    height: 50px;
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+  }
+  
+  .content {
+    min-height: calc(100vh - (80px + 50px));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 50px 0;
+  }
+
+  @media (max-width: 767px) {
+  .big-logo {
+    display: none;
+  }
+}

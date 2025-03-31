@@ -1,0 +1,84 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">Human Resources</li>
+                <li class="breadcrumb-item active" aria-current="page">Certifications</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+  </section>
+  
+  <section class="content">
+    <div class="card">
+        <div class="card-header row">
+            <div class="col-lg-6 mt-2">
+            <h1 class="text-primary"><i class="bi bi-award-fill mr-2"></i>Certifications</h1>
+            </div>
+            <!-- <div class="col-lg-6 text-right">
+                <button (click)="refresh()" class="btn btn-default mr-2">
+                    <i class="bi bi-arrow-clockwise"></i>
+                    Refresh
+                </button>
+                <button type="button" class="btn btn-primary" (click)="open(createPerformanceEvaluation)">
+                    <i class="bi bi-file-earmark-plus"></i>
+                    Create
+                </button>
+            </div> -->
+        </div>
+        <form [formGroup]="certForm" #ngForm (ngSubmit)="updateData('print')">
+            <div class="card-body">
+                <div class="form-group">
+                    <label for="exampleInputEmail1">Type of Certificate</label>
+                    <select class="custom-select rounded-0" formControlName="type" (change)="typeChange()">
+                        <option [value]="null">-- Select Type --</option>
+                        <option value="Certificate_of_Employment">Certificate of Employment</option>
+                        <option value="Service_Record">Service Record</option>
+                        <option value="Certification">Certification Record</option>
+                        <option value="Certifcation_Medical">Certification Medical</option>
+                        <!-- <option>Value 2</option>
+                        <option>Value 3</option> -->
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="exampleInputPassword1">Employee</label>
+                    <select class="custom-select rounded-0" formControlName="id" (change)="typeChange()">
+                        <option [value]="null">-- Select Employee --</option>
+                        <option *ngFor="let emp of employee" [value]="emp.id">{{ emp.doc.firstName }} {{ emp.doc.middleName }} {{ emp.doc.lastName }} {{ emp.doc.ext }}</option>
+                    </select>
+                </div>
+            </div>
+            <div class="card-footer row">
+                <div class="col-lg-12 text-right">
+                    <!-- <button type="button" class="btn btn-default" (click)="open(createPerformanceEvaluation)" [disabled]="certForm.invalid">Preview</button> -->
+                    <button type="button" class="btn btn-success mr-2" [disabled]="certForm.invalid" (click)="updateData('print')">Print</button>
+                    <button type="button" class="btn btn-success mr-2" [disabled]="certForm.invalid" (click)="updateData('download')">Download</button>
+                    <!-- <button type="submit" class="btn btn-primary" [disabled]="certForm.invalid">Print</button> -->
+                </div>
+            </div>
+        </form>
+    </div>
+  </section>
+  
+  <ng-template #createPerformanceEvaluation>
+    <div class="modal-header">
+        <h1 class="modal-title" id="modal-basic-title">Preview</h1>
+        <button type="button" class="close" aria-label="Close" (click)="dismiss(); createForm.reset()">
+        <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body" style="height: 600px;">
+        <iframe style="width: 100%; height: 100%" [src]="previewURL | safe"
+        *ngIf="certForm.controls['type'].value != null || certForm.controls['type'].value != null"></iframe>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-dark" (click)="dismiss()">Close</button>
+        <button type="submit" class="btn btn-primary" (click)="printCert()">Print</button>
+    </div>
+  </ng-template>
+  <iframe #pdfIframe style="display:none;"></iframe>

@@ -1,0 +1,41 @@
+main {
+    background-image: url('../../../assets/img/slide-legazpi-tngnlf-pictures-1600x586.jpeg');
+    background-size: cover;
+    opacity: 0.8;
+}
+
+.header {
+    height: 80px;
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+  }
+  
+  .footer {
+    height: 50px;
+    background-color: #333;
+    color: #fff;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: absolute;
+    bottom: 0;
+    width: 100%;
+  }
+  
+  .content {
+    min-height: calc(100vh - (80px + 50px));
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 50px 0;
+  }
+
+  @media (max-width: 767px) {
+  .big-logo {
+    display: none;
+  }
+}

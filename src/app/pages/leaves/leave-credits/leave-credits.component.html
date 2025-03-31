@@ -1,0 +1,477 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Leaves</li>
+              <li class="breadcrumb-item active" aria-current="page">Leave Credits</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-list-columns mr-2"></i>LEAVE CREDITS</h1>
+      </div>
+      <div class="col-lg-6 text-right">
+        <!--<button type="button" class="btn btn-primary" (click)="addCreatedAt()">Update Documents</button>-->
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive mt-2" *ngIf="employees?.length">
+        <table id="leaveCreditsTable" class="table table-striped" datatable [dtOptions]="dtOptions" >
+          <thead>
+            <tr>
+              <th class="noExport">View</th>
+              <th class="noExport">View</th>
+              <th>Employee ID</th>
+              <th>Complete Name</th>
+              <th>Sick</th>
+              <th>Vacation</th>
+              <th>Available FL</th>
+              <th>Available SPL</th>
+              <th>Position Title</th>
+              <th>Department</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of leaveCardList; let i = index;">
+              <td style="cursor: pointer;" class="text-primary" (click)="showLeaveCredit(data.doc, leave)">Credit</td>
+              <td style="cursor: pointer;" class="text-primary" (click)="showLeaveCard(data.doc, ledger)">Ledger</td>
+              <td>{{ data.doc.id_no }}</td>
+              <td>{{ data.doc.name }}</td>
+              <td>{{ data.doc.slBalance }}</td>
+              <td>{{ data.doc.vlBalance }}</td>
+              <td>{{ data.doc.flBalance }}</td>
+              <td>{{ data.doc.splBalance }}</td>
+              <td>{{ data.doc.position_title }}</td>
+              <td>{{ data.doc.department }}</td>
+              <td>{{ data.doc.status }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #leave>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Added Credits & Leaves</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss();">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="text-right">
+      <button type="button" (click)="openCreate(leaveCard, 'add')" class="btn btn-primary mr-2">
+        <i class="fa-solid fa-plus"></i>
+        Add
+      </button>
+    </div>
+    <div class="table-responsive mt-2" *ngIf="selectedEmployee.card?.length">
+      <table id="addedCreditsLeavesTable" class="table table-striped" datatable [dtOptions]="dtOptionsAddedCreditLeave">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Particulars</th>
+            <th>Vacation Leave Credits</th>
+            <th>Sick Leave Credits</th>
+            <th>Monetized Credits</th>
+            <th>Deducted T/U Credits</th>
+            <th>Added FL Credits</th>
+            <th>Added SPL Credits</th>
+            <th>Total Leave Days</th>
+            <th class="noExport"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let data of selectedEmployee.card; let i = index;">
+          <tr *ngIf="data.leaveId == null">
+              <td>
+                {{ data.as_of_start | date:'MM/dd/yyyy'}}
+                <span *ngIf="data.as_of_start !== data.as_of_end && data.as_of_end !== null">
+                  - {{ data.as_of_end | date:'MM/dd/yyyy' }}
+                </span>
+
+              </td>
+              <td>{{ data.particulars }}</td>
+              <td>{{ (data.earnedVacationCredits == 0)? "-": data.earnedVacationCredits }}</td>
+              <td>{{ (data.earnedSickLeaveCredits == 0)? "-": data.earnedSickLeaveCredits }}</td>
+              <td>{{ (data.vlslMonet == 0)? "-": data.vlslMonet }}</td>
+              <td>{{ (data.totEQUIV == 0)? "-": data.totEQUIV}}</td>
+              <td>{{ (data.addedForcedLeave == 0)? "-": data.addedForcedLeave}}</td>
+              <td>{{ (data.addedSpecialLeave == 0)? "-": data.addedSpecialLeave}}</td>
+              <td>{{ (data.leaveTotalDays == 0)? "-": data.leaveTotalDays}}</td>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <!-- <a class="dropdown-item text-danger" (click)="openEditLedger(selectedEmployee, leaveCard, i)">Edit</a> -->
+                    <a class="dropdown-item text-danger" (click)="deleteLedgerFormEntry(selectedEmployee, i)">Delete</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </ng-container>
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="2"><b>Total Earned</b></td>
+            <td><b>{{totalVacation}}</b></td>
+            <td><b>{{totalSick}}</b></td>
+            <td></td>
+            <td></td>
+            <td><b>{{totalFlEarned}}</b></td>
+            <td><b>{{totalSplEarned}}</b></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td colspan="2"><b>Current Balance (with Leave Deductions)</b></td>
+            <td><b>{{selectedEmployee.vlBalance}}</b></td>
+            <td><b>{{selectedEmployee.slBalance}}</b></td>
+            <td></td>
+            <td></td>
+            <td><b>{{selectedEmployee.flBalance}}</b></td>
+            <td><b>{{selectedEmployee.splBalance}}</b></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #ledger>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Leave Card</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss();">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="text-right">
+      <!-- <button type="button" (click)="goToLeaveHistory()" class="btn btn-primary mr-2">
+        <i class="fa-solid fa-plus"></i>
+        Create Leave
+      </button> -->
+    </div>
+    <div class="table-responsive mt-2" *ngIf="selectedEmployee.card.length">
+      <table class="table-striped" datatable [dtOptions]="dtOptions">
+        <thead>
+          <tr>
+            <th colspan="2"></th>
+            <th class="text-center" colspan="6">Vacation Leave</th>
+            <th class="text-center" colspan="2">Other Leave Bal. Available</th>
+            <th class="text-center" colspan="6">Sick Leave</th>
+            <!-- <th colspan="1"></th> -->
+          </tr>
+          <tr>
+            <th>As of</th>
+            <th>Particulars</th>
+
+            <th>Earned</th>
+            <th>T/U(dd-hh-mm)</th>
+            <th>T/U Equiv.</th>
+            <th>VL/SLP/ Monet.</th>
+            <th>Balance</th>
+            <th>Inclusive Dates of VL/FL/SPL</th>
+
+            <th>FL</th>
+            <th>SPL</th>
+
+            <th>ABS/UND WOP</th>
+            <th>Earned</th>
+            <th>Leave Spent</th>
+            <th>With Pay?</th>
+            <th>Balance</th>
+            <th>Date/s of Sick Leave</th>
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let data of selectedEmployee.card; let i = index;">
+          <tr>
+              <td>
+                {{ data.as_of_start | date:'MM/dd/yyyy'}}
+                <span *ngIf="data.as_of_start !== data.as_of_end && data.as_of_end !== null">
+                  - {{ data.as_of_end | date:'MM/dd/yyyy' }}
+                </span>
+              </td>
+              <td>{{ data.particulars }}</td>
+              
+              <td>{{ (data.earnedVacationCredits!=0)?data.earnedVacationCredits:"" }}</td>
+
+              <td>({{data.daysTU}}-{{data.hoursTU}}-{{ data.minsTU }})</td>
+              <td>{{(data.totEQUIV !=0)?data.totEQUIV :""}}</td>
+              <td>{{ (data.vlslMonet !=0)? data.vlslMonet: "" }}</td>
+              <td>{{ data.currentBalance }}</td>
+              <td>{{ data.vacationLeaveDates }}</td>
+
+              <td>{{ data.forcedLeaveBalance }}</td>
+              <td>{{ data.specialLeaveBalance }}</td>
+              
+              <td>{{ data.abs_und_wop }}</td>
+              <td>{{ (data.earnedSickLeaveCredits!=0)?data.earnedSickLeaveCredits:"" }}</td>
+              <td>{{ (data.sl_deduction != 0)?data.sl_deduction:"" }}</td>
+              <td>{{ (data.leaveType == '003')?((!data.wop)? 'Yes':'No'): "" }}</td>
+              <td>{{ data.currentSickLEaveBalance }}</td>
+              <td>{{ data.sl_start }} {{ data.sl_end }}</td>
+              <!-- <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item text-danger">Edit</a>
+                    <a class="dropdown-item text-danger" (click)="deleteLeaveCredit(data.doc)">Delete</a>
+                  </div>
+                </div>
+              </td> -->
+          </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-template>
+
+<!-- <ng-template #leaveCredit>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Leave Credit</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismissCreate(); form.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="form" #ngForm (ngSubmit)="submitLeaveCredit()">
+      <div class="row">
+        <div class="col-lg-6">
+          <label for="leaveType" class="form-label">Leave<span class="text-danger">*</span></label>
+          <select name="leaveType" id="leaveType" class="form-control" formControlName="leaveType" placeholder="Select Leave">
+            <option [value]="null">Select Leave</option>
+            <option *ngFor="let type of leaveTypes" [value]="type.doc.code">{{ type.doc.leave_name }}</option>
+          </select>
+          <div class="text-danger" *ngIf="!f.get('leaveType').valid && f.get('leaveType').touched">
+            Please provide valid input.
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <label for="dateEarned" class="form-label">Date<span class="text-danger">*</span></label>
+          <input type="date" min="{{dateToday | date:'yyyy-MM-dd'}}" class="form-control" formControlName="dateEarned" placeholder="Date Earned">
+          <div class="text-danger" *ngIf="!f.get('dateEarned').valid && f.get('dateEarned').touched">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <label for="credits" class="form-label">Credit<span class="text-danger">*</span></label>
+          <input type="number" min="0" class="form-control" formControlName="credits" placeholder="Credits">
+          <div class="text-danger" *ngIf="!f.get('credits').valid && f.get('credits').touched">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <label for="remarks" class="form-label">Remarks</label>
+          <textarea class="form-control" name="remarks" id="remarks" cols="30" rows="3" formControlName="remarks" placeholder="Remarks"></textarea>
+          <div class="text-danger" *ngIf="!f.get('remarks').valid && f.get('remarks').touched">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismissCreate(); form.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitLeaveCredit()">Save</button>
+	</div>
+</ng-template> -->
+
+<ng-template #leaveCard>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Add to Card</h1>
+		<!-- <h1 *ngIf="!editMode"class="modal-title" id="modal-basic-title">Edit Card Entry</h1> -->
+		<button type="button" class="close" aria-label="Close" (click)="dismissModal(); ledgerForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+  <div class="modal-body">
+    <form [formGroup]="ledgerForm" #ngForm (ngSubmit)="submitLedgerForm()">
+      <div class="row pb-2">
+        <div class="col-lg-6">
+          <label for="type" class="form-label">Type<span class="text-danger">*</span></label>
+          <select name="creditType" id="type" class="form-control" (change)="clearLedgerFormValues();setMonthlyEarnedCredit()" formControlName="type" placeholder="Select Credit Type">
+            <option value="null">Select Type</option>
+            <option value="credit">Credit</option>
+            <option value="monetization">Monetization</option>
+            <option value="tu">T/U</option>
+            <option value="leave">Leave</option>
+          </select>
+          <div class="text-danger" *ngIf="!ledgerForm.get('type').valid && ledgerForm.get('type').touched">
+            Please provide valid input.
+          </div>
+        </div>
+        <div class="col-lg-6" *ngIf="hideMonetization() || hideTU()">
+          <small>Current Credit Balance: {{this.selectedEmployee.vlBalance}}</small>
+        </div>
+        <div class="col-lg-3" *ngIf="hideCreditType() || hideLeave()">
+          <small>Current Vacation Balance: {{this.selectedEmployee.vlBalance}}</small><br>
+          <small>Current Sick Balance: {{this.selectedEmployee.slBalance}}</small><br>
+        </div>
+        <div class="col-lg-3" *ngIf="hideCreditType() || hideLeave()">
+          <small>Current FL Balance: {{this.selectedEmployee.flBalance}}</small><br>
+          <small>Current Spl Balance: {{this.selectedEmployee.splBalance}}</small><br>
+        </div>
+
+      </div>
+      <div class="row pb-2" *ngIf="hideCreditType()">
+        <div class="col-lg-6">
+          <label for="vacationCredits" class="form-label">VL Credits to add<span class="text-danger">*</span></label>
+          <input type="number" min="0" class="form-control" formControlName="vacationCredits" placeholder="Credits">
+          <!-- <div class="text-danger" *ngIf="!ledgerForm.get('credits').valid && ledgerForm.get('credits').touched">
+            Please provide valid input.
+          </div> -->
+        </div>
+        <div class="col-lg-6">
+          <label for="sickCredits" class="form-label">SL Credits to add<span class="text-danger">*</span></label>
+          <input type="number" min="0" class="form-control" formControlName="sickCredits" placeholder="Credits">
+          <!-- <div class="text-danger" *ngIf="!ledgerForm.get('credits').valid && ledgerForm.get('credits').touched">
+            Please provide valid input.
+          </div> -->
+        </div>
+      </div>
+      <div class="row pb-2" *ngIf="hideCreditType()">
+        <div class="col-lg-6">
+          <label for="forcedLeaveAdd" class="form-label">FL to add<span class="text-danger">*</span></label>
+          <input type="number" min="0" class="form-control" formControlName="forcedLeaveAdd" placeholder="Credits">
+          <!-- <div class="text-danger" *ngIf="!ledgerForm.get('credits').valid && ledgerForm.get('credits').touched">
+            Please provide valid input.
+          </div> -->
+        </div>
+        <div class="col-lg-6">
+          <label for="specialLeaveAdd" class="form-label">SPL to add<span class="text-danger">*</span></label>
+          <input type="number" min="0" class="form-control" formControlName="specialLeaveAdd" placeholder="Credits">
+          <!-- <div class="text-danger" *ngIf="!ledgerForm.get('credits').valid && ledgerForm.get('credits').touched">
+            Please provide valid input.
+          </div> -->
+        </div>
+      </div>
+      <div class="row pb-2" *ngIf="hideMonetization()">
+        <div class="col-lg-12">
+          <label for="monet" class="form-label">Credits to monetize<span class="text-danger">*</span></label>
+          <input type="number" min="0" class="form-control" formControlName="monet" placeholder="Credits">
+          <div class="text-danger" *ngIf="!ledgerForm.get('monet').valid && ledgerForm.get('monet').touched">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>
+      <div class="row pb-2" *ngIf="hideTU()">
+        <div class="col-lg-4">
+          <label for="days" class="form-label">Days T/U<span class="text-danger">*</span></label>
+          <input type="number" min="0" step="1" class="form-control" formControlName="days" placeholder="Credits" (change)="computeDaysTU($event)">
+          <div> <small>Days EQUIV: {{ledgerForm.get('daysEquiv').value}}</small> </div>
+          <div class="text-danger" *ngIf="!ledgerForm.get('days').valid && ledgerForm.get('days').touched">
+            Please provide valid input.
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <label for="hours" class="form-label">Hours T/U<span class="text-danger">*</span></label>
+          <input type="number" min="0" class="form-control" formControlName="hours" placeholder="Credits"  (change)="computeHoursTU($event)">
+          <div> <small>Hours EQUIV: {{ledgerForm.get('hoursEquiv').value}}</small> </div>
+          <div class="text-danger" *ngIf="!ledgerForm.get('hours').valid && ledgerForm.get('hours').touched">
+            Please provide valid input.
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <label for="minutes" class="form-label">Minutes T/U<span class="text-danger">*</span></label>
+          <input type="number" min="0" class="form-control" formControlName="minutes" placeholder="Credits"  (change)="computeMinsTU($event)">
+          <div> <small>Minutes EQUIV: {{ledgerForm.get('minutesEquiv').value}}</small> </div>
+          <div class="text-danger" *ngIf="!ledgerForm.get('minutes').valid && ledgerForm.get('minutes').touched">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>
+
+      <!-- LEAVE -->
+      <div class="row pb-2" *ngIf="hideLeave()">
+        <div class="col-lg-12 pb-2">
+          <label for="leaveType" class="form-label">Leave<span class="text-danger">*</span></label>
+          <select name="leaveType" id="leavetype" class="form-control" formControlName="leavetype" placeholder="Select Leave">
+            <option [value]="null">Select Leave</option>
+            <option *ngFor="let type of leaveTypes" [value]="type.doc.code">{{ type.doc.leave_name }}</option>
+          </select>
+          <div class="text-danger" *ngIf="deductionWarnings()!=''"> {{ deductionWarnings()}} </div>
+        </div>
+        <div class="col-lg-6">
+          <label for="from" class="form-label">From:<span class="text-danger">*</span></label>
+          <input type="date" class="form-control" max="{{ ledgerForm.get('inclusive_to').value}}"  formControlName="inclusive_from"> <!--min="{{dateToday | date:'yyyy-MM-dd'}}" -->
+          <!-- <div class="text-danger" *ngIf="!ledgerForm.get('from').valid && ledgerForm.get('from').touched">
+            Please provide valid input.
+          </div> -->
+        </div>
+        <div class="col-lg-6">
+          <label for="to" class="form-label">To:<span class="text-danger">*</span></label>
+          <input type="date"  min="{{ ledgerForm.get('inclusive_from').value}}"  class="form-control" formControlName="inclusive_to">
+          <!-- <div class="text-danger" *ngIf="!ledgerForm.get('to').valid && ledgerForm.get('to').touched">
+            Please provide valid input.
+          </div> -->
+        </div>
+        <div class="col-lg-6 pt-2">
+          <!-- <label class="form-label pt-2">Inclusive Dates</label> -->
+        </div>
+        <div class="col-lg-6 pt-2">
+          <label for="totalDays" class="form-label">Total Days: {{ getDiffDays(ledgerForm.get('inclusive_from').value, ledgerForm.get('inclusive_to').value) }}</label>
+        </div>
+
+      </div>
+      <!-- LEAVE -->
+      <div class="row pb-2">
+        <div class="col-lg-6">
+          <label for="from" *ngIf="!hideLeave()" class="form-label">Date as of:<span class="text-danger">*</span></label>
+          <label for="from" *ngIf="hideLeave()" class="form-label">Date Filed:<span class="text-danger">*</span></label>
+          <input type="date" class="form-control" formControlName="from"> <!--min="{{dateToday | date:'yyyy-MM-dd'}}" -->
+          <div class="text-danger" *ngIf="!ledgerForm.get('from').valid && ledgerForm.get('from').touched">
+            Please provide valid input.
+          </div>
+        </div>
+        <div class="col-lg-6" *ngIf="ledgerForm.get('type').value == 'leave'">
+          <div class="icheck-primary">
+            <input  class="form-control" type="checkbox" id="withoutPay" formControlName="withoutPay" />
+            <label for="withoutPay"> Without Pay? </label>
+        </div>
+        </div>
+        <div class="col-lg-6" *ngIf="ledgerForm.get('type').value == 'credit'">
+          <label for="to" class="form-label">Date until:<span class="text-danger">*</span></label>
+          <input type="date" min="{{ ledgerForm.get('from').value}}" class="form-control" formControlName="to">
+          <div class="text-danger" *ngIf="!ledgerForm.get('to').valid && ledgerForm.get('to').touched">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>
+      <div class="row pb-2">
+        <div class="col-lg-12">
+          <label for="remarks" class="form-label">Particulars<span class="text-danger">*</span></label>
+          <input class="form-control" name="remarks" id="remarks" formControlName="particulars" placeholder="Particulars">
+        </div>
+      </div>
+    </form>
+  </div>
+  <div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismissModal(); ledgerForm.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" [disabled]="checkAddToLedgerForm()"(click)="submitLedgerForm()">Save</button>
+	</div>
+</ng-template>

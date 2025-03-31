@@ -1,0 +1,122 @@
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-12 mt-2">
+        <h1 class="text-primary"><i class="bi bi-clock-history mr-2"></i>Attendance</h1>
+      </div>
+      <!-- Refresh Section -->
+      <div class="col-lg-12 text-right">
+        <button (click)="refresh()" class="btn btn-default float-right">
+          <i class="bi bi-arrow-clockwise"></i> Refresh
+        </button>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <div class="row mt-5">
+      <div class="px-5 d-flex flex-wrap w-100">
+
+        <!-- Time Card -->
+        <div class=" mr-3 card card-primary card-outline time-card">
+          <div class="card-body box-profile">
+            <div class="d-flex justify-content-center">
+              <img
+                *ngIf="imageUrl"
+                class="user-img"
+                [src]="imageUrl"
+                alt="Employee profile picture"
+                width="100"
+                height="100"
+              />
+            </div>
+            <h3 class="profile-username text-center"> {{ userName }} </h3>
+            <p class="text-muted text-center"> {{ designation }}</p>
+            <label for="employeeId" class="form-label">Employee ID</label>
+            <div class="input-group mb-3">
+              <input
+                type="text"
+                class="form-control text-center"
+                placeholder="Employee ID #"
+                [(ngModel)]="idNo"
+                [readonly]="!isEditId"
+              />
+            </div>
+            <div class="mb-3">
+              <button class="btn btn-primary w-100" (click)="toggleTime()">
+                <i class="bi bi-clock-fill"></i> {{ buttonLabel }}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Attendance Table -->
+        <div class="card card-primary card-outline flex-grow-1 table-card">
+          <div [class.dark-mode]="darkMode" class="table-responsive">
+            <table mat-table [dataSource]="filteredRequests | paginate: pageSize : pageIndex" class="mat-elevation-z8 full-width-table">
+              <!-- Date Column -->
+              <ng-container matColumnDef="date">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center">Date</th>
+                <td mat-cell *matCellDef="let data" class="text-center">{{ data.doc.date }}</td>
+              </ng-container>
+
+              <!-- Time In Column -->
+              <ng-container matColumnDef="timeIn">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center">Time In</th>
+                <td mat-cell *matCellDef="let data" class="text-center" [ngClass]="{'text-danger': isLate(data.doc.timeIn)}">
+                  {{ data.doc.timeIn }}
+                </td>
+              </ng-container>
+
+              <!-- Time Out Column -->
+              <ng-container matColumnDef="timeOut">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center">Time Out</th>
+                <td mat-cell *matCellDef="let data" class="text-center">
+                  <span *ngIf="callNoTimeOut(data.doc.date, data.doc.timeOut)">
+                    <span class="text-danger">No Time Out</span>
+                  </span>
+                  <span *ngIf="!callNoTimeOut(data.doc.date, data.doc.timeOut)">
+                    {{ data.doc.timeOut }}
+                  </span>
+                </td>
+              </ng-container>
+
+              <!-- Late Column -->
+              <ng-container matColumnDef="late">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center">Late</th>
+                <td mat-cell *matCellDef="let data" class="text-center">{{ data.doc.late }}</td>
+              </ng-container>
+
+              <!-- Overtime Column -->
+              <ng-container matColumnDef="overtime">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center">Overtime</th>
+                <td mat-cell *matCellDef="let data" class="text-center">{{ data.doc.overtime }}</td>
+              </ng-container>
+
+              <!-- Work Hours Column -->
+              <ng-container matColumnDef="workhours">
+                <th mat-header-cell *matHeaderCellDef mat-sort-header class="text-center">Work Hours</th>
+                <td mat-cell *matCellDef="let data" class="text-center">{{ data.doc.workhours }}</td>
+              </ng-container>
+
+              <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+              <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+            </table>
+
+            <div *ngIf="filteredRequests.length === 0" class="px-4 text-center alert alert-secondary mt-3">
+              No Attendance Records Found.
+            </div>
+
+            <mat-paginator
+              [pageSizeOptions]="[10, 20, 30]"
+              [length]="filteredRequests.length"
+              [pageSize]="pageSize"
+              (page)="onPageChange($event)"
+              showFirstLastButtons>
+            </mat-paginator>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</section>

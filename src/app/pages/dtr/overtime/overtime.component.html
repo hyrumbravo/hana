@@ -1,0 +1,278 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">DTR</li>
+                <li class="breadcrumb-item active" aria-current="page">Overtime</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+  </section>
+  <ngx-loading [show]="loading"></ngx-loading>
+  <section class="content">
+      <div class="card">
+        <div class="card-header row">
+          <div class="col-lg-6 mt-2">
+            <h1 class="text-primary"><i class="bi bi-list-columns mr-2"></i>Overtime</h1>
+          </div>
+        </div>
+        <div class="card-body">
+
+          <div class="row">
+            <div class="col-md-12">
+
+              <div class="row">
+                <div class="btn-group">
+                  <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    {{ filterbyDay ? 'Filter By Day' : 'Filter By Range' }}
+                  </button>
+                  <div class="dropdown-menu">
+                    <a class="dropdown-item" (click)="setFilterMode(true)">Filter By Day</a>
+                    <a class="dropdown-item" (click)="setFilterMode(false)">Filter By Range</a>
+                  </div>
+                </div>
+                <button class="btn btn-outline-secondary ml-2" (click)="clearDateFilter()" type="button">Clear</button>
+
+                <!-- Per day filter -->
+                <div class="col-md-4" *ngIf="filterbyDay">
+                  <div class="input-group">
+                    <input
+                      class="form-control"
+                      placeholder="yyyy-mm-dd"
+                      name="dp"
+                      [(ngModel)]="dateFilter"
+                      ngbDatepicker
+                      #d="ngbDatepicker"
+                      [maxDate]="today"
+                      (dateSelect)="applyClientFilters()"
+                      readonly
+                    />
+                    <button class="btn btn-outline-secondary bi bi-calendar3" (click)="d.toggle()" type="button"></button>
+                  </div>
+                </div>
+
+                <!-- Date Range Filter -->
+                <div class="col-md-4 position-relative" *ngIf="!filterbyDay">
+                  <div class="input-group">
+                    <input
+                      class="form-control"
+                      placeholder="yyyy-mm-dd"
+                      name="dpFromDate"
+                      [value]="fromDate ? formatter.format(fromDate) : ''"
+                      readonly
+                    />
+                    <input
+                      class="form-control"
+                      placeholder="yyyy-mm-dd"
+                      name="dpToDate"
+                      [value]="toDate ? formatter.format(toDate) : ''"
+                      readonly
+                    />
+                    <button (click)="datepicker.toggle()" type="button" class="btn btn-outline-secondary bi bi-calendar3"></button>
+                  </div>
+
+                  <div class="datepicker-container">
+                    <input
+                      ngbDatepicker
+                      #datepicker="ngbDatepicker"
+                      [autoClose]="'outside'"
+                      (dateSelect)="onDateSelection($event)"
+                      [displayMonths]="1"
+                      [dayTemplate]="t"
+                      outsideDays="hidden"
+                      tabindex="-1"
+                      class="position-absolute w-100 border-0 shadow"
+                      style="width: 0; height: 0; border: none; outline: none; padding: 0; margin: 0;"
+                    />
+                  </div>
+
+                  <ng-template #t let-date let-focused="focused">
+                    <span
+                      class="custom-day"
+                      [class.focused]="focused"
+                      [class.range-start]="date.equals(fromDate)"
+                      [class.range-end]="date.equals(toDate)"
+                      [class.range]="isRange(date)"
+                      [class.faded]="isHovered(date) || isInside(date)"
+                      (mouseenter)="hoveredDate = date"
+                      (mouseleave)="hoveredDate = null"
+                    >
+                      {{ date.day }}
+                    </span>
+                  </ng-template> 
+                </div>             
+
+                <!-- overtime status -->
+                <div class="col-md-2">
+                  <select class="form-control" name="currentStatusFilter" [(ngModel)]="selectedStatus" (change)="applyClientFilters()">
+                    <option [value]="'null'">All Status</option>
+                    <option [value]="'Pending'">Pending</option>
+                    <option [value]="'Approved'">Approved</option>
+                    <option [value]="'Declined'">Declined</option>
+                  </select>
+                </div>                
+
+              </div>
+            </div>
+          </div>
+
+          <div class="row mt-5">
+            <div class="px-4 d-flex flex-wrap w-100">
+
+              <!-- user-card -->
+              <div class="card card-primary card-outline">
+                <div class="card-body box-profile">
+                  <div class="d-flex justify-content-center">
+                    <img *ngIf="imageUrl" class="user-img" [src]="imageUrl" alt="Employee profile picture" width="100" height="100">
+                  </div>
+                  <h3 class="profile-username text-center">{{ userName }}</h3>
+                  <p class="text-muted text-center">{{ designation }}</p>
+                  <label for="employeeId" class="form-label">Employee ID</label>
+                  <div class="input-group mb-3">
+                    <input type="text" class="form-control text-center" placeholder="Employee ID #" [(ngModel)]="idNo" [readonly]="!isEditId">
+                  </div>
+                </div>
+              </div>
+
+              <!-- table -->
+              <div class="card card-primary card-outline flex-grow-1 table-card">
+                <div [class.dark-mode]="darkMode" class="table-responsive">   
+                  <table mat-table [dataSource]="filteredOvertimeRequests | paginate: pageSize : pageIndex" class="mat-elevation-z8 full-width-table">
+                    <!-- Date Column -->
+                    <ng-container matColumnDef="date">
+                      <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Date </th>
+                      <td mat-cell *matCellDef="let data" class="text-center row-cell"> {{ data.doc.date }} </td>
+                    </ng-container>
+                
+                    <!-- Time In Column -->
+                    <ng-container matColumnDef="timeIn">
+                      <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Time In </th>
+                      <td mat-cell *matCellDef="let data" [ngClass]="{'text-danger': isLate(data.doc.timeIn)}" class="text-center row-cell"> {{ data.doc.timeIn }} </td>
+                    </ng-container>
+                
+                    <!-- Time Out Column -->
+                    <ng-container matColumnDef="timeOut">
+                      <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Time out </th>
+                      <td mat-cell *matCellDef="let data" class="text-center row-cell"> {{ data.doc.timeOut }} </td>
+                    </ng-container>
+                
+                    <!-- Overtime Column -->
+                    <ng-container matColumnDef="overtime">
+                      <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Overtime </th>
+                      <td mat-cell *matCellDef="let data" class="text-center row-cell"> {{ data.doc.overtime }} </td>
+                    </ng-container>
+                
+                    <!-- Overtime Pay Column -->
+                    <ng-container matColumnDef="overtimePay">
+                      <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Overtime Pay </th>
+                      <td mat-cell *matCellDef="let data" class="text-center row-cell"> ₱ {{ data.doc.overtimeRequest?.overtimePay != null ? (data.doc.overtimeRequest.overtimePay | number:'1.2-2') : '0.00' }} </td>
+                    </ng-container>
+                
+                    <!-- Status Column -->
+                    <ng-container matColumnDef="status">
+                      <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Status </th>
+                      <td mat-cell *matCellDef="let data" class="text-center row-cell"> 
+                        <span [ngClass]="{
+                            'status-pending': data.doc.overtimeRequest?.status === 'Pending',
+                            'status-approved': data.doc.overtimeRequest?.status === 'Approved',
+                            'status-declined': data.doc.overtimeRequest?.status === 'Declined'
+                          }">
+                          {{ data.doc.overtimeRequest?.status }} 
+                        </span>
+                      </td>
+                    </ng-container>
+                
+                    <!-- Action Column -->
+                    <ng-container matColumnDef="action">
+                      <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Action </th>
+                      <td mat-cell *matCellDef="let data" class="text-center row-cell">
+                        <div class="dropdown">
+                          <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                            <i class="fa fa-ellipsis-v"></i>
+                          </button>
+                          <div style="cursor: pointer;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                            <button *ngIf="!data.doc.overtimeRequest?.status" class="dropdown-item" (click)="openModal(data)">
+                              Request
+                            </button>
+                            <button *ngIf="data.doc.overtimeRequest?.status === 'Pending' || data.doc.overtimeRequest?.status === 'Approved' || data.doc.overtimeRequest?.status === 'Declined'"
+                                    class="dropdown-item" 
+                                    (click)="openModal(data, true)">
+                              View
+                            </button>
+                          </div>
+                        </div>
+                      </td>
+                    </ng-container>
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                  </table>
+                  <div *ngIf="filteredOvertimeRequests.length === 0" class="text-center alert alert-secondary mt-3">
+                    There's No Available Data.
+                  </div>
+                  <mat-paginator
+                    [pageSizeOptions]="[10, 20, 30]"
+                    [length]="filteredOvertimeRequests.length"
+                    [pageSize]="pageSize"
+                    (page)="onPageChange($event)"
+                    showFirstLastButtons>
+                  </mat-paginator>
+                </div>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <ng-template #overtimeModal let-modal>
+      <div class="modal-header">
+        <h4 class="modal-title pull-left">Overtime Request</h4>
+        <button type="button" class="btn pull-right" aria-label="Close" (click)="modal.dismiss()">
+          <i class="fa fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <p><strong>Employee:</strong> {{ selectedOvertime?.employeeName }}</p>
+        <p><strong>Date:</strong> {{ selectedOvertime?.date }}</p>
+        <p><strong>Time In:</strong> {{ selectedOvertime?.timeIn }}</p>
+        <p><strong>Time Out:</strong> {{ selectedOvertime?.timeOut }}</p>
+        <p><strong>Overtime Hours:</strong> {{ selectedOvertime?.overtime }}</p>
+    
+        <!-- Display additional information when in view mode -->
+        <div *ngIf="isViewMode">
+          <p><strong>Overtime Pay:</strong> ₱ {{ selectedOvertime?.overtimeRequest?.overtimePay || '0.00' }}</p>
+          <p><strong>Status:</strong> {{ selectedOvertime?.overtimeRequest?.status || 'N/A' }}</p>
+          <p><strong>Reason:</strong> {{ selectedOvertime?.overtimeRequest?.reason || 'N/A' }}</p>
+          <p><strong>Approved By:</strong> {{ selectedOvertime?.overtimeRequest?.approvedBy || 'N/A' }}</p>
+        </div>
+        
+        <!-- Show input field for reason if not in view mode -->
+        <div *ngIf="!isViewMode" class="form-group">
+          <label for="reason">Overtime Reason:</label>
+          <input
+            type="text"
+            class="form-control"
+            id="reason"
+            [(ngModel)]="requestReason"
+            [ngClass]="{'is-invalid': !requestReason && isSubmitted}"
+            placeholder="Enter reason for overtime"
+            required
+          />
+          <div *ngIf="!requestReason && isSubmitted" class="text-danger">
+            Reason is required.
+          </div>
+        </div>
+      </div>
+    
+      <!-- Only show the footer buttons when not in view mode -->
+      <div class="modal-footer justify-content-center mt-3">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">{{ isViewMode ? 'Close' : 'Cancel' }}</button>
+        <button *ngIf="!isViewMode" type="button" class="btn btn-primary" (click)="submitRequest()">Submit</button>
+      </div>      
+    </ng-template>    

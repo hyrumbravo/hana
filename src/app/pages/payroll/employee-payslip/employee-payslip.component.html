@@ -1,0 +1,224 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">Payroll</li>
+                <li class="breadcrumb-item active" aria-current="page">Payroll Employee</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+  </section>
+  <ngx-loading [show]="loading"></ngx-loading>
+  <section class="content">
+    <div class="card">
+      <div class="card-header row">
+        <div class="col-lg-6 mt-2">
+          <h1 class="text-primary"><i class="bi bi-list-columns mr-2"></i>Payroll Employee</h1>
+        </div>
+      </div>
+      <div class="card-body">
+
+        <div class="row">
+          <div class="col-md-12 ml-3">
+            <div class="row">
+
+              <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{ filterbyDay ? 'Filter By Day' : 'Filter By Range' }}
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" (click)="setFilterMode(true)">Filter By Day</a>
+                  <a class="dropdown-item"  (click)="setFilterMode(false)">Filter By Range</a>
+                </div>
+              </div>
+              <button class="btn btn-outline-secondary ml-2" (click)="clearDateFilter()" type="button">Clear</button>
+              <!-- Per day filter -->
+              <div class="col-md-4" *ngIf="filterbyDay">
+                <div class="input-group">
+                  <input
+                    class="form-control"
+                    placeholder="yyyy-mm-dd"
+                    name="dp"
+                    [(ngModel)]="dateFilter"
+                    ngbDatepicker
+                    #d="ngbDatepicker"
+                    [maxDate]="today"
+                    (dateSelect)="filterPayslips()"
+                    readonly
+                  />
+                  <button class="btn btn-outline-secondary bi bi-calendar3" (click)="d.toggle()" type="button"></button>
+                </div>
+              </div>
+              
+              <!-- Date Range Filter -->
+              <div class="col-md-4 position-relative" *ngIf="!filterbyDay">
+                <div class="input-group">
+                  <input
+                    class="form-control"
+                    placeholder="yyyy-mm-dd"
+                    name="dpFromDate"
+                    [value]="fromDate ? formatter.format(fromDate) : ''"
+                    readonly
+                  />
+                  <input
+                    class="form-control"
+                    placeholder="yyyy-mm-dd"
+                    name="dpToDate"
+                    [value]="toDate ? formatter.format(toDate) : ''"
+                    readonly
+                  />
+                  <button (click)="datepicker.toggle()" type="button" class="btn btn-outline-secondary bi bi-calendar3"></button>
+                </div>
+
+                <div class="datepicker-container">
+                  <input
+                    ngbDatepicker
+                    #datepicker="ngbDatepicker"
+                    [autoClose]="'outside'"
+                    (dateSelect)="onDateSelection($event)"
+                    [displayMonths]="1"
+                    [dayTemplate]="t"
+                    outsideDays="hidden"
+                    tabindex="-1"
+                    class="position-absolute w-100 border-0 shadow"
+                    style="width: 0; height: 0; border: none; outline: none; padding: 0; margin: 0;"
+                  />
+                </div>
+
+                <ng-template #t let-date let-focused="focused">
+                  <span
+                    class="custom-day"
+                    [class.focused]="focused"
+                    [class.range-start]="date.equals(fromDate)"
+                    [class.range-end]="date.equals(toDate)"
+                    [class.range]="isRange(date)"
+                    [class.faded]="isHovered(date) || isInside(date)"
+                    (mouseenter)="hoveredDate = date"
+                    (mouseleave)="hoveredDate = null"
+                  >
+                    {{ date.day }}
+                  </span>
+                </ng-template> 
+              </div>   
+
+            </div>
+          </div>
+        </div>
+
+        <div class="row mt-5">
+          <div class="px-4 d-flex flex-wrap w-100">
+
+            <!-- user-card -->
+            <div class=" mr-3 card card-primary card-outline time-card">
+              <div class="card-body box-profile">
+                <div class="d-flex justify-content-center">
+                  <img
+                    *ngIf="imageUrl"
+                    class="user-img rounded-circle img-fluid"
+                    style="width: 100px; height: 100px;"
+                    [src]="imageUrl | safe2"
+                    alt="User profile picture"
+                  >
+                </div>
+                <h3 class="profile-username text-center">{{ userName }}</h3>
+                <p class="text-muted text-center">{{ designation }}</p>
+                <label for="employeeId" class="form-label">Employee ID</label>
+                <div class="input-group mb-3">
+                  <input type="text" class="form-control text-center" placeholder="Employee ID #" [(ngModel)]="idNo" [readonly]="!isEditId">
+                </div>
+              </div>
+            </div>
+
+              <!-- table -->
+            <div class="card card-primary card-outline flex-grow-1 table-card">
+              <div [class.dark-mode]="darkMode" class="table-responsive">
+                <table mat-table [dataSource]="filteredPayslips" class="mat-elevation-z8 full-width-table">
+              
+                  <!-- Payroll Number Column -->
+                  <ng-container matColumnDef="payrollNumber">
+                    <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Payroll Number </th>
+                    <td mat-cell *matCellDef="let data" class="text-center row-cell"> {{ data.payrollNum }} </td>
+                  </ng-container>
+              
+                  <!-- Payroll Type Column -->
+                  <ng-container matColumnDef="payrollType">
+                    <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Payroll Type </th>
+                    <td mat-cell *matCellDef="let data" class="text-center row-cell"> {{ data.payrollType }} </td>
+                  </ng-container>
+              
+                  <!-- Payroll Range Column -->
+                  <ng-container matColumnDef="payrollPeriod">
+                    <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Payroll Range </th>
+                    <td mat-cell *matCellDef="let data" class="text-center row-cell">
+                      {{ data.dateFrom | date:'MMM dd, yyyy' }} - {{ data.dateTo | date:'MMM dd, yyyy' }}
+                    </td>
+                  </ng-container>
+              
+                  <!-- Gross Pay Column -->
+                  <ng-container matColumnDef="grossPay">
+                    <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Gross Pay </th>
+                    <td mat-cell *matCellDef="let data" class="text-center row-cell">
+                      {{ data.payrollDetails.grossPayTotal | currency:'₱ ':'symbol':'1.2-2' }}
+                    </td>
+                  </ng-container>
+              
+                  <!-- Deductions Column -->
+                  <ng-container matColumnDef="deductions">
+                    <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Deductions </th>
+                    <td mat-cell *matCellDef="let data" class="text-center row-cell">
+                      {{ data.payrollDetails.deductionTotal | currency:'₱ ':'symbol':'1.2-2' }}
+                    </td>
+                  </ng-container>
+              
+                  <!-- Net Pay Column -->
+                  <ng-container matColumnDef="netPay">
+                    <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Net Pay </th>
+                    <td mat-cell *matCellDef="let data" class="text-center row-cell">
+                      {{ data.payrollDetails.netPayTotal | currency:'₱ ':'symbol':'1.2-2' }}
+                    </td>
+                  </ng-container>
+              
+                  <!-- Action Column -->
+                  <ng-container matColumnDef="action">
+                    <th mat-header-cell *matHeaderCellDef class="text-center header-cell"> Action </th>
+                    <td mat-cell *matCellDef="let data" class="text-center row-cell">
+                      <div class="dropdown">
+                        <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <i class="fa fa-ellipsis-v"></i>
+                        </button>
+                        <div style="cursor: pointer;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                          <a class="dropdown-item" (click)="handleSinglePrint(data.employeeId)">Print</a>
+                        </div>
+                      </div>
+                    </td>
+                  </ng-container>
+              
+                  <!-- Header and Row Definitions -->
+                  <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                  <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+                <div *ngIf="filteredPayslips.data.length === 0" class=" text-center alert alert-secondary mt-3">
+                  No data available for the selected date(s).
+                </div>
+                <mat-paginator 
+                [pageSizeOptions]="[10, 20, 30]" 
+                [length]="filteredPayslips.data.length"
+                [pageSize]="pageSize" 
+                (page)="onPageChange($event)" 
+                showFirstLastButtons>
+                </mat-paginator>
+              </div>
+
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </section>

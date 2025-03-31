@@ -1,0 +1,14 @@
+.card-header {
+    position: relative;
+    border-bottom: none !important;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;  // controls where the border starts
+    right: 20px; // controls where the border ends
+    height: 1px;
+    background-color: #dee2e6; // or your preferred border color
+}

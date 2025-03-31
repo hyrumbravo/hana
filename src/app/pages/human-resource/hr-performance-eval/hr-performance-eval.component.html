@@ -1,0 +1,356 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Human Resources</li>
+              <li class="breadcrumb-item active" aria-current="page">Performance Evaluations</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-list-columns mr-2"></i>Performance Evaluations</h1>
+      </div>
+      <div class="col-lg-6 text-right">
+        <button (click)="refresh()" class="btn btn-default mr-2">
+          <i class="bi bi-arrow-clockwise"></i>
+          Refresh
+        </button>
+        <!-- <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#ratingModal">
+          <i class="bi bi-table"></i>
+          Rating Table
+        </button> -->
+        <button type="button" class="btn btn-primary" (click)="open(createPerformanceEvaluation)">
+          <i class="bi bi-file-earmark-plus"></i>
+          Create
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive mt-2" *ngIf="posts.length">
+        <table class="table-striped" datatable [dtOptions]="dtOptions">
+          <thead>
+            <tr>
+              <!-- <th>#</th> -->
+              <th>ID No.</th>
+              <th>Employee Name</th>
+              <th>Position</th>
+              <th>Assessment</th>
+              <th>Date Covered</th>
+              <th>Absents</th>
+              <th>Evaluated By</th>
+              <th>Comment</th>
+              <th>Date Posted</th>
+              <th class="noExport"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let post of posts; let i = index;">
+              <td>{{ post.doc.id_no }}</td>
+              <td>{{ post.doc.name }}</td>
+              <td>{{ post.doc.position_title }}</td>
+              <td>{{ post.doc.assessment }}</td>
+              <td>{{ post.doc.date_cover }}</td>
+              <td>{{ post.doc.absent }}</td>
+              <td>{{ post.doc.evaluator }}</td>
+              <td>{{ post.doc.comment }}</td>
+              <td>{{ post.doc.date_from }}</td>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" (click)="edit(post.doc, editPerformanceEvaluation)">Edit</a>
+                    <a class="dropdown-item text-danger" (click)="deleteApp(post.doc._id, post.doc._rev)">Delete</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #createPerformanceEvaluation>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Performance Evaluation</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); createForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="createForm" #ngForm (ngSubmit)="addEvaluation()">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="id_no" class="form-label">Employee<span class="text-danger">*</span></label>
+            <select name="id_no" id="id_no" class="form-control" formControlName="id_no" (change)="getId()">
+              <option [value]="null">Select Employee</option>
+              <option *ngFor="let emp of employee" [value]="emp.doc.id_no">{{ emp.doc.firstName }} {{ emp.doc.middleName }} {{ emp.doc.lastName }} {{ emp.doc.ext }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!createForm.get('id_no').valid && createForm.get('id_no').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="assessment" class="form-label">Assessment<span class="text-danger">*</span></label>
+            <select name="assessment" id="assessment" class="form-control" formControlName="assessment">
+              <option [value]="null">Select Assessment</option>
+              <option [value]="'Administrative A'">Administrative A</option>
+              <option [value]="'Clerical & Services'">Clerical & Services</option>
+            </select>
+            <div class="text-danger" *ngIf="!createForm.get('assessment').valid && createForm.get('assessment').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="evaluator" class="form-label">Evaluated By<span class="text-danger">*</span></label>
+            <select name="evaluator" id="evaluator" class="form-control" formControlName="evaluator">
+              <option [value]="null">Select Evaluator</option>
+              <option [value]="'Admin'">Admin</option>
+              <option [value]="'Human Resource'">Human Resource</option>
+            </select>
+            <div class="text-danger" *ngIf="!createForm.get('evaluator').valid && createForm.get('evaluator').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="date_cover" class="form-label">Date Covered<span class="text-danger">*</span></label>
+            <input type="date" class="form-control" formControlName="date_cover" placeholder="Date Covered">
+            <div class="text-danger" *ngIf="!createForm.get('date_cover').valid && createForm.get('date_cover').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <label for="absent" class="form-label">Absent<span class="text-danger">*</span></label>
+          <input type="number" class="form-control" formControlName="absent" placeholder="Absent">
+          <div class="text-danger" *ngIf="!createForm.get('absent').valid && createForm.get('absent').touched">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="date_from" class="form-label">Date From<span class="text-danger">*</span></label>
+            <input type="date" max="{{createForm.get('date_to').value | date:'yyyy-MM-dd'}}" class="form-control" formControlName="date_from" placeholder="Date From">
+            <div class="text-danger" *ngIf="!createForm.get('date_from').valid && createForm.get('date_from').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="date_to" class="form-label">Date To<span class="text-danger">*</span></label>
+            <input type="date" min="{{createForm.get('date_from').value | date:'yyyy-MM-dd'}}" class="form-control" formControlName="date_to" placeholder="Date To">
+            <div class="text-danger" *ngIf="!createForm.get('date_to').valid && createForm.get('date_to').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="comment" class="form-label">Comments<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="comment" placeholder="Comments">
+            <div class="text-danger" *ngIf="!createForm.get('comment').valid && createForm.get('comment').touched">
+              Please provide valid input.
+            </div>
+          </div>
+          <input disabled type="text" class="" style ="display: none;" name="gcode" formControlName="positionTitle"/>
+          <input disabled type="text" class="" style ="display: none;" name="gcode" formControlName="name"/>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); createForm.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="addEvaluation()" [disabled]="isSubmitting">Save</button>
+	</div>
+</ng-template>
+
+<ng-template #editPerformanceEvaluation>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Performance Evaluation</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); createForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="editForm" #ngForm (ngSubmit)="editEval()">
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="id_no" class="form-label">Employee<span class="text-danger">*</span></label>
+            <select name="id_no" id="id_no" class="form-control" formControlName="id_no" (change)="getIdOf()">
+              <option [value]="null">Select Employee</option>
+              <option *ngFor="let emp of employee" [value]="emp.doc.id_no">{{ emp.doc.firstName }} {{ emp.doc.middleName }} {{ emp.doc.lastName }} {{ emp.doc.ext }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!editForm.get('id_no').valid && editForm.get('id_no').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="assessment" class="form-label">Assessment<span class="text-danger">*</span></label>
+            <select name="assessment" id="assessment" class="form-control" formControlName="assessment">
+              <option [value]="null">Select Assessment</option>
+              <option [value]="'Administrative A'">Administrative A</option>
+              <option [value]="'Clerical & Services'">Clerical & Services</option>
+            </select>
+            <div class="text-danger" *ngIf="!editForm.get('assessment').valid && editForm.get('assessment').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="evaluator" class="form-label">Evaluated By<span class="text-danger">*</span></label>
+            <select name="evaluator" id="evaluator" class="form-control" formControlName="evaluator">
+              <option [value]="null">Select Evaluator</option>
+              <option [value]="'Admin'">Admin</option>
+              <option [value]="'Human Resource'">Human Resource</option>
+            </select>
+            <div class="text-danger" *ngIf="!editForm.get('evaluator').valid && editForm.get('evaluator').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="date_cover" class="form-label">Date Covered<span class="text-danger">*</span></label>
+            <input type="date" class="form-control" formControlName="date_cover" placeholder="Date Covered">
+            <div class="text-danger" *ngIf="!editForm.get('date_cover').valid && editForm.get('date_cover').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <label for="absent" class="form-label">Absents<span class="text-danger">*</span></label>
+          <input type="number" class="form-control" formControlName="absent" placeholder="Absent">
+          <div class="text-danger" *ngIf="!editForm.get('absent').valid && editForm.get('absent').touched">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="date_from" class="form-label">Date From<span class="text-danger">*</span></label>
+            <input type="date" max="{{editForm.get('date_to').value | date:'yyyy-MM-dd'}}" class="form-control" formControlName="date_from" placeholder="Date From">
+            <div class="text-danger" *ngIf="!editForm.get('date_from').valid && editForm.get('date_from').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="date_to" class="form-label">Date To<span class="text-danger">*</span></label>
+            <input type="date" min="{{editForm.get('date_from').value | date:'yyyy-MM-dd'}}" class="form-control" formControlName="date_to" placeholder="Date To">
+            <div class="text-danger" *ngIf="!editForm.get('date_to').valid && editForm.get('date_to').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="comment" class="form-label">Comments<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="comment" placeholder="Comments">
+            <div class="text-danger" *ngIf="!editForm.get('comment').valid && editForm.get('comment').touched">
+              Please provide valid input.
+            </div>
+          </div>
+          <input disabled type="text" class="" style ="display: none;" name="gcode" formControlName="positionTitle"/>
+          <input disabled type="text" class="" style ="display: none;" name="gcode" formControlName="name"/>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); editForm.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="editEval()">Save</button>
+	</div>
+</ng-template>
+
+<div class="modal fade" id="ratingModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title text-primary">
+                  <i class="bi bi-table"></i>
+                  Rating Table
+                </h2>
+                <i class="bi bi-x close btn" data-dismiss="modal"></i>
+            </div>
+            <!-- Modal body -->
+            <div class="container">
+                <div class="col-md-12 card">
+                    <div class="card-body">
+                      <div class="table-responsive mt-2" *ngIf="rate.length">
+                        <table class="table-striped" datatable [dtOptions]="dtOptions">
+                          <thead>
+                            <tr>
+                              <th>Classification</th>
+                              <th>Minimum</th>
+                              <th>Maximum</th>
+                              <th>Description</th>
+                              <th>Remarks</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            <tr *ngFor="let post of rate; let i = index">
+                              <td>{{ post.doc.classification }}</td>
+                              <td>{{ post.doc.min }}</td>
+                              <td>{{ post.doc.max }}</td>
+                              <td>{{ post.doc.description }}</td>
+                              <td>{{ post.doc.remarks }}</td>
+                            </tr>
+                          </tbody>
+                        </table>
+                      </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" ><i class="bi bi-x-lg"></i>Close</button>
+            </div>
+
+        </div>
+    </div>
+</div>

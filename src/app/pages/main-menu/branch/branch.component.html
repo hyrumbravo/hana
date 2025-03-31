@@ -1,0 +1,187 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">Settings</li>
+                <li class="breadcrumb-item active" aria-current="page">Branches List</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+<section class="content">
+    <div class="card">
+      <div class="card-header row">
+        <div class="col-lg-6 mt-2">
+          <h1 class="text-primary"><i class="fa-solid fa-code-branch"></i> Branches List</h1>
+        </div>
+        <div class="col-lg-6 text-right">
+          <button (click)="getBranches()" class="btn btn-default mr-2">
+            <!-- <i class="bi bi-arrow-clockwise"></i> -->
+            Refresh
+          </button>
+          <!-- <button type="button" class="btn btn-info mr-2" data-toggle="modal" data-target="#ratingModal">
+            <i class="bi bi-table"></i>
+            Rating Table
+          </button> -->
+          <button type="button" class="btn btn-primary report" data-toggle="modal" data-target="#myModal">
+            <i class="bi bi-file-earmark-plus"></i>
+            Create
+          </button>
+          <!-- <button  (click)="refresh()" class="btn btn-default rfresh"><i class="bi bi-arrow-clockwise"></i>Refresh</button>
+          <button type="button" class="btn btn-primary report" data-toggle="modal" data-target="#myModal"><i class="bi bi-file-earmark-plus"></i>Create</button> -->
+        </div>
+      </div>
+        <div class="card-body">
+            <div class="table-responsive mt-2" *ngIf="leave.length">
+                <table class="table-striped" datatable [dtOptions]="dtOptions">
+                    <thead>
+                        <tr>
+                            <th class="num">#</th>
+                            <th class="code">Branch Location</th>
+                            <th class="ln">Branch Name</th>
+                            <th class="icons"></th>
+                            <th class="icons"></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let display of leave; let i = index">
+                            <td class="num">
+                                {{ i + 1 }}
+                            </td>
+                            <td class = "pos">
+                                {{display.doc.branchLocation}}
+                            </td>
+                            <td class="pos">
+                                {{display.doc.branchName}}
+                            </td>
+                            <td class="edit">
+                                <i (click)="open(display.doc)" class="bi bi-pencil-square" data-toggle="modal" title="Update" data-target="#editModal" style="color: green; cursor: pointer;"></i>
+                            </td>
+                            <td class="edit">
+                                <i (click)="deleteBranch(display.doc._id, display.doc._rev, display.doc.branchName)" class="bi bi-trash-fill editic" title="Delete" style="color: red; cursor: pointer;"></i>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div> 
+        </div>
+    </div>
+</section>
+
+<!-- create modal -->
+<div class="modal fade" id="myModal">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+            <div class="modal-header" style="height: 50px">
+                <h2 class="modal-title text-primary">Create New Branch</h2>
+                <i class="bi bi-x close btn" data-dismiss="modal"></i>
+            </div>
+            <!-- Modal body -->
+            <div class="modal-body">
+                <form [formGroup]="createForm">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label" for="branchLocation">Branch Location<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="branchLocation" formControlName="branchLocation"/>
+                                <small class="text-danger" *ngIf="!createForm.get('branchLocation').valid && createForm.get('branchLocation').touched">
+                                    Please provide valid input.
+                                  </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">   
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label" for="branchName">Branch Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="branchName" formControlName="branchName"/>
+                                <small class="text-danger" *ngIf="!createForm.get('branchName').valid && createForm.get('branchName').touched">
+                                    Please provide valid input.
+                                  </small>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer">
+                <button [disabled]="!createForm.valid" (click)="saveLeave()" data-dismiss="modal" type="button" class="btn btn-success saveGroup"><i class="bi bi-save-fill"></i>Save</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" ><i class="bi bi-x-lg"></i>Close</button>
+            </div>
+        
+        </div>
+    </div>
+</div>
+
+<!-- edit modal -->
+<div class="modal fade" id="editModal">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header" style="height: 50px">
+                <h2 class="modal-title text-primary">Edit Branch</h2>
+                <i class="bi bi-x close btn" data-dismiss="modal"></i>
+            </div>
+            <!-- Modal body -->
+            <div class="modal-body">
+                <form [formGroup]="editForm">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label" for="branchLocation">Branch Location<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="branchLocation" formControlName="branchLocation"/>
+                                <small class="text-danger" *ngIf="!editForm.get('branchLocation').valid && editForm.get('branchLocation').touched">
+                                    Please provide valid input.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <div class="form-group">
+                                <label class="form-label" for="branchName">Branch Name<span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" name="branchName" formControlName="branchName"/>
+                                <small class="text-danger" *ngIf="!editForm.get('branchName').valid && editForm.get('branchName').touched">
+                                    Please provide valid input.
+                                  </small>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <!-- Modal footer -->
+            <div class="modal-footer">
+                <button [disabled]="!editForm.valid" (click)="editBranch()" data-dismiss="modal" type="button" class="btn btn-success saveGroup"><i class="bi bi-save-fill"></i>Save</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal" ><i class="bi bi-x-lg"></i>Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Delete Modal -->
+<div class="modal fade" id="deleteModal" >
+    <div class="modal-dialog modal-sm">
+        <div class="modal-content">
+            <div class="modal-header" style="height: 50px">
+                <h2 class="modal-title text-danger"><i class="bi bi-exclamation-triangle-fill"></i>Warning!!!</h2>
+                <i class="bi bi-x close btn" data-dismiss="modal"></i>
+            </div>
+            <!-- Modal body -->
+                <div class="modal-body">
+                Are you sure you want to delete this Branch?
+                </div>
+            <!-- Modal footer -->
+            <div class="modal-footer">
+                <button (click)="deleteBranch(id, rev, rev)" data-dismiss="modal" type="button" class="btn btn-danger delGroup"><i class="bi bi-trash-fill"></i>Continue</button>
+                <button type="button" class="btn btn-secondary" data-dismiss="modal"><i class="bi bi-x-lg"></i>Close</button>
+            </div>
+        </div>
+    </div>
+</div>

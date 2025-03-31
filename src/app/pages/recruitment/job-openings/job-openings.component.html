@@ -1,0 +1,197 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Recruitment</li>
+              <li class="breadcrumb-item active" aria-current="page">Job Openings</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-box mr-2"></i>Job Openings</h1>
+      </div>
+      <div class="col-lg-6 text-right">
+        <button type="button" class="btn btn-primary mr-2" (click)="open(jobOpening)">
+          <i class="bi bi-file-earmark-plus"></i>
+          Create
+        </button>
+        <button class="btn btn-default mr-2">
+          <i class="bi bi-arrow-clockwise"></i>
+          Refresh
+        </button>
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive mt-2">
+        <table class="table-striped" datatable [dtOptions]="dtOptions" *ngIf="jobOpenings.length">
+          <thead>
+            <tr>
+              <th>Branch</th>
+              <th>Job Name</th>
+              <th>Job Type</th>
+              <th>Description</th>
+              <th>Opening Date</th>
+              <th>Closing Date</th>
+              <th>Status</th>
+              <th>Number to Employees</th>
+              <th>Applied</th>
+              <th>Hired</th>
+              <th>Declined</th>
+              <th class="noExport"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of jobOpenings; let i = index;">
+              <td>{{ data.doc.branch }}</td>
+              <td>{{ data.doc.positionName }}</td>
+              <td>{{ data.doc.employmentType }}</td>
+              <td>{{ data.doc.description }}</td>
+              <td>{{ data.doc.startDate }}</td>
+              <td>{{ data.doc.endDate }}</td>
+              <td>{{ data.doc.openForApplication? 'Open': 'Closed' }}</td>
+              <td>{{ data.doc.requiredForThisPosition }}</td>
+              <td>0</td>
+              <td>0</td>
+              <td>0</td>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item text-danger" (click)="deleteJobOpening(data.doc)">Delete</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<ng-template #jobOpening>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Job Opening</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); f.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="form" #ngForm (ngSubmit)="submitJobOpening()">
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="branch" class="form-label">Name<span class="text-danger">*</span></label>
+            <select name="branch" id="branch" class="form-control" formControlName="branch">
+              <option [value]="null">Select Branch</option>
+              <option [value]="'Manila Office'">Manila Office</option>
+              <option [value]="'Davao Office'">Davao Office</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('branch').valid && f.get('branch').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="position" class="form-label">Position Name<span class="text-danger">*</span></label>
+            <select name="position" id="position" class="form-control" formControlName="position">
+              <option [value]="null">Select Position</option>
+              <option *ngFor="let position of positions" [value]="position.doc.position_name">{{ position.doc.position_name }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('position').valid && f.get('position').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="employmentType" class="form-label">Employment Type<span class="text-danger">*</span></label>
+            <select name="employmentType" id="employmentType" class="form-control" formControlName="employmentType">
+              <option [value]="null">Select Type</option>
+              <option [value]="'Casual'">Casual</option>
+              <option [value]="'Consultant'">Consultant</option>
+              <option [value]="'Fixed Term / Contractual'">Fixed Term / Contractual</option>
+              <option [value]="'Probationary'">Probationary</option>
+              <option [value]="'Project-based'">Project-based</option>
+              <option [value]="'Regular / Permanent'">Regular / Permanent</option>
+              <option [value]="'Seasonal'">Seasonal</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('employmentType').valid && f.get('employmentType').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="requiredForThisPosition" class="form-label"># Required to this position<span class="text-danger">*</span></label>
+            <input type="number" min="0" class="form-control" formControlName="requiredForThisPosition">
+            <div class="text-danger" *ngIf="!f.get('requiredForThisPosition').valid && f.get('requiredForThisPosition').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="description" class="form-label">Description</label>
+            <textarea name="description" id="description" cols="30" rows="3" class="form-control" formControlName="description" placeholder="Description"></textarea>
+            <div class="text-danger" *ngIf="!f.get('description').valid && f.get('description').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="startDate" class="form-label">Start Date<span class="text-danger">*</span></label>
+            <input type="date" max="{{ f.get('endDate').value}}" class="form-control" name="startDate" id="startDate" formControlName="startDate" placeholder="Start Date">
+            <div class="text-danger" *ngIf="!f.get('startDate').valid && f.get('startDate').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="endDate" class="form-label">End Date<span class="text-danger">*</span></label>
+            <input type="date" min="{{ f.get('startDate').value}}" class="form-control" name="endDate" id="endDate" formControlName="endDate" placeholder="End Date">
+            <div class="text-danger" *ngIf="!f.get('endDate').valid && f.get('endDate').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="openForApplication" id="openForApplication" class="form-check-input" formControlName="openForApplication">
+            <label for="openForApplication" class="form-check-label">Open for Application</label>
+            <div class="text-danger" *ngIf="!f.get('openForApplication').valid && f.get('openForApplication').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); f.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitJobOpening()">Save</button>
+	</div>
+</ng-template>

@@ -1,0 +1,646 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Leaves</li>
+              <li class="breadcrumb-item active" aria-current="page">Leave Applications</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+<section class="content">
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-list-columns mr-2"></i>LEAVE APPLICATIONS</h1>
+      </div>
+      <div class="col-lg-5">
+          <div class="row" *ngIf="!userHasIdNo">
+              <div class="col-md-12">
+                <label for="check">Search:</label>
+                <input type="text" class="form-control" name="searchId" id="searchString" [(ngModel)]="searchString" placeholder="Enter Employee No. or Name" 
+                autocomplete="off" (input)="onSearchInput()">
+              </div>
+              <div
+                *ngIf="showDropdown"
+                class="col-md-12"
+                ngbDropdown
+                [autoClose]="'outsideClick'"
+              >
+                <ul class="list-group list-group-flush" ngbDropdownMenu style="max-height: 200px; overflow-y: auto;">
+                  <li *ngIf="searchResults.length === 0" class="list-group-item disabled">No Employee Found</li>
+                  <li class="list-group-item list-group-item-action" *ngFor="let result of searchResults"  style="cursor: pointer;" >
+                    <a (click)="selectResult(result)">{{ result.doc.firstName }} {{ result.doc.middleName? result.doc.middleName + " ": ""}}{{ result.doc.lastName }} ({{ result.doc.id_no }})</a>
+                  </li>
+                </ul>
+            </div>
+          </div>
+      </div>
+    </div>
+    <br>
+    <div  *ngIf="!currentEmployee || !currentLeaveCardData" class="card-header row">
+      <div class="col-lg-12 text-center"><p>{{searchMessage}}</p></div>
+    </div>
+  <div class=" card-body" *ngIf="currentEmployee && currentLeaveCardData"> 
+      <div class="row">
+          <!-- Info Titles -->
+          <div class="col-lg-6 credit-div pb-0">
+            <h2><b>{{transform(currentLeaveCardData.doc.name)}}</b></h2>
+          </div>
+          <div class="col-lg-6 credit-div pb-0">
+              <h2 class=""><b>Current Leave Credits</b>&nbsp;&nbsp;
+                <button type="submit" (click)="openLeaveForm(leave)" class="btn btn-primary"><i class="fa-solid fa-plus"></i> File Leave</button>&nbsp;
+                <button type="submit" [disabled]="currentLeaveCardData.doc.card.length === 0" (click)="openCard(card)" class="btn btn-primary"><i class="fa-solid fa-address-card"></i> View Leave Card</button>
+              
+              </h2>
+          </div>
+          
+          <!-- Info Content -->
+          <div class="col-lg-6 credit-div pb-0">
+              <h3 class="no-bottom"><b>Employee No:</b> {{currentLeaveCardData.doc.id_no}}</h3>
+              <h3 class="no-bottom"><b>Employee:</b> {{transform(currentLeaveCardData.doc.name)}}</h3>
+              <h3 class="no-bottom"><b>Position:</b> {{currentLeaveCardData.doc.position_title}}</h3>
+              <h3 class="no-bottom"><b>Office/Department:</b> {{currentLeaveCardData.doc.department}}</h3>
+              <h3 class="no-bottom"><b>Salary Grade:</b> {{currentLeaveCardData.doc.salaryGrade}} - {{currentLeaveCardData.doc.salaryStep}}</h3>
+          </div>
+
+
+          <div class="col-lg-6">
+            <div class="row">
+                <div class="col-md-6 credit-div pb-0">
+                  <h3 class="no-bottom">Vacation Leave </h3>
+                  <h1 class="text-right no-bottom" [ngStyle]="{'color': currentLeaveCardData.doc.vlBalance > 1 ? 'green' : 'red'}">
+                    <b>{{currentLeaveCardData.doc.vlBalance}}</b></h1>
+                </div>
+                <div class="col-md-6 credit-div pb-0">
+                  <h3  class="no-bottom">Sick Leave </h3>
+                  <h1  class=" text-right no-bottom" [ngStyle]="{'color': currentLeaveCardData.doc.slBalance > 1 ? 'green' : 'red'}">
+                    <b>{{currentLeaveCardData.doc.slBalance}}</b></h1>
+                </div>
+                <div class="col-md-6 credit-div">
+                  <h3 class="no-bottom">Special Leave Available </h3>
+                  <h1  class=" text-right no-bottom" [ngStyle]="{'color': currentLeaveCardData.doc.splBalance > 1 ? 'green' : 'red'}">
+                    <b>{{currentLeaveCardData.doc.splBalance}}</b></h1>
+                </div>
+                <div class="col-md-6 credit-div">
+                  <h3  class="no-bottom">Forced Leave Available </h3>
+                  <h1  class=" text-right no-bottom" [ngStyle]="{'color': currentLeaveCardData.doc.flBalance > 1 ? 'green' : 'red'}">
+                    <b>{{currentLeaveCardData.doc.flBalance}}</b></h1>
+                </div>
+            </div>
+          </div>
+        </div>
+
+      <div *ngIf="currentEmployee" class="row pt-2">
+        <div class="col-lg-6 mt-2" *ngIf="currentLeaves.length">
+          <h1 class="text-primary">LEAVE RECORDS</h1>
+        </div>
+          <div class="table-responsive mt-2" *ngIf="currentLeaves.length">
+              <table class="table-striped" datatable [dtOptions]="dtOptions">
+                <thead>
+                  <tr>
+                    <th>Date Filed</th>
+                    <th>Reference</th>
+                    <th>Leave Type</th>
+                    <th>Leave Details</th>
+                    <th>Period Covered</th>
+                    <th>Total Days</th>
+                    <th>With Commutation?</th>
+                    <th>Status</th>
+                    <th class="noExport"></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let data of currentLeaves; let i = index;">
+                    <td>{{ data.doc.dateFiled | date }}</td>
+                    <td>{{ data.doc.referenceNumber }}</td>
+                    <td style="cursor: pointer;" class="text-primary" (click)="viewLeaveApproval(data.doc, leave)">{{ data.doc.leaveName === null? 'Others':data.doc.leaveName }}</td>
+                    <td> {{leaveDetails(data.doc)}}</td>
+                    <td>{{ data.doc.startDateTime | date }} - {{ data.doc.finishDateTime | date }}</td>
+                    <td>{{ data.doc.totalDays }}</td>
+                    <td>{{ data.doc.commutation? 'Yes':'No'}}</td>
+                    <td>{{ data.doc.status | titlecase }}</td>
+                    <td>
+                      <div class="dropdown">
+                        <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                          <i class="fa fa-ellipsis-v"></i>
+                        </button>
+                        <div style="cursor: pointer;" class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                          <a class="dropdown-item" *ngIf="data.doc.status === 'pending'" (click)="openEditFileLeave(data.doc, leave)">Edit</a>
+                          <a class="dropdown-item" (click)="download(data.id,'print',data.doc.referenceNumber)">Print</a>
+                          <a class="dropdown-item" (click)="download(data.id,'download',data.doc.referenceNumber)">Download PDF</a>
+                          <a class="dropdown-item text-danger" *ngIf="data.doc.status === 'pending'" (click)="deleteFileLeave(data.doc)">Delete</a>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+          </div>
+         
+          <div *ngIf="currentLeaves.length === 0" class="col-lg-12 text-center">
+            <hr>
+            <div><p>No Leave Applications for this Employee</p></div>
+          </div>
+      </div>
+
+  </div>
+  
+  </div>
+</section>
+
+<ng-template #signature>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Signature</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismissSignForm();removeFile(fileInput)">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="row">
+      <div class="col-lg-12">
+        <div class="form-group">
+          <label class="form-label">
+          Use Profile signature 
+          <input type="checkbox" name="usersign" [disabled]="userSignature === null"
+            [(ngModel)]="useUserSignaturePreset" (click)="removeFile(fileInput)">
+        </label>
+        <br><small class="text-danger" *ngIf="userSignature===null">No signature saved.</small>
+        </div>
+      </div>
+      <div class="col-lg-8">
+        <label class="form-label">Upload Image: </label>
+        <div class="form-group" >  
+          <input type="file" (change)="onFileSelected($event)" #fileInput placeholder="Upload Signature" accept="image/*" [disabled]="useUserSignaturePreset"/>
+          <button type="button" *ngIf="base64Image" class="close" aria-label="Remove Image" (click)="removeFile(fileInput)">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>          
+      </div>
+      <div class="col-lg-12 text-center" *ngIf="!base64Image && !useUserSignaturePreset">
+        -- or --
+      </div>
+      <div class="col-lg-12" *ngIf="useUserSignaturePreset">
+        <label class="form-label">Signature Preview: </label>
+        <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+          <img class="img-preview" height="300px" width="450px" [src]="userSignature" alt="Uploaded Image" /><br>
+        </div>
+        <button class="col-lg-12 mb-1 sign-button" disabled>Remove</button>
+        <button class="col-lg-12 sign-button" (click)="saveSignature(userSignature);removeFile(fileInput)">Save</button>
+      </div>
+      <div class="col-lg-12" *ngIf="base64Image && !useUserSignaturePreset">
+        <label class="form-label">Signature Preview: </label>
+        <div class="mb-2 text-center d-flex align-items-center justify-content-center">
+          <img class="img-preview" height="300px" width="450px" [src]="base64Image" alt="Uploaded Image" /><br>
+        </div>
+        <button class="col-lg-12 mb-1 sign-button" (click)="removeFile(fileInput)">Remove</button>
+        <button class="col-lg-12 sign-button" (click)="saveSignature(base64Image);removeFile(fileInput)">Save</button>
+      </div>
+      <div *ngIf="!base64Image && !useUserSignaturePreset" class="col-lg-12">
+        <label for="dateFiled" class="form-label">Sign Form: </label>
+        <app-signing-pad (signatureSaved)="saveSignature($event)"></app-signing-pad>
+      </div>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #leave>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Leave Form</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismiss(); leaveForm.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <!-- STEP1 -->
+    <div class="card-body">
+      <form [formGroup]="leaveForm" #ngForm>
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="dateFiled" class="form-label">Date of Filing<span class="text-danger">*</span></label>
+              <input type="datetime-local" class="form-control" name="dateFiled" id="dateFiled" formControlName="dateFiled" placeholder="Date of Filing">
+              <div class="text-danger" *ngIf="!f.get('dateFiled').valid && f.get('dateFiled').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="leaveType" class="form-label">Leave Type<span class="text-danger">*</span></label>
+              <select name="leaveType" id="leaveType" class="form-control" formControlName="leaveType" placeholder="Select Type" (change)="formResets()">
+                <option [value]="null">Select Type</option>
+                <option *ngFor="let type of leaveTypes" [value]="type.doc.code">{{ type.doc.leave_name }}</option>
+                <option value="others">Others(specify)</option>
+              </select>
+              <div class="text-danger" *ngIf="!f.get('leaveType').valid && f.get('leaveType').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+
+          <div class="col-lg-12" *ngIf="hideOthers()">
+            <div class="form-group">
+              <label for="others" class="form-label">Specify<span class="text-danger">*</span></label>
+              <textarea name="others" id="others" cols="30" rows="3" class="form-control" formControlName="others" placeholder="Other"></textarea>
+              <!-- <div class="text-danger" *ngIf="!f.get('others').valid && f.get('others').touched">
+                Please provide valid input.
+              </div> -->
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-secondary" role="alert">
+          Inclusive Dates
+        </div>
+        <div class="row">
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="startDateTime" class="form-label">Start Date<span class="text-danger">*</span></label>
+              <input type="date" max="{{ f.get('finishDateTime').value}}" class="form-control" name="startDateTime" id="startDateTime" formControlName="startDateTime" placeholder="Start Date">
+              <div class="text-danger" *ngIf="!f.get('startDateTime').valid && f.get('startDateTime').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group">
+              <label for="finishDateTime" class="form-label">End Date<span class="text-danger">*</span></label>
+              <input type="date" min="{{ f.get('startDateTime').value}}" class="form-control" name="finishDateTime" id="finishDateTime" formControlName="finishDateTime" placeholder="End Date">
+              <div class="text-danger" *ngIf="!f.get('finishDateTime').valid && f.get('finishDateTime').touched">
+                Please provide valid input.
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label for="totalDays" class="form-label">Total Days: {{ getDiffDays(f.get('startDateTime').value, f.get('finishDateTime').value) }}</label>
+            </div>
+          </div>
+        </div>
+        <div class="alert alert-secondary" role="alert">
+          Leave Details
+        </div>
+        <div class="row">
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label>
+              Request Commutation? 
+              <ng-container *ngIf="!viewOn">
+                <input type="checkbox" formControlName="commutation">
+              </ng-container>
+              <ng-container *ngIf="viewOn">
+                <span>{{f.get('commutation').value? 'Yes': 'No'}}</span>
+              </ng-container>
+            </label>
+            </div>
+          </div>
+
+        </div>
+        <div class="row" *ngIf="hideDetails('vl')">
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label for="leaveLocation" class="form-label">VL/SPL Location<span class="text-danger">*</span></label>
+              <select name="leaveLocation" id="leaveLocation" class="form-control" formControlName="leaveLocation" placeholder="Select Location">
+                <option [value]="null">Select Location</option>
+                <option [value]="'Local'">Within The Philippines</option>
+                <option [value]="'International'">Abroad</option>
+              </select>
+              <!-- <div class="text-danger" *ngIf="!f.get('leaveLocation').valid && f.get('leaveLocation').touched">
+                Please provide valid input.
+              </div> -->
+            </div>
+            <div class="form-group">
+              <label for="leaveLocationDetail" class="form-label">Specify Location<span class="text-danger">*</span></label>
+              <textarea name="leaveLocationDetail" id="leaveLocationDetail" cols="30" rows="3" class="form-control" formControlName="leaveLocationDetail" placeholder="Vacation Description"></textarea>
+              <!-- <div class="text-danger" *ngIf="!f.get('vacationDescription').valid && f.get('vacationDescription').touched">
+                Please provide valid input.
+              </div> -->
+            </div>
+          </div>
+        </div>
+        <div class="row" *ngIf="hideDetails('sl')">
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label for="sickLeaveLocation" class="form-label">Sick Leave Location<span class="text-danger">*</span></label>
+              <select name="sickLeaveLocation" id="v" class="form-control" formControlName="sickLeaveLocation" placeholder="Select Location">
+                <option [value]="null">Select Location</option>
+                <option [value]="'In Hospital'">In Hospital</option>
+                <option [value]="'Out Patient'">Out Patient</option>
+              </select>
+              <!-- <div class="text-danger" *ngIf="!f.get('leaveLocation').valid && f.get('leaveLocation').touched">
+                Please provide valid input.
+              </div> -->
+            </div>
+            <div class="form-group">
+              <label for="sickLeaveDetail" class="form-label">Specify Illness<span class="text-danger">*</span></label>
+              <textarea name="sickLeaveDetail" id="sickLeaveDetail" cols="30" rows="3" class="form-control" formControlName="sickLeaveDetail" placeholder="Vacation Description"></textarea>
+              <!-- <div class="text-danger" *ngIf="!f.get('vacationDescription').valid && f.get('vacationDescription').touched">
+                Please provide valid input.
+              </div> -->
+            </div>
+          </div>
+        </div>
+        <div class="row" *ngIf="hideDetails('splw')">
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label for="splBenefitsForWomenDetail" class="form-label">Specify Special Leave Reason/Illness<span class="text-danger">*</span></label>
+              <textarea name="splBenefitsForWomenDetail" id="splBenefitsForWomenDetail" cols="30" rows="3" class="form-control" formControlName="splBenefitsForWomenDetail" placeholder="Vacation Description"></textarea>
+              <!-- <div class="text-danger" *ngIf="!f.get('vacationDescription').valid && f.get('vacationDescription').touched">
+                Please provide valid input.
+              </div> -->
+            </div>
+          </div>
+        </div>
+        <div class="row" *ngIf="hideDetails('std')">
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label for="studyLeaveDetail" class="form-label">Study Leave Reason<span class="text-danger">*</span></label>
+              <select name="studyLeaveDetail" id="v" class="form-control" formControlName="studyLeaveDetail" placeholder="Study Leave Reason">
+                <option [value]="null">Select Reason</option>
+                <option [value]="'Completion'">Completion of Master's Degree</option>
+                <option [value]="'Examination'">BAR/Board Examination Review</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="row" *ngIf="hideDetails('others')">
+          <div class="col-lg-12">
+            <div class="form-group">
+              <label for="otherPurpose" class="form-label">Other Purpose<span class="text-danger">*</span></label>
+              <select name="otherPurpose" id="v" class="form-control" formControlName="otherPurpose" placeholder="Other Purpose">
+                <option [value]="null">Select Reason</option>
+                <option [value]="'Monetization'">Monetization of Leave Credits</option>
+                <option [value]="'Terminal'">Terminal Leave</option>
+              </select>
+              <!-- <div class="text-danger" *ngIf="!f.get('leaveLocation').valid && f.get('leaveLocation').touched">
+                Please provide valid input.
+              </div> -->
+            </div>
+          </div>
+        </div>
+        <div class="alert " [ngClass]="{
+          'alert-success': viewOn && f.get('status').value === 'approved',
+          'alert-danger': viewOn && f.get('status').value === 'denied',
+          'alert-secondary': viewOn && f.get('status').value === 'pending',
+          'alert-primary': viewOn && f.get('status').value === 'processing'
+        }" role="alert" *ngIf="viewOn">
+          Approval Status: {{f.get('status').value | titlecase}}
+        </div>
+        
+        <div class="row" *ngIf="viewOn">
+          <div class="col-lg-6">
+            <div class="form-group pl-2">
+              <label for="approverB" class="form-label">Recomendation:</label><br>
+              <div class=" center-div-items" *ngIf="viewOn && f.get('approverBSignature').value !== null">
+                <img style="width: 200px; height: 100px;" [src]="appendImageBase64(f.get('approverBSignature').value)"><br>
+              </div>
+              <span><b>{{f.get('approverB').value}}</b></span><br>
+              <span><i>{{f.get('approverBPosition').value}}</i></span>
+              <span *ngIf="f.get('approverB').value === null">N/A</span><br>
+
+              <div class="pt-2" *ngIf="f.get('recommendation').value !==null">
+                <label class="form-label">Details:</label><br>
+                {{f.get('recommendation').value? "For Approval":"For Disapproval"}}&nbsp;
+                {{f.get('recommendation').value === false? "(Reason: " + f.get('recommendationDisapprovalReason').value +")":""}}
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group  pl-2">
+              <label for="approverC" class="form-label">Approval:</label><br>  
+              <div class=" center-div-items" *ngIf="viewOn && f.get('approverCSignature').value !== null">
+                <img style="width: 200px; height: 100px;" [src]="appendImageBase64(f.get('approverCSignature').value)"><br>
+              </div>
+              <span><b>{{f.get('approverC').value}}</b></span><br>
+              <span><i>{{f.get('approverCPosition').value}}</i></span>
+              <span *ngIf="f.get('approverC').value === null">N/A</span>
+
+              <div class="pt-2" *ngIf="f.get('approverC').value !== null">
+                <label class="form-label">Details:</label><br>
+                {{f.get('status').value | titlecase}}&nbsp;{{f.get('status').value === 'denied'? "(Reason: " + f.get('disapprovalReason').value+")": "(Date: " +f.get('dateOfApproval').value+")" }}
+              </div>
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group  pl-2">
+              <label for="approverA" class="form-label">Certification By:</label><br>
+              <div class=" center-div-items" *ngIf="viewOn && f.get('approverASignature').value !== null">
+                <img style="width: 200px; height: 100px;" [src]="appendImageBase64(f.get('approverASignature').value)"><br>
+              </div>
+              <span><b>{{f.get('approverA').value}}</b></span><br>
+              <span><i>{{f.get('approverAPosition').value}}</i></span>
+              <span *ngIf="f.get('approverA').value === null">N/A</span>
+              <!-- <input type="text" class="form-control" name="approverA" id="approverA" formControlName="approverA" placeholder="Certified Officer"> -->
+            </div>
+          </div>
+          <div class="col-lg-6">
+            <div class="form-group pl-2" *ngIf="viewOn && f.get('applicantSignature').value !== null">
+                <label class="form-label">Applicant Signature:</label><br>
+                <div class=" center-div-items ">
+                  <img style="width: 220px; height: 120px;" [src]="appendImageBase64(f.get('applicantSignature').value)">
+                </div>
+            </div>
+          </div>
+        </div>
+      </form>
+    </div>
+    <div class="card-footer text-right" *ngIf="!viewOn">
+      <button type="button" class="btn btn-outline-dark mr-2" (click)="dismiss(); leaveForm.reset()">Cancel</button>
+      <button type="submit" class="btn btn-success" [disabled]="!leaveForm.valid || !checkFormValidity()" (click)="submitFileLeave(signature)">Save</button>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #card>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Leave Card</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismiss();">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="text-right">
+    </div>
+    <div class="table-responsive mt-2" *ngIf="currentLeaveCardData.doc.card.length">
+      <table class="table-striped" datatable [dtOptions]="dtOptions">
+        <thead>
+          <tr>
+            <th colspan="2"></th>
+            <th class="text-center" colspan="5">Vacation Leave</th>
+            <th class="text-center" colspan="2">Other Leave Bal. Available</th>
+            <th class="text-center" colspan="4">Sick Leave</th>
+            <!-- <th colspan="1"></th> -->
+          </tr>
+          <tr>
+            <th>As of</th>
+            <th>Particulars</th>
+
+            <th>Earned</th>
+            <th>T/U(dd-hh-mm)</th>
+            <th>T/U Equiv.</th>
+            <th>VL/SLP/ Monet.</th>
+            <th>Balance</th>
+            <!-- <th>Inclusive Dates of VL/FL/SPL</th> -->
+
+            <th>FL</th>
+            <th>SPL</th>
+
+            <!-- <th>ABS/UND WOP</th> -->
+            <th>Earned</th>
+            <th>Leave Spent</th>
+            <th>With Pay?</th>
+            <th>Balance</th>
+            <!-- <th>Date/s of Sick Leave</th> -->
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let data of currentLeaveCardData.doc.card; let i = index;">
+          <tr>
+              <td>
+                {{ data.as_of_start | date:'MM/dd/yyyy'}}
+                <span *ngIf="data.as_of_start !== data.as_of_end && data.as_of_end !== null">
+                  - {{ data.as_of_end | date:'MM/dd/yyyy' }}
+                </span>
+              </td>
+              <td>{{ data.particulars }}</td>
+              
+              <td>{{ (data.earnedVacationCredits!==0)?data.earnedVacationCredits:"" }}</td>
+
+              <td>({{data.daysTU}}-{{data.hoursTU}}-{{ data.minsTU }})</td>
+              <td>{{(data.totEQUIV !==0)?data.totEQUIV :""}}</td>
+              <td>{{ (data.vlslMonet !==0)? data.vlslMonet: "" }}</td>
+              <td>{{ data.currentBalance }}</td>
+              <!-- <td>{{ data.vacationLeaveDates }}</td> -->
+
+              <td>{{ data.forcedLeaveBalance }}</td>
+              <td>{{ data.specialLeaveBalance }}</td>
+              
+              <!-- <td>{{ data.abs_und_wop }}</td> -->
+              <td>{{ (data.earnedSickLeaveCredits!==0)?data.earnedSickLeaveCredits:"" }}</td>
+              <td>{{ (data.sl_deduction !==0)?data.sl_deduction:"" }}</td>
+              <td>{{ (data.leaveType === '003')?((!data.wop)? 'Yes':'No'): "" }}</td>
+              <td>{{ data.currentSickLEaveBalance }}</td>
+              <!-- <td>{{ data.sl_start }} {{ data.sl_end }}</td> -->
+              <!-- <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item text-danger">Edit</a>
+                    <a class="dropdown-item text-danger" (click)="deleteLeaveCredit(data.doc)">Delete</a>
+                  </div>
+                </div>
+              </td> -->
+          </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-template>
+
+<ng-template #card>
+  <div class="modal-header">
+    <h1 class="modal-title" id="modal-basic-title">Leave Card</h1>
+    <button type="button" class="close" aria-label="Close" (click)="dismiss();">
+      <span aria-hidden="true">&times;</span>
+    </button>
+  </div>
+  <div class="modal-body">
+    <div class="text-right">
+      <!-- <button type="button" (click)="goToLeaveHistory()" class="btn btn-primary mr-2">
+        <i class="fa-solid fa-plus"></i>
+        Create Leave
+      </button> -->
+    </div>
+    <div class="table-responsive mt-2" *ngIf="currentLeaveCardData.doc.card.length">
+      <table class="table-striped" datatable [dtOptions]="dtOptions">
+        <thead>
+          <tr>
+            <th colspan="2"></th>
+            <th class="text-center" colspan="5">Vacation Leave</th>
+            <th class="text-center" colspan="2">Other Leave Bal. Available</th>
+            <th class="text-center" colspan="4">Sick Leave</th>
+            <!-- <th colspan="1"></th> -->
+          </tr>
+          <tr>
+            <th>As of</th>
+            <th>Particulars</th>
+
+            <th>Earned</th>
+            <th>T/U(dd-hh-mm)</th>
+            <th>T/U Equiv.</th>
+            <th>VL/SLP/ Monet.</th>
+            <th>Balance</th>
+            <!-- <th>Inclusive Dates of VL/FL/SPL</th> -->
+
+            <th>FL</th>
+            <th>SPL</th>
+
+            <!-- <th>ABS/UND WOP</th> -->
+            <th>Earned</th>
+            <th>Leave Spent</th>
+            <th>With Pay?</th>
+            <th>Balance</th>
+            <!-- <th>Date/s of Sick Leave</th> -->
+          </tr>
+        </thead>
+        <tbody>
+          <ng-container *ngFor="let data of currentLeaveCardData.doc.card; let i = index;">
+          <tr>
+              <td>
+                {{ data.as_of_start | date:'MM/dd/yyyy'}}
+                <span *ngIf="data.as_of_start !== data.as_of_end && data.as_of_end !== null">
+                  - {{ data.as_of_end | date:'MM/dd/yyyy' }}
+                </span>
+              </td>
+              <td>{{ data.particulars }}</td>
+              
+              <td>{{ (data.earnedVacationCredits!==0)?data.earnedVacationCredits:"" }}</td>
+
+              <td>({{data.daysTU}}-{{data.hoursTU}}-{{ data.minsTU }})</td>
+              <td>{{(data.totEQUIV !==0)?data.totEQUIV :""}}</td>
+              <td>{{ (data.vlslMonet !==0)? data.vlslMonet: "" }}</td>
+              <td>{{ data.currentBalance }}</td>
+              <!-- <td>{{ data.vacationLeaveDates }}</td> -->
+
+              <td>{{ data.forcedLeaveBalance }}</td>
+              <td>{{ data.specialLeaveBalance }}</td>
+              
+              <!-- <td>{{ data.abs_und_wop }}</td> -->
+              <td>{{ (data.earnedSickLeaveCredits!==0)?data.earnedSickLeaveCredits:"" }}</td>
+              <td>{{ (data.sl_deduction !== 0)?data.sl_deduction:"" }}</td>
+              <td>{{ (data.leaveType === '003')?((!data.wop)? 'Yes':'No'): "" }}</td>
+              <td>{{ data.currentSickLEaveBalance }}</td>
+              <!-- <td>{{ data.sl_start }} {{ data.sl_end }}</td> -->
+              <!-- <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item text-danger">Edit</a>
+                    <a class="dropdown-item text-danger" (click)="deleteLeaveCredit(data.doc)">Delete</a>
+                  </div>
+                </div>
+              </td> -->
+          </tr>
+          </ng-container>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</ng-template>
+
+<iframe #pdfIframe style="display:none;"></iframe>

@@ -1,0 +1,21 @@
+/* Enable text wrapping */
+.wrap-text {
+  white-space: normal;  /* Allows text to wrap normally */
+  word-wrap: break-word;  /* Break long words if necessary */
+  word-break: break-word; /* Ensures long words are broken to fit */
+}
+
+.card-header {
+    position: relative;
+    border-bottom: none !important;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;  // controls where the border starts
+    right: 20px; // controls where the border ends
+    height: 1px;
+    background-color: #dee2e6; // or your preferred border color
+}

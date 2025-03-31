@@ -1,0 +1,118 @@
+.FlexContainer {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: center;
+    align-items: center;
+    align-content: center;
+    width: 65%;
+    height: 22vh;
+    flex-direction: row;
+    margin-bottom: 160px;
+}
+
+.FlexContainer .profile {
+    width: 100%;
+    height: 100%;
+    margin: 5px;
+    top: 50px; 
+    position: absolute;
+}
+
+.custom-label {
+    font-size: 0.85rem;
+    text-align: left;
+    display: block;
+    margin-bottom: 0.3rem;
+}
+
+.employee-list {
+    border: 1px solid #ddd;
+    padding: 10px;
+    max-height: 150px;
+    overflow-y: scroll;
+}
+
+.selectEmp {
+    max-height: 150px;
+    overflow-y: scroll;
+    border: 1px solid #ccc;
+    padding: 10px;
+}
+
+.selectEmp {
+scrollbar-width: thin; /* For Firefox */
+}
+
+.selectEmp::-webkit-scrollbar {
+width: 6px;
+background-color: #f1f1f1; /* Scrollbar background */
+}
+
+.selectEmp::-webkit-scrollbar-thumb {
+background-color: #888; /* Scrollbar thumb color */
+border-radius: 10px;
+}
+
+.selectEmp::-webkit-scrollbar-thumb:hover {
+background-color: #555; /* Scrollbar hover effect */
+}
+  
+
+#dataText,
+#dataText0,
+#dataText1,
+#dataText2,
+#dataText3,
+#dataText4,
+#dataText5,
+#dataText6,
+#dataText7 {
+    border: none;
+    background-color: transparent;
+    font-size: 16px;
+}
+.position-relative {
+    position: relative;
+}
+  
+.input-wrapper {
+position: relative;
+}
+
+.loader {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1em;
+    color: rgb(29, 162, 216);
+    background-color: #e9ecef;
+    border-radius: 4px;
+    border: 1px solid #ced4da;
+    pointer-events: none; /* Prevent interaction */
+    z-index: 10; /* Ensure it appears above the input */
+  }
+
+  input[readonly] {
+    background-color: transparent !important;
+    // cursor: not-allowed;
+  }
+ 
+ .card-header {
+    position: relative;
+    border-bottom: none !important;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;  // controls where the border starts
+    right: 20px; // controls where the border ends
+    height: 1px;
+    background-color: #dee2e6; // or your preferred border color
+}

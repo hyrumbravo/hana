@@ -1,0 +1,131 @@
+<ul class="navbar-nav">
+    <li class="nav-item">
+        <a class="nav-link" (click)="onToggleMenuSidebar()" role="button"><i class="fas fa-bars"></i></a>
+    </li>
+    <li class="nav-item d-none d-sm-inline-block">
+        <a [routerLink]="['/']" class="nav-link">Home</a>
+    </li>
+    <!-- <li class="nav-item d-none d-sm-inline-block">
+        <a [routerLink]="['/blank']" class="nav-link">Contact</a>
+    </li> -->
+</ul>
+
+<form class="form-inline ml-3" [formGroup]="searchForm" *ngIf="false">
+    <div class="input-group input-group-sm">
+        <input class="form-control form-control-navbar" type="search" placeholder="Search" aria-label="Search" />
+        <div class="input-group-append">
+            <button class="btn btn-navbar" type="submit">
+                <i class="fas fa-search"></i>
+            </button>
+        </div>
+    </div>
+</form>
+
+<ul class="navbar-nav ml-auto">
+    <!-- <app-messages></app-messages>
+    <app-language></app-language> -->
+    <li class="nav-item dropdown" *ngIf="withNotif">
+        <a class="nav-link" data-toggle="dropdown" href="#" aria-expanded="false">
+            <i class="far fa-bell"></i>
+            <span class="badge badge-warning navbar-badge" *ngIf="leavesToday.length > 0">{{leavesToday.length}}</span>
+        </a>
+        <div class="dropdown-menu dropdown-menu-lg dropdown-menu-right" style="left: inherit; right: 0px;">
+            <span class="dropdown-header">{{leaves.length}} Outstanding Leave Approvals</span>
+            <div class="dropdown-divider"></div>
+            <a (click)="goTo('new')" class="dropdown-item" *ngIf="leavesToday.length > 0">
+                <i class="fas fa-file mr-2"></i> {{leavesToday.length > 0 ? leavesToday.length : 'No'}} new application/s
+                <!-- <span class="float-right text-muted text-sm">2 days</span> -->
+            </a>
+            <div class="dropdown-divider"></div>
+            <a (click)="goTo('processing')" class="dropdown-item" *ngIf="processingLeaves.length > 0">
+                <i class="fas fa-file mr-2"></i> {{processingLeaves.length}} total processing application/s
+                <!-- <span class="float-right text-muted text-sm">2 days</span> -->
+            </a>
+            <div class="dropdown-divider"></div>
+            <a (click)="goTo('pending')" class="dropdown-item" *ngIf="pendingLeaves.length > 0">
+                <i class="fas fa-file mr-2"></i> {{pendingLeaves.length}} total pending application/s
+                <!-- <span class="float-right text-muted text-sm">2 days</span> -->
+            </a>
+            <div class="dropdown-divider"></div>
+            <a (click)="goTo('all')" class="dropdown-item dropdown-footer">See All Applications</a>
+        </div>
+    </li>
+    <!-- <pf-dropdown hide-arrow>
+        <div slot="button">
+            <a class="nav-link">
+                <i class="far fa-bell"></i>
+                <span class="badge badge-warning navbar-badge">15</span>
+            </a>
+        </div>
+        <div slot="menu">
+            <span class="dropdown-item dropdown-header">15 Notifications</span>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item">
+                <i class="fas fa-envelope mr-2"></i> 4 new messages
+                <span class="float-right text-muted text-sm">3 mins</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item">
+                <i class="fas fa-users mr-2"></i> 8 friend requests
+                <span class="float-right text-muted text-sm">12 hours</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item">
+                <i class="fas fa-file mr-2"></i> 3 new reports
+                <span class="float-right text-muted text-sm">2 days</span>
+            </a>
+            <div class="dropdown-divider"></div>
+            <a href="#" class="dropdown-item dropdown-footer">See All Notifications</a>
+        </div>
+    </pf-dropdown> -->
+    <app-user></app-user>
+    <li class="nav-item">
+    </li>
+    <li class="nav-item">
+        <button class="nav-link" (click)="onToggleControlSidebar()">
+            <i class="fas fa-th-large"></i>
+        </button>
+    </li>
+</ul>
+
+<ng-template #notif>
+    <div class="modal-header bg-primary">
+        <h1 class="modal-title" id="modal-basic-title">Outstanding Leave Applications</h1>
+        <button type="button" class="close" aria-label="Close" (click)="dismiss()">
+        <span aria-hidden="true">&times;</span>
+        </button>
+    </div>
+    <div class="modal-body">
+        <div class="table-responsive mt-2">
+            <table class="table table-striped" *ngIf="leaves.length">
+              <thead>
+                <tr>
+                  <th>Date Filed</th>
+                  <th>ID No.</th>
+                  <th>Employee Name</th>
+                  <th>Leave Type</th>
+                  <th>Total(Days)</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let data of leaves; let i = index;">
+                  <td>{{ data.doc.dateFiled | date:'yyyy-MM-dd' }}</td>
+                  <td>{{ data.doc.id_no }}</td>
+                  <td>{{ getEmployeeName(data.doc.id_no) }}</td>
+                  <td>{{ data.doc.leaveName == null? 'Others':data.doc.leaveName }}</td>
+                  <td>{{ data.doc.totalDays }}</td>
+                  <td>{{ data.doc.status | titlecase }}</td>
+                </tr>
+              </tbody>
+            </table>
+            <div *ngIf="leaves.length == 0" class="col-lg-12 text-center">
+              <div><p>No Records Available</p></div>
+            </div>
+          </div>
+    </div>
+    <div class="modal-footer">
+        <button type="button" class="btn btn-outline-dark" (click)="dismiss()">Close</button>
+        <a [routerLink]="['/LeaveApproval']" class="btn btn-primary" (click)="dismiss()">Check</a>
+    </div>
+</ng-template>

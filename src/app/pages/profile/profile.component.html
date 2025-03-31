@@ -1,0 +1,226 @@
+<section class="content-header">
+  <div class="container-fluid">
+    <div class="row mb-2">
+      <div class="col-sm-6">
+        <h1>Profile</h1>
+      </div>
+      <div class="col-sm-6">
+        <ol class="breadcrumb float-sm-right">
+          <li class="breadcrumb-item"><a href="#">Home</a></li>
+          <li class="breadcrumb-item active">User Profile</li>
+        </ol>
+      </div>
+    </div>
+  </div>
+  <!-- /.container-fluid -->
+</section>
+<ngx-loading [show]="loading"></ngx-loading>
+<div class="row">
+  <div class="col-12">
+
+    <div class="card">
+      <div class="card-header d-flex p-0">
+        <!-- <h3 class="card-title p-3">Tabs</h3> -->
+        <ul class="nav nav-pills mr-auto p-2">
+          <li class="nav-item"><a class="nav-link active" href="#tab_1" data-toggle="tab">Account Profile</a></li>
+          <li class="nav-item" *ngIf="employeeFound"><a class="nav-link" href="#tab_2" data-toggle="tab">Employee Profile</a></li>
+          <!-- <li class="nav-item" *ngIf="canAccessSmsSetting"><a class="nav-link" href="#tab_3" data-toggle="tab">SMS Settings</a></li> -->
+        </ul>
+      </div>
+      <div class="card-body">
+        <div class="tab-content">
+          <div class="tab-pane active" id="tab_1">
+            <form [formGroup]="form" #ngForm>
+              <div class="card-body">
+
+                  <div class="row">
+                      <div class="col-lg-6">
+                          <div class="form-group">
+                              <label for="firstName" class="form-label">First Name<span class="text-danger">*</span></label>
+                              <input name="firstName" id="firstName" class="form-control" formControlName="firstName">
+                              <div class="text-danger" *ngIf="!f.get('firstName').valid && f.get('firstName').touched">
+                              Please provide valid input.
+                              </div>
+                          </div>
+                      </div>
+                      <div class="col-lg-6">
+                          <div class="form-group">
+                              <label for="middleName" class="form-label">Middle Name</label>
+                              <input name="middleName" id="middleName" class="form-control" formControlName="middleName">
+                              <div class="text-danger" *ngIf="!f.get('middleName').valid && f.get('middleName').touched">
+                              Please provide valid input.
+                              </div>
+                          </div>
+                      </div>
+                      <div class="col-lg-6">
+                          <div class="form-group">
+                              <label for="lastName" class="form-label">Last Name<span class="text-danger">*</span></label>
+                              <input name="lastName" id="lastName" class="form-control" formControlName="lastName">
+                              <div class="text-danger" *ngIf="!f.get('lastName').valid && f.get('lastName').touched">
+                              Please provide valid input.
+                              </div>
+                          </div>
+                      </div>
+                      <div class="col-lg-6">  
+                          <div class="form-group">
+                              <label for="email" class="form-label">Email<span class="text-danger">*</span></label>
+                              <input name="email" id="email" class="form-control" formControlName="email" type="email">
+                              <div class="text-danger" *ngIf="!f.get('email').valid && f.get('email').touched">
+                              Please provide valid input.
+                              </div>
+                          </div>
+                      </div>
+                      <!-- <div class="col-lg-6">  
+                          <div class="form-group">
+                              <label for="password" class="form-label">Password<span class="text-danger">*</span></label>
+                              <input name="password" id="password" class="form-control" formControlName="password" type="password">
+                              <div class="text-danger" *ngIf="!f.get('password').valid && f.get('password').touched">
+                              Please provide valid input.
+                              </div>
+                          </div>
+                      </div>
+                      <div class="col-lg-6">  
+                          <div class="form-group">
+                              <label for="retypePassword" class="form-label">Retype Password<span class="text-danger">*</span></label>
+                              <input name="retypePassword" id="retypePassword" class="form-control" formControlName="retypePassword" type="password">
+                              <div class="text-danger" *ngIf="!f.get('retypePassword').valid && f.get('retypePassword').touched">
+                              Please provide valid input.
+                              </div>
+                          </div>
+                      </div> -->
+                      <div class="col-lg-6">
+                          <div class="form-group">
+                              <label for="contact" class="form-label">Contact<span class="text-danger">*</span></label>
+                              <input name="contact" id="contact" class="form-control" formControlName="contact">
+                              <div class="text-danger" *ngIf="!f.get('contact').valid && f.get('contact').touched">
+                              Please provide valid input.
+                              </div>
+                          </div>
+                      </div>
+                      <div class="col-lg-6">
+                        <p class="mb-1">
+                            Signature
+                            <i
+                              *ngIf="!withNewSignature"
+                                class="fas"
+                                [ngClass]="{
+                                    'fa-circle-check text-primary': signatureFile,
+                                    'fa-circle-xmark text-danger': !signatureFile
+                                }"
+                              mat-raised-button
+                              [matTooltip]="signatureFile ? 'Signature saved' : 'No signature saved'"
+                            >
+                            </i>
+                            <i
+                              *ngIf="withNewSignature"
+                                class="fas fa-exclamation text-warning"
+                              mat-raised-button
+                              matTooltip="Unsaved signature"
+                            >
+                            <!-- <a href="#" data-toggle="tooltip" data-placement="top" title="Hooray!">Hover</a> -->
+                            </i>
+                            <button type="button" class="btn btn-primary btn-sm float-right mb-1" (click)="openModal(previewSignature)" *ngIf="imageSrc">Preview</button>
+                        </p>
+                        <div class="btn-group btn-block">
+                          <button
+                              type="button"
+                              class="btn btn-outline-info"
+                              (click)="openModal(inputSignature)"
+                          >
+                              <i class="fa fa-signature"></i>
+                              Draw
+                          </button>
+                          <button
+                              type="button"
+                              class="btn btn-info"
+                              (click)="openFileInput()"
+                          >
+                              <i class="fa fa-upload"></i>
+                              Upload
+                          </button>
+                          <input
+                              type="file"
+                              #fileInput
+                              style="display: none"
+                              (change)="onFileSelected($event)"
+                              accept="image/*"
+                          />
+                        </div>
+                      </div>
+
+                  </div>
+              </div>
+              <div class="card-footer">
+                <button type="submit" class="btn btn-primary float-right" (click)="updateUser()">Submit</button>
+              </div>
+            </form>
+          
+          </div>
+
+          <div class="tab-pane" id="tab_2">
+            <app-emp-profile></app-emp-profile>
+          </div>
+
+          <div class="tab-pane" id="tab_3">
+            <app-sms-settings></app-sms-settings>
+          </div>
+
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+</div>
+
+<ng-template #inputSignature let-modal>
+  <div class="modal-header">
+      <h1 class="modal-title" id="modal-basic-title">Draw Signature</h1>
+      <button
+          type="button"
+          class="close"
+          aria-label="Close"
+          (click)="dismiss()"
+      >
+          <span aria-hidden="true">&times;</span>
+      </button>
+  </div>
+  <div class="modal-body">
+      <div class="row">
+          <!-- add details -->
+          <!-- <div class="col-lg-12 pb-2">
+    
+      </div> -->
+          <!-- signature pad -->
+          <div class="col-lg-12" style="width: 400px">
+              <app-signing-pad
+                  (signatureSaved)="saveSignature($event)"
+              ></app-signing-pad>
+          </div>
+      </div>
+  </div>
+</ng-template>
+
+<ng-template #previewSignature let-modal>
+  <div class="modal-header">
+      <h4 class="modal-title">Signature Preview</h4>
+      <button
+          type="button"
+          class="close"
+          (click)="dismiss()"
+          aria-label="Close"
+      >
+          <span aria-hidden="true">×</span>
+      </button>
+  </div>
+  <div class="modal-body text-center">
+      <img
+      *ngIf="imageSrc"
+      [src]="imageSrc | safe"
+      class="img-fluid img-thumbnail"
+      style="max-height:250px;"
+      />
+  </div>
+  <div class="modal-footer hide" style="display: none">&nbsp;</div>
+</ng-template>

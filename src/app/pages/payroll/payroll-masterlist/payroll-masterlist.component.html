@@ -1,0 +1,359 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">Payroll</li>
+                <li class="breadcrumb-item active" aria-current="page">Payroll Masterlist</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+  </section>
+  <ngx-loading [show]="loading"></ngx-loading>
+  <section class="content">
+    <div class="card">
+      <div class="card-header row">
+        <div class="col-lg-6 mt-2">
+          <h1 class="text-primary"><i class="bi bi-list-columns mr-2"></i>Payroll Masterlist</h1>
+        </div>
+      </div>
+
+      <div class="card-body">
+        
+        <div class="row">
+          <div class="col-lg-10">
+            <div class="row">
+              <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  {{ filterbyDay ? 'Filter By Day' : 'Filter By Range' }}
+                </button>
+                <div class="dropdown-menu">
+                  <a class="dropdown-item" (click)="setFilterMode(true)">Filter By Day</a>
+                  <a class="dropdown-item"  (click)="setFilterMode(false)">Filter By Range</a>
+                </div>
+              </div>
+              <button class="btn btn-outline-secondary ml-2" (click)="clearDateFilter()" type="button" 
+                      [disabled]="(filterbyDay && !dateFilter) || (!filterbyDay && (!fromDate || !toDate))">
+                      Clear
+              </button>
+              <!-- Per day filter -->
+              <div class="col-md-4" *ngIf="filterbyDay">
+                <div class="input-group">
+                  <input
+                    class="form-control"
+                    placeholder="yyyy-mm-dd"
+                    name="dp"
+                    [(ngModel)]="dateFilter"
+                    ngbDatepicker
+                    #d="ngbDatepicker"
+                    [maxDate]="today"
+                    (dateSelect)="filterPayroll()"
+                    readonly
+                  />
+                  <button class="btn btn-outline-secondary bi bi-calendar3" (click)="d.toggle()" type="button"></button>
+                </div>
+              </div>
+              <!-- Date Range Filter -->
+              <div class="col-md-4" *ngIf="!filterbyDay">
+                <div class="dp-hidden position-absolute">
+                  <div class="input-group">
+                    <input
+                      name="datepicker"
+                      class="form-control"
+                      ngbDatepicker
+                      #datepicker="ngbDatepicker"
+                      [autoClose]="'outside'"
+                      (dateSelect)="onDateSelection($event)"
+                      [displayMonths]="1"
+                      [dayTemplate]="t"
+                      outsideDays="hidden"
+                      [startDate]="fromDate!"
+                      tabindex="-1"
+                    />
+                    <ng-template #t let-date let-focused="focused">
+                      <span
+                        class="custom-day"
+                        [class.focused]="focused"
+                        [class.range]="isRange(date)"
+                        [class.faded]="isHovered(date) || isInside(date)"
+                        (mouseenter)="hoveredDate = date"
+                        (mouseleave)="hoveredDate = null"
+                      >
+                        {{ date.day }}
+                      </span>
+                    </ng-template>
+                  </div>
+                </div>
+                <div class="input-group">
+                  <input
+                    #dpFromDate
+                    class="form-control"
+                    placeholder="yyyy-mm-dd"
+                    name="dpFromDate"
+                    [value]="formatter.format(fromDate)"
+                    (input)="fromDate = validateInput(fromDate, dpFromDate.value)"
+                    readonly
+                  />
+                  <input
+                    #dpToDate
+                    class="form-control"
+                    placeholder="yyyy-mm-dd"
+                    name="dpToDate"
+                    [value]="formatter.format(toDate)"
+                    (input)="toDate = validateInput(toDate, dpToDate.value)"
+                    readonly
+                  />
+                  <button class="btn btn-outline-secondary bi bi-calendar3" (click)="datepicker.toggle()" type="button"></button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="col-lg-2 text-right">
+            <button type="button" (click)="openPayrollModal(payrollModal)" class="btn btn-primary mr-2">
+              <i class="fa-solid fa-floppy-disk"></i> 
+              Generate Payroll
+            </button>
+          </div>
+        </div>
+
+        <div [class.dark-mode]="darkMode" class="mt-4 card card-primary card-outline table-responsive">
+          <table mat-table [dataSource]="payroll | paginate: pageSize : pageIndex" class="mat-elevation-z8 full-width-table">
+            
+            <ng-container matColumnDef="payrollType">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell"> Payroll Type </th>
+              <td mat-cell *matCellDef="let data" class="center-text"> {{ data.payrollType }} </td>
+            </ng-container>
+            
+            <ng-container matColumnDef="payrollPeriod">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell"> Payroll Range </th>
+              <td mat-cell *matCellDef="let data" class="center-text"> {{ data.dateFrom | date: 'MMM dd, yyyy' }} - {{ data.dateTo | date: 'MMM dd, yyyy' }} </td>
+            </ng-container>
+
+            <ng-container matColumnDef="totalEmployees">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell"> Total Employees </th>
+              <td mat-cell *matCellDef="let data" class="center-text">{{ data.totalEmployees }}</td>
+            </ng-container>
+          
+            <ng-container matColumnDef="totalSSS">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell"> Total SSS </th>
+              <td mat-cell *matCellDef="let data" class="center-text">{{ data.totalSSS | currency:'₱ ':'symbol':'1.2-2' }}</td>
+            </ng-container>
+          
+            <ng-container matColumnDef="totalPhilhealth">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell"> Total PhilHealth </th>
+              <td mat-cell *matCellDef="let data" class="center-text">{{ data.totalPhilhealth | currency:'₱ ':'symbol':'1.2-2' }}</td>
+            </ng-container>
+          
+            <ng-container matColumnDef="totalPagibig">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell"> Total Pagibig </th>
+              <td mat-cell *matCellDef="let data" class="center-text">{{ data.totalPagibig | currency:'₱ ':'symbol':'1.2-2' }}</td>
+            </ng-container>
+          
+            <ng-container matColumnDef="totalGSIS">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell"> Total GSIS </th>
+              <td mat-cell *matCellDef="let data" class="center-text">{{ data.totalGSIS | currency:'₱ ':'symbol':'1.2-2' }}</td>
+            </ng-container>
+          
+            <ng-container matColumnDef="totalNetpay">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell"> Total Net Pay </th>
+              <td mat-cell *matCellDef="let data" class="center-text">{{ data.totalNetpay | currency:'₱ ':'symbol':'1.2-2' }}</td>
+            </ng-container>
+
+            <ng-container matColumnDef="action">
+              <th mat-header-cell *matHeaderCellDef class="center-text header-cell header-cell"> Action </th>
+              <td mat-cell *matCellDef="let data" class="center-text row-cell">
+                <button mat-icon-button [matMenuTriggerFor]="actionMenu">
+                  <mat-icon>more_vert</mat-icon>
+                </button>
+                <mat-menu #actionMenu="matMenu">
+                  <button mat-menu-item (click)="handleBulkPrint(data)">
+                    <mat-icon>print</mat-icon> Print
+                  </button>
+                  
+                  <button mat-menu-item (click)="delete(data)" color="warn">
+                    <mat-icon>delete</mat-icon> Delete
+                  </button>
+                </mat-menu>
+              </td>
+            </ng-container>
+            
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+
+          <div *ngIf="payroll.length === 0" class="text-center alert alert-secondary mt-3">
+            There's No Available Data.
+          </div>
+          <mat-paginator
+            [pageSizeOptions]="[10, 20, 30]"
+            [length]="payroll.length"
+            [pageSize]="pageSize"
+            (page)="onPageChange($event)"
+            showFirstLastButtons>
+          </mat-paginator>
+        </div>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- Payroll Modal -->
+  <ng-template #payrollModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">Payroll Details</h4>
+      <button type="button" class="btn pull-right" aria-label="Close" (click)="modal.dismiss()">
+        <i class="fa fa-times"></i>
+      </button>
+    </div>
+    <div class="modal-body">
+      <!-- Payroll Type Field -->
+      <div class="form-group">
+        <label for="payrollType">Payroll Type</label>
+        <select
+          id="payrollType"
+          class="form-control"
+          [(ngModel)]="payrollType"
+          name="payrollType">
+          <option value="" disabled hidden>Select Payroll Type</option>
+          <option value="Monthly">Monthly</option>
+          <option value="Semi-Monthly">Semi-Monthly</option>
+          <option value="Weekly">Weekly</option>
+        </select>
+        <div *ngIf="showValidationErrors && !payrollType" class="text-danger">
+          Please provide valid input.
+        </div>
+      </div>
+      <div class="row mt-3">
+        <div class="col-lg-12">
+          <label>Payroll Range</label>
+          <div class="dp-hidden position-absolute">
+            <div class="input-group">
+              <input
+                name="datepicker"
+                class="form-control"
+                ngbDatepicker
+                #datepicker="ngbDatepicker"
+                [autoClose]="'outside'"
+                (dateSelect)="onDateSelectionM($event)"
+                [displayMonths]="1"
+                [dayTemplate]="t"
+                outsideDays="hidden"
+                [startDate]="dateFrom!"
+                tabindex="-1"
+              />
+              <ng-template #t let-date let-focused="focused">
+                <span
+                  class="custom-day"
+                  [class.focused]="focused"
+                  [class.range]="isRangeM(date)"
+                  [class.faded]="isHoveredM(date) || isInsideM(date)"
+                  (mouseenter)="hoveredDate = date"
+                  (mouseleave)="hoveredDate = null"
+                >
+                  {{ date.day }}
+                </span>
+              </ng-template>
+            </div>
+          </div>
+          <div class="input-group">
+            <input
+              #dpDateFrom
+              class="form-control"
+              placeholder="yyyy-mm-dd"
+              name="dpDateFrom"
+              [value]="formatter.format(dateFrom)"
+              (input)="dateFrom = validateInputM(dateFrom, dpDateFrom.value)"
+              readonly
+            />
+            <input
+              #dpDateTo
+              class="form-control"
+              placeholder="yyyy-mm-dd"
+              name="dpDateTo"
+              [value]="formatter.format(dateTo)"
+              (input)="dateTo = validateInputM(dateTo, dpDateTo.value)"
+              readonly
+            />
+            <button class="btn btn-outline-secondary bi bi-calendar3" (click)="datepicker.toggle()" type="button"></button>
+            <button class="btn btn-outline-secondary ml-2" (click)="clearDateFilterM()" type="button"> Clear </button>
+          </div>
+          <div *ngIf="showValidationErrors && !dateFrom" class="text-danger">
+            Please provide valid input.
+          </div>
+        </div>
+      </div>      
+      <!-- Employee Selection Field -->
+      <div class="form-group mt-3">
+        <label>Select Employees</label>
+        <div class="selectEmp">
+          <div class="sticky-header form-check form-check-inline displayFlex">
+            <div>
+              <input type="checkbox" class="form-check-input" [(ngModel)]="selectAll" (change)="toggleSelectAll()">
+              <label class="form-check-label"> Select All</label>
+            </div>
+            <div>
+              <span *ngIf="selectedCount > 0">{{ selectedCount }} - Employee(s) </span>
+            </div>
+          </div>
+      
+          <div class="scrollable-employee-list">
+            <div *ngIf="loadingEmployees" class="loader">
+              <div class="spinner-border text-primary" role="status">
+                <span class="sr-only">Loading...</span>
+              </div>
+            </div>
+            <div *ngIf="!loadingEmployees">
+              <div *ngFor="let employee of employees;  let i = index" class="form-check">
+                <input 
+                type="checkbox" 
+                class="form-check-input" 
+                [(ngModel)]="employee.selected" 
+                (change)="onEmployeeSelect($event, employee)">
+                <label class="form-check-label">
+                  {{ i + 1 }}. &nbsp;
+                  {{ employee.id_no }} - 
+                  {{ employee.firstName }} 
+                  {{ employee.middleName }} 
+                  {{ employee.lastName }}
+                </label>
+              </div>
+            </div>
+          </div>
+        </div>
+        <!-- Validation message for employee selection -->
+        <div *ngIf="showValidationErrors && !isAnyEmployeeSelected()" class="text-danger">
+          Please provide valid input.
+        </div>
+      </div>        
+    </div>
+
+    <div class="modal-footer justify-content-center">
+      <button type="button" class="btn btn-secondary" (click)="modal.dismiss()">Cancel</button>
+      <button type="button" class="btn btn-primary" [disabled]="isGenerating" (click)="savePayrollData()">Confirm</button>
+    </div>
+  </ng-template>
+
+  <!-- Progress Modal -->
+  <ng-template #progressModal let-modal>
+    <div class="modal-header">
+      <h4 class="modal-title">Generating Payroll</h4>
+    </div>
+    <div class="modal-body">
+      <p>Generating payroll, please wait...</p>
+      <div class="progress my-3">
+        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+            role="progressbar" 
+            [style.width]="progress + '%'" 
+            [attr.aria-valuenow]="progress" 
+            aria-valuemin="0" 
+            aria-valuemax="100">
+          {{ progress }}%
+        </div>
+      </div>
+    </div>
+  </ng-template>

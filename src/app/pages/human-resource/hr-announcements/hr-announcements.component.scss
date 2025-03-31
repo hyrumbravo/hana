@@ -1,0 +1,31 @@
+/* Time In Button: Hover turns green */
+#time-in-btn:hover {
+  background-color: green;
+  color: white;
+}
+
+/* Time Out Button: Hover turns red */
+#time-out-btn:hover {
+  background-color: red;
+  color: white;
+}
+
+/* Optional: Add some transition for smoother hover effect */
+.time-in-btn, .time-out-btn {
+  transition: background-color 0.3s ease;
+}
+
+.card-header {
+    position: relative;
+    border-bottom: none !important;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;  // controls where the border starts
+    right: 20px; // controls where the border ends
+    height: 1px;
+    background-color: #dee2e6; // or your preferred border color
+}

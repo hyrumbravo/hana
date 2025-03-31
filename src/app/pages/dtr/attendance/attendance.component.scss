@@ -1,0 +1,115 @@
+.card-header {
+    position: relative;
+    border-bottom: none !important;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;  // controls where the border starts
+    right: 20px; // controls where the border ends
+    height: 1px;
+    background-color: #dee2e6; // or your preferred border color
+}
+
+// table 
+.full-width-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.mat-header-cell, .header-cell {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 500; /* Medium weight for headers */
+  font-size: 14px;
+  color: #333333;
+  border-bottom: 2px solid #A9A9A9;
+  background-color: #f8f9fa;  
+}
+
+.mat-cell, .row-cell {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 400; /* Normal weight for rows */
+  font-size: 14px;
+  color: #555555;
+}
+
+// flexing layout
+.time-card {
+  flex: 0 0 300px;
+}
+
+.table-card {
+  flex-grow: 1;
+  min-width: 0;
+}
+
+.table-responsive {
+  overflow-x: auto;
+}
+
+.d-flex {
+  display: flex;
+  gap: 1rem;
+}
+
+// alert
+.alert-secondary {
+  background-color: #f4f6f9 !important;
+  color: #6c757d;
+  border-color: #d6d8db;
+}
+
+.dark-mode {
+    .mat-table {
+      background-color: #343a40;
+      color: #f8f9fa;
+  
+      .mat-header-row {
+        background-color: #343a40;
+        color: #f8f9fa;
+      }
+  
+      .mat-row {
+        &:hover {
+          background-color: #3d444a;
+        }
+        color: #f8f9fa;
+      }
+  
+      .mat-cell, .mat-header-cell {
+        border-bottom: 1px solid #f8f9fa;
+        color: #f8f9fa;
+      }
+  
+      .mat-header-cell {
+        background-color: #343a40;
+        font-weight: bold;
+      }
+    }
+  
+    .mat-paginator {
+      background-color: #343a40;
+      color: #f8f9fa;
+  
+      .mat-paginator-page-size-label,
+      .mat-select-value,
+      .mat-option-text,
+      .mat-select-arrow {
+        color: #f8f9fa !important;
+      }
+  
+      .mat-form-field-label {
+        color: #f8f9fa;
+      }
+  
+      .mat-form-field-outline {
+        border-color: #f8f9fa;
+      }
+  
+      .mat-form-field-underline {
+        background-color: #f8f9fa;
+      }
+    }
+  }

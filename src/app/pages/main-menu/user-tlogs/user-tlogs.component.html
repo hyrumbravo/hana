@@ -1,0 +1,123 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">Settings</li>
+                <li class="breadcrumb-item active" aria-current="page">User T-Logs</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+  </section>
+  <ngx-loading [show]="loading"></ngx-loading>
+  <section class="content">
+    <div class="card">
+      <div class="card-header row">
+        <div class="col-lg-6 mt-2">
+          <h1 class="text-primary"><i class="bi bi-megaphone-fill mr-2"></i>User T-Logs</h1>
+        </div>
+        <div class="col-lg-6 text-right">
+          <button (click)="refresh()" class="btn btn-default mr-2">
+            <i class="bi bi-arrow-clockwise"></i>
+            Refresh
+          </button>
+        </div>
+      </div>
+      <!--datatables-->
+      <div class="card-body">
+        <div class="table-responsive mt-2">
+          <div>
+            <h4 style="font-weight: bold;">Filters:</h4>
+          </div>
+          <div class="filter-section d-flex align-items-center mb-3">
+            <!-- Dropdown to select filter type -->
+            <select id="filterType" class="form-control form-control-sm me-2 mr-3" style="width: auto; font-size: 1.3em; cursor: pointer;" [(ngModel)]="filterType" (change)="onFilterTypeChange()">
+              <option value="byDate" style="cursor: pointer;">Filter by Date</option>
+              <option value="byDateRange" style="cursor: pointer;">Filter by Date Range</option>
+            </select>
+          
+            <!-- Filter by Date -->
+            <div *ngIf="filterType === 'byDate'" class="d-flex align-items-center">
+              <label style="padding-top: 5px; padding-right: 5px;">Date: </label>
+              <input
+                type="date"
+                max="{{dateToday | date:'yyyy-MM-dd'}}"
+                id="filterDate"
+                class="form-control form-control-sm me-2"
+                [(ngModel)]="filterDate"
+                (change)="applyFilter()"
+                placeholder="yyyy-mm-dd"
+                style="cursor: pointer; width: auto; font-size: 1.3em; padding: 0.6em;"
+              />
+            </div>
+          
+            <!-- Filter by Date Range -->
+            <div *ngIf="filterType === 'byDateRange'" class="d-flex align-items-center">
+              <label style="padding-top: 5px; padding-right: 5px;">Start Date: </label>
+              <input
+                type="date"
+                id="startDate"
+                max="{{dateToday | date:'yyyy-MM-dd'}}"
+                class="form-control form-control-sm me-2"
+                [(ngModel)]="startDate"
+                (change)="applyFilter()"
+                placeholder="yyyy-mm-dd"
+                style="width: auto; font-size: 1.3em; padding: 0.6em;"
+              />
+              <label style="padding-top: 5px; padding-left: 5px; padding-right: 5px;">End Date: </label>
+              <input
+                type="date"
+                id="endDate"
+                max="{{dateToday | date:'yyyy-MM-dd'}}"
+                class="form-control form-control-sm"
+                [(ngModel)]="endDate"
+                (change)="applyFilter()"
+                placeholder="yyyy-mm-dd"
+                style="width: auto; font-size: 1.3em; padding: 0.6em;"
+              />
+            </div>
+          </div>
+
+          <table id="dataTable" class="table-striped table-bordered" datatable [dtOptions]="dtOptions" [dtTrigger]="dtTrigger" *ngIf="logs?.length" [ngClass]="{ 'hidden': !hasInitialized }">
+            <thead>
+                <tr *ngIf="logs.length > 1">
+                    <th style="width: 30%">Timestamp</th>
+                    <th style="width: 30%">User's Name</th>
+                    <th style="width: 15%">Module</th>
+                    <th style="width: 10%">Action</th>
+                    <th style="width: 15%">Detail</th>
+                </tr>
+                <tr *ngIf="logs.length === 1">
+                  <th></th>
+                </tr>
+            </thead>
+            <tbody>
+              <!-- Display 'No Records Available' if logs length is 1 -->
+              <tr *ngIf="logs.length === 1">
+                <td colspan="5" class="text-center" style="font-weight: bold; font-size: 1.3em;">No Records Available</td>
+              </tr>
+              <!-- Display normal rows if logs length is greater than 1 -->
+              <ng-container *ngIf="logs.length > 1">
+                <tr *ngFor="let data of logs; let i = index;">
+                  <td>{{ data.value.timestamp | date:'medium'}}</td>
+                  <td>{{ getUserName(data.value.userId) }}</td>
+                  <td>{{ data.value.module }}</td>
+                  <td>{{ data.value.action }}</td>
+                  <td>{{ data.value.details }}</td>
+                </tr>
+              </ng-container>
+              
+            </tbody>
+          </table>
+
+        </div>
+        <!--<div *ngIf="logs?.length == 0" class="col-lg-12 pt-2 text-center">-->
+        <!--    <div *ngIf="!loading"><p>No Records Available</p></div>-->
+        <!--  </div>-->
+      </div>
+    </div>
+  </section>

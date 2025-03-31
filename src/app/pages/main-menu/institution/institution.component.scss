@@ -1,0 +1,35 @@
+.equal-height {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.equal-height [class^="col-"] {
+  display: flex;
+  flex-direction: column;
+}
+
+.equal-height .card {
+  flex-grow: 1;
+}
+
+.profile-user-img {
+  border: 3px solid #adb5bd;
+  margin: 0 auto;
+  padding: 3px;
+  width: 150px;
+}
+
+.card-header {
+    position: relative;
+    border-bottom: none !important;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;  // controls where the border starts
+    right: 20px; // controls where the border ends
+    height: 1px;
+    background-color: #dee2e6; // or your preferred border color
+}

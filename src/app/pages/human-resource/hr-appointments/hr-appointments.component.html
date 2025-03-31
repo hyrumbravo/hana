@@ -1,0 +1,337 @@
+<section class="content-header">
+  <div class="container-fluid">
+      <div class="row mb-2">
+        <div class="col-lg-12">
+          <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+              <li class="breadcrumb-item"><a href="#">Home</a></li>
+              <li class="breadcrumb-item">Human Resources</li>
+              <li class="breadcrumb-item active" aria-current="page">Appointments</li>
+            </ol>
+          </nav>
+        </div>
+      </div>
+  </div>
+</section>
+
+<section class="content">
+  <ngx-loading [show]="loading"></ngx-loading>
+  <div class="card">
+    <div class="card-header row">
+      <div class="col-lg-6 mt-2">
+        <h1 class="text-primary"><i class="bi bi-list-columns mr-2"></i>Appointments</h1>
+      </div>
+      <div class="col-lg-6 text-right">
+        <button type="button" (click)="open(appointment)" class="btn btn-primary mr-2">
+          <i class="fa-solid fa-plus"></i>
+          Create Appointment
+        </button>
+        <!-- <button class="btn btn-success mr-2" type="submit">
+          <i class="fa-solid fa-floppy-disk"></i>
+          Save
+        </button>
+        <button type="button" (click)="getEmployees()" class="btn btn-secondary">
+          <i class="fa-solid fa-arrows-rotate"></i>
+          Refresh
+        </button> -->
+      </div>
+    </div>
+    <div class="card-body">
+      <div class="table-responsive mt-2" *ngIf="appointments.length">
+        <table class="table-striped" datatable [dtOptions]="dtOptions">
+          <thead>
+            <tr>
+              <!-- <th>#</th> -->
+              <th>ID #</th>
+              <th>Employee Name</th>
+              <th>Date of Original Appointment</th>
+              <th>Position Title</th>
+              <th>Nature Of Appointment</th>
+              <th>Date Posted</th>
+              <th class="noExport"></th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let data of appointments; let i = index;">
+              <!-- <td>{{ i + 1 }}</td> -->
+              <td>{{ data.doc.id_no }}</td>
+              <td>
+                  {{ data.doc.employeeName }}
+              </td>
+              <td>{{ data.doc.dateOfOriginalAppointment }}</td>
+              <td>{{ data.doc.positionTitle }}</td>
+              <td>{{ data.doc.natureOfAppointment }}</td>
+              <td>{{ data.doc.datePosted }}</td>
+              <td>
+                <div class="dropdown">
+                  <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                    <i class="fa fa-ellipsis-v"></i>
+                  </button>
+                  <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                    <a class="dropdown-item" (click)="editAppointment(data.doc, appointment)">Edit</a>
+                    <a class="dropdown-item text-danger" (click)="deleteAppointment(data.doc)">Delete</a>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+<ng-template #appointment>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Appointment</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); form.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="form" #ngForm (ngSubmit)="submitAppointment()">
+      <div class="row">
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="id_no" class="form-label">Select Employee<span class="text-danger">*</span></label>
+            <select name="id_no" id="id_no" class="form-control" formControlName="id_no">
+              <option [value]="null">Select Employee</option>
+              <option *ngFor="let employee of employees" [value]="employee.doc.id_no">{{ employee.doc.firstName }} {{ employee.doc.middleName }} {{ employee.doc.lastName }} {{ employee.doc.ext }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('id_no').valid && f.get('id_no').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="dateOfOriginalAppointment" class="form-label">Original Appointment<span class="text-danger">*</span></label>
+            <input type="date" class="form-control" formControlName="dateOfOriginalAppointment" placeholder="Date of Original Appointment">
+            <div class="text-danger" *ngIf="!f.get('dateOfOriginalAppointment').valid && f.get('dateOfOriginalAppointment').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="dateOfLastPromotion" class="form-label">Date of Last Promotion</label>
+            <input type="date" class="form-control" formControlName="dateOfLastPromotion" placeholder="Date of Last Promotion">
+            <div class="text-danger" *ngIf="!f.get('dateOfLastPromotion').valid && f.get('dateOfLastPromotion').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="datePosted" class="form-label">Date Posted</label>
+            <input type="date" class="form-control" formControlName="datePosted" placeholder="Date Posted">
+            <div class="text-danger" *ngIf="!f.get('datePosted').valid && f.get('datePosted').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="natureOfAppointment" class="form-label">Nature of Appointment<span class="text-danger">*</span></label>
+            <select name="natureOfAppointment" id="natureOfAppointment" class="form-control" formControlName="natureOfAppointment">
+              <option [value]="null">Select Nature</option>
+              <option [value]="'Temporary'">Temporary</option>
+              <option [value]="'Permanenent'">Permanent</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('natureOfAppointment').valid && f.get('natureOfAppointment').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="itemNumber" class="form-label">Item Number</label>
+            <select name="itemNumber" id="itemNumber" class="form-control" formControlName="itemNumber" (change)="setPositionTitle()">
+              <option [value]="null">Select Item</option>
+              <option *ngFor="let position of positions" [value]="position.doc.position_name">{{ position.doc.position_num }} - {{ position.doc.position_name }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('itemNumber').valid && f.get('itemNumber').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="plantillaPage" class="form-label">Plantilla Page<span class="text-danger">*</span></label>
+            <input type="number" class="form-control" formControlName="plantillaPage" placeholder="Plantilla Page">
+            <div class="text-danger" *ngIf="!f.get('plantillaPage').valid && f.get('plantillaPage').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-3">
+          <div class="form-group">
+            <label for="positionTitle" class="form-label">Position Title</label>
+            <select name="positionTitle" id="positionTitle" class="form-control" formControlName="positionTitle" (change)="setItemNumber()">
+              <option [value]="null">Select Position</option>
+              <option *ngFor="let position of positions" [value]="position.doc.position_name">{{ position.doc.position_name }} - {{ position.doc.position_num }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('positionTitle').valid && f.get('positionTitle').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="salaryGrade" class="form-label">Salary Grade</label>
+            <select name="salaryGrade" id="salaryGrade" class="form-control" formControlName="salaryGrade">
+              <option [value]="null">Select Salary Grade</option>
+              <option *ngFor="let sgs of salaryGrades" [value]="sgs.doc.grade">{{ sgs.doc.grade }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('salaryGrade').valid && f.get('salaryGrade').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="employeeStatus" class="form-label">Employee Status<span class="text-danger">*</span></label>
+            <select class="form-control" formControlName="employeeStatus">
+              <option [value]="null">Select Status</option>
+              <option [value]="'Casual'">Casual</option>
+              <option [value]="'Consultant'">Consultant</option>
+              <option [value]="'Fixed Term / Contractual'">Fixed Term / Contractual</option>
+              <option [value]="'Probationary'">Probationary</option>
+              <option [value]="'Project-based'">Project-based</option>
+              <option [value]="'Regular / Permanent'">Regular / Permanent</option>
+              <option [value]="'Seasonal'">Seasonal</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('employeeStatus').valid && f.get('employeeStatus').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="agency" class="form-label">Agency</label>
+            <textarea name="agency" id="agency" cols="30" rows="3" class="form-control" formControlName="agency" placeholder="Agency"></textarea>
+            <div class="text-danger" *ngIf="!f.get('agency').valid && f.get('agency').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="branch" class="form-label">Branch<span class="text-danger">*</span></label>
+            <select class="form-control" formControlName="branch">
+              <option [value]="null">Select Branch</option>
+              <option *ngFor="let brc of branches" [value]="brc.doc.branchName">{{ brc.doc.branchName }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('branch').valid && f.get('branch').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="department" class="form-label">Department<span class="text-danger">*</span></label>
+            <select class="form-control" formControlName="department">
+              <option [value]="null">Select Department</option>
+              <option [value]="'Human Resource Management & Development'">Human Resource Management & Development</option>
+              <option [value]="'Administration Department'">Administration Department</option>
+              <option [value]="'Quality Management System Department'">Quality Management System Department</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('department').valid && f.get('department').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="division" class="form-label">Division</label>
+            <select class="form-control" formControlName="division">
+              <option [value]="null">Select Division</option>
+              <option *ngFor="let divs of divisions" [value]="divs.doc.divisionName">{{ divs.doc.divisionName }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('division').valid && f.get('division').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="monthlyRate" class="form-label">Monthly Rate<span class="text-danger">*</span></label>
+            <input type="number" name="monthlyRate" id="monthlyRate" class="form-control" formControlName="monthlyRate" placeholder="Monthly Rate">
+            <div class="text-danger" *ngIf="!f.get('monthlyRate').valid && f.get('monthlyRate').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="annualSalary" class="form-label">Annual Salary<span class="text-danger">*</span></label>
+            <input type="number" name="annualSalary" id="annualSalary" class="form-control" formControlName="annualSalary" placeholder="Annual Salary">
+            <div class="text-danger" *ngIf="!f.get('annualSalary').valid && f.get('annualSalary').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="amountInWords" class="form-label">Amount in Words</label>
+            <input type="text" name="amountInWords" id="amountInWords" class="form-control" formControlName="amountInWords" placeholder="Amount in Words">
+            <div class="text-danger" *ngIf="!f.get('amountInWords').valid && f.get('amountInWords').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="replacementOf" class="form-label">Replacement Of</label>
+            <select name="replacementOf" id="replacementOf" class="form-control" formControlName="replacementOf">
+              <option [value]="null">Select Employee</option>
+              <option *ngFor="let employee of employees" [value]="employee.doc.id_no">{{ employee.doc.firstName }} {{ employee.doc.middleName }} {{ employee.doc.lastName }} {{ employee.doc.ext }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('replacementOf').valid && f.get('replacementOf').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="replacementStatus" class="form-label">Replacement Status<span class="text-danger">*</span></label>
+            <select class="form-control" formControlName="replacementStatus">
+              <option [value]="null">Select Status</option>
+              <option [value]="'Retired'">Retired</option>
+              <option [value]="'Transferred'">Transferred</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('replacementStatus').valid && f.get('replacementStatus').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="dateEffectivity" class="form-label">Date Effectivity</label>
+            <input type="date" class="form-control" formControlName="dateEffectivity" placeholder="Date Effectivity">
+            <div class="text-danger" *ngIf="!f.get('dateEffectivity').valid && f.get('dateEffectivity').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); form.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitAppointment()">Save</button>
+	</div>
+</ng-template>

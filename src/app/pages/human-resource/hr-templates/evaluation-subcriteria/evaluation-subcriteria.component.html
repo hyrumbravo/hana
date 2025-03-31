@@ -1,0 +1,134 @@
+<div class="card">
+  <div class="card-header row">
+    <div class="col-lg-6 mt-2">
+      <h1 class="text-primary"><i class="bi bi-diagram-2 mr-2"></i>Evaluation Sub-Criteria</h1>
+    </div>
+    <div class="col-lg-6 text-right">
+      <button type="button" class="btn btn-primary mr-2" (click)="open(evaluationSubCriteria)">
+        <i class="bi bi-file-earmark-plus"></i>
+        Create
+      </button>
+      <button (click)="getEvaluationSubCriterias()" class="btn btn-default mr-2">
+        <i class="bi bi-arrow-clockwise"></i>
+        Refresh
+      </button>
+    </div>
+  </div>
+  <div class="card-body">
+    <ngx-loading [show]="loading"></ngx-loading>
+    <div class="table-responsive mt-2" *ngIf="evaluationSubCriterias.length">
+      <table class="table-striped" datatable [dtOptions]="dtOptions">
+        <thead>
+          <tr>
+            <th>Criteria</th>
+            <th>Sub-Criteria</th>
+            <th>Points</th>
+            <th>Description</th>
+            <th>Inactive</th>
+            <th class="noExport"></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let data of evaluationSubCriterias; let i = index;">
+            <td>{{ data.doc.criteriaName }}</td>
+            <td>{{ data.doc.subCriteria }}</td>
+            <td>{{ data.doc.points }}</td>
+            <td>{{ data.doc.description }}</td>
+            <td>{{ data.doc.inactive? 'Yes': 'No' }}</td>
+            <td>
+              <div class="dropdown">
+                <button class="btn btn-light btn-sm" type="button" id="dropdownMenuButton" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                  <i class="fa fa-ellipsis-v"></i>
+                </button>
+                <div class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                  <a class="dropdown-item" (click)="editEvaluationSubCriteria(data.doc, evaluationSubCriteria)">Edit</a>
+                  <a class="dropdown-item text-danger" (click)="deleteEvaluationSubCriteria(data.doc)">Delete</a>
+                </div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<ng-template #evaluationSubCriteria>
+	<div class="modal-header">
+		<h1 class="modal-title" id="modal-basic-title">Evaluation Sub-Criteria</h1>
+		<button type="button" class="close" aria-label="Close" (click)="dismiss(); f.reset()">
+      <span aria-hidden="true">&times;</span>
+    </button>
+	</div>
+	<div class="modal-body">
+		<form [formGroup]="form" #ngForm (ngSubmit)="submitEvaluationSubCriteria()">
+      <div class="row">
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="subCriteria" class="form-label">Sub-Criteria<span class="text-danger">*</span></label>
+            <input type="text" class="form-control" formControlName="subCriteria" placeholder="Sub-Criteria">
+            <div class="text-danger" *ngIf="!f.get('subCriteria').valid && f.get('subCriteria').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div class="form-group">
+            <label for="points" class="form-label">Points<span class="text-danger">*</span></label>
+            <input type="number" min="0" max="100" class="form-control" formControlName="points" placeholder="Points">
+            <div class="text-danger" *ngIf="!f.get('points').valid && f.get('points').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-4">
+          <div style="margin-top: 35px !important;" class="form-group form-check">
+            <input type="checkbox" name="inactive" id="inactive" class="form-check-input" formControlName="inactive">
+            <label for="inactive" class="form-check-label">Inactive</label>
+            <div class="text-danger" *ngIf="!f.get('inactive').valid && f.get('inactive').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="criteria" class="form-label">Criteria<span class="text-danger">*</span></label>
+            <select name="criteria" id="criteria" class="form-control" formControlName="criteria">
+              <option [value]="null">Select Criteria</option>
+              <option *ngFor="let data of evaluationCriterias" [value]="data.doc._id">{{ data.doc.criteria }}</option>
+            </select>
+            <div class="text-danger" *ngIf="!f.get('criteria').valid && f.get('criteria').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="form-group">
+            <label for="criteriaPoints" class="form-label">Criteria Points<span class="text-danger">*</span></label>
+            <input type="number" min="0" max="100" class="form-control" formControlName="criteriaPoints" placeholder="Criteria Points">
+            <div class="text-danger" *ngIf="!f.get('criteriaPoints').valid && f.get('criteriaPoints').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-lg-12">
+          <div class="form-group">
+            <label for="description" class="form-label">Description<span class="text-danger">*</span></label>
+            <textarea name="description" id="description" cols="30" rows="3" class="form-control" formControlName="description" placeholder="Description"></textarea>
+            <div class="text-danger" *ngIf="!f.get('description').valid && f.get('description').touched">
+              Please provide valid input.
+            </div>
+          </div>
+        </div>
+      </div>
+		</form>
+	</div>
+	<div class="modal-footer">
+		<button type="button" class="btn btn-outline-dark" (click)="dismiss(); f.reset()">Cancel</button>
+		<button type="submit" class="btn btn-success" (click)="submitEvaluationSubCriteria()">Save</button>
+	</div>
+</ng-template>

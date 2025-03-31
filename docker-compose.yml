@@ -1,0 +1,80 @@
+# version: '3.8'
+services:
+  # couchdb:
+  #   image: couchdb:3
+  #   container_name: couchdb
+  #   environment:
+  #     - COUCHDB_USER=admin
+  #     - COUCHDB_PASSWORD=h@n@
+  #   ports:
+  #     - "5984:5984" # CouchDB default port
+  # #   networks:
+  # #     - app-network
+  #   volumes:
+  #     - couchdb_data:/opt/couchdb/data
+  #   networks:
+  #     - app-network
+
+  # mariadb:
+  #   image: docker.io/jmg2021/hana-mariadb:test
+  #   volumes:
+  #     - 'mariadb_data:/jmg2021/hana-mariadb:test'
+  #   environment:
+  #     # ALLOW_EMPTY_PASSWORD is recommended only for development.
+  #     - ALLOW_EMPTY_PASSWORD=yes
+  #     - MARIADB_USER=bn_jasperreports
+  #     - MARIADB_DATABASE=bitnami_jasperreports
+  #   networks:
+  #     - app-network
+    
+  # jasperreports:
+  #   image: docker.io/jmg2021/hana-jrs:test
+  #   ports:
+  #     - '8081:8080'
+  #   volumes:
+  #     - 'jasperreports_data:/hana-jrs:test'
+  #   depends_on:
+  #     - mariadb
+  #   environment:
+  #     # ALLOW_EMPTY_PASSWORD is recommended only for development.
+  #     - ALLOW_EMPTY_PASSWORD=yes
+  #     - JASPERREPORTS_DATABASE_HOST=mariadb
+  #     - JASPERREPORTS_DATABASE_PORT_NUMBER=3306
+  #     - JASPERREPORTS_DATABASE_USER=bn_jasperreports
+  #     - JASPERREPORTS_DATABASE_NAME=bitnami_jasperreports
+  #   networks:
+  #     - app-network
+  
+  angular-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: angular-app
+    # depends_on:
+    #   - couchdb
+    #   - mariadb
+    #   - jasperreports
+    ports:
+      - '8080:80'  # Expose Angular app on port 8080
+    # environment:
+    #   - WAIT_HOSTS=couchdb:5984,mariadb:3306,jasperreports:8080
+    # command: >
+    #   sh -c '
+    #     npm run start -- --proxy-config proxy.conf.json --host 0.0.0.0 --port 8080 --disable-host-check'
+    #     nginx -g "daemon off;"'
+    volumes:
+      - .:/app  # Mount the project directory so that proxy.conf.json is available    
+    # networks:
+    #   - app-network
+
+# volumes:
+#   mariadb_data:
+#     driver: local
+#   jasperreports_data:
+#     driver: local
+#   couchdb_data:
+#     driver: local
+  
+# networks:
+#   app-network:
+#     driver: bridge

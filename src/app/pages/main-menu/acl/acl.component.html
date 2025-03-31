@@ -1,0 +1,184 @@
+<section class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+          <div class="col-lg-12">
+            <nav aria-label="breadcrumb">
+              <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                <li class="breadcrumb-item">Settings</li>
+                <li class="breadcrumb-item active" aria-current="page">ACL</li>
+              </ol>
+            </nav>
+          </div>
+        </div>
+    </div>
+  </section>
+
+    <section class="content">
+    <div class="card">
+        <div class="card-header row">
+            <div class="col-lg-6 mt-2">
+            <h1 class="text-primary"><i class="fas fa-file mr-2"></i>ACL</h1>
+            </div>
+        </div>
+        <!-- <form [formGroup]="certForm" #ngForm (ngSubmit)="printCert()"> -->
+        <div class="row">
+          <!-- Left Panel -->
+          <div class="col-4">
+            <div class="card-body">
+              <div class="form-group">
+                  <h3><b>Select User Group</b></h3>
+                  <select class="custom-select rounded-0"  [(ngModel)]="selectedGroup" (ngModelChange)="selectGroup($event)">
+                      <option [value]="null">-- Select Type --</option>
+                      <option *ngFor="let group of group_settings" [value]="group.id">{{ group.doc.group_name }}</option>
+                  </select>
+              </div>
+              <div class="text-right" *ngIf="selectedGroup" >
+                <button *ngIf="selectedGroup !== 'null'"
+                  (click)="updatePermissions(groupForm.value)" type="button" class="btn btn-default">Update Permissions</button>
+                <!-- <button type="submit" class="btn btn-primary" [disabled]="certForm.invalid">Print</button> -->
+            </div>
+            </div>
+          </div>
+          
+          <!-- Right Panel -->
+          <div class="col-8">
+            <div class="card-body">              
+              <div class="form-group pl-3 pr-3 ">
+                  <h3><b>Group Permissions</b></h3>
+                  <div *ngIf="!selectedGroup || selectedGroup === 'null'" style="text-align: center;">
+                    <p>No User Group Selected</p>
+                  </div>
+
+                  <div *ngIf="selectedGroup !== 'null'">
+                    <div class="text-right pb-2">
+                      <button (click)="selectAllCheckBoxes()" type="button" class="btn btn-secondary btn-sm">Select All</button>&nbsp;
+                      <button (click)="unselectAllCheckBoxes()" type="button" class="btn btn-primary btn-sm">Unselect All</button>
+                    </div>
+                    <form [formGroup]="groupForm">
+                      <div class="row">
+                          <!-- dashboard -->
+                          <div class="col-4 p-3" style="border: 1px solid grey;">
+                              <span><input type="checkbox" name="dashboard" formControlName="dashboard" value="dashboard"><b> Dashboard</b></span><hr>
+                              <span><input type="checkbox" name="profile" formControlName="profile" value="profile"><b> Profile</b></span><hr>
+                          </div>
+
+                          <!-- 201 File -->
+                          <div class="col-4 p-3" style="border: 1px solid grey;">
+                              <span><input type="checkbox" name="file_201" formControlName="file_201" value="file_201" (change)="file201Change()"><b> The 201 File</b></span><hr>
+                              <div [ngClass]="{'disabled': disableSubModules('file_201')}" class="pt-1 pl-3">
+                                <span><input type="checkbox" name="employeeProfile" formControlName="employeeProfile" value="employeeProfile" (change)="file201sub()"> Employee Profile</span><br>
+                                <span><input type="checkbox" name="plantilla" formControlName="plantilla" value="plantilla" (change)="file201sub()"> Plantilla</span><br>
+                                <span><input type="checkbox" name="serviceRecords" formControlName="serviceRecords" value="serviceRecords" (change)="file201sub()"> Service Record</span><br>
+                                <span><input type="checkbox" name="discipline" formControlName="discipline" value="discipline" (change)="file201sub()"> Discipline Management</span><br>
+                                <span><input type="checkbox" name="medical" formControlName="medical" value="medical"> Medical</span><br>
+                                <span><input type="checkbox" name="appointments" formControlName="appointments" value="appointments" (change)="file201sub()"> Appointments</span><br>
+                              </div>
+                        </div> 
+
+                        <!-- Human Resource -->
+                        <div class="col-4 p-3" style="border: 1px solid grey;">
+                          <span><input type="checkbox" name="humanResource" formControlName="humanResource" value="humanResource" (change)="humanResourceChange()"><b> Human Resource</b></span><hr>
+                            <div [ngClass]="{'disabled': disableSubModules('humanResource')}"  class="pt-1 pl-3">
+                              <span><input type="checkbox" name="reports" formControlName="reports" value="reports" (change)="humanResourcesub()"> Reports</span><br>
+                              <span><input type="checkbox" name="announcements" formControlName="announcements" value="announcements" (change)="humanResourcesub()"> Announcements</span><br>
+                              <span><input type="checkbox" name="certifications" formControlName="certifications" value="certifications" (change)="humanResourcesub()"> Certifications</span><br>
+                              <span><input type="checkbox" name="templates" formControlName="templates" value="templates" (change)="humanResourcesub()"> Templates</span><br>
+                              <span><input type="checkbox" name="evaluations" formControlName="evaluations" value="evaluations" (change)="humanResourcesub()"> Performance Evaluation</span><br>
+                              <span><input type="checkbox" name="requests" formControlName="requests" value="requests" (change)="humanResourcesub()"> Requests</span><br>
+                              <!-- <span><input type="checkbox" name="actions" formControlName="actions" value="actions" (change)="humanResourcesub()"> Action/Movements</span><br> -->
+                            </div>
+                        </div>
+                      </div>
+
+                      <div class="row">
+                        <!-- Leaves -->
+                        <div class="col-4 p-3" style="border: 1px solid grey;">
+                          <span><input type="checkbox" name="leaves" formControlName="leaves" value="leaves" (change)="leavesChange()"><b> Leaves</b></span><hr>
+                            <div [ngClass]="{'disabled': disableSubModules('leaves')}" class="pt-1 pl-3">
+                              <span><input type="checkbox" name="leaveApplication" formControlName="leaveApplication" (change)="leavessub()" value="leaveApplication"> Leave Application</span><br>
+                              <span><input type="checkbox" name="leaveApproval" formControlName="leaveApproval" (change)="leavessub()" value="leaveApproval"> Leave Approval</span><br>
+                              <span><input type="checkbox" name="leaveCredits" formControlName="leaveCredits" (change)="leavessub()" value="leaveCredits"> Leave Credits</span><br>
+                              <span><input type="checkbox" name="leaveSettings" formControlName="leaveSettings" (change)="leavessub()" value="leaveSettings"> Leave Settings</span><br>
+                            </div>
+                          </div>
+                          
+                          <!-- updated -->
+                          <div class="col-4 p-3" style="border: 1px solid grey;">
+                            <span><input type="checkbox" name="payroll" formControlName="payroll" value="payroll" (change)="payrollChange()"><b> Payroll</b></span><hr>
+                            <div [ngClass]="{'disabled': disableSubModules('payroll')}" class="pt-1 pl-3">
+                              <span><input type="checkbox" name="salaryComputation" formControlName="salaryComputation" (change)="payrollsub()" value="salaryComputation"> Payroll Information</span><br>
+                              <span><input type="checkbox" name="employeePayslip" formControlName="employeePayslip" (change)="payrollsub()" value="employeePayslip"> Payroll Employee</span><br>
+                              <span><input type="checkbox" name="overtimeRequests" formControlName="overtimeRequests" (change)="payrollsub()" value="overtimeRequests"> Payroll Overtime</span><br>
+                              <!-- <span><input type="checkbox" name="leaveRequests" formControlName="leaveRequests" (change)="payrollsub()" value="leaveRequests"> Payroll Leave</span><br> -->
+                              <span><input type="checkbox" name="payrollMasterlist" formControlName="payrollMasterlist" (change)="payrollsub()" value="payrollMasterlist"> Payroll Masterlist</span><br>
+                            </div>
+                          </div>
+                          
+                          
+                          <div class="col-4 p-3" style="border: 1px solid grey;">
+                            <span><input type="checkbox" name="dtr" formControlName="dtr" value="dtr" (change)="dtrChange()"><b> DTR</b></span><hr>
+                            <div [ngClass]="{'disabled': disableSubModules('dtr')}" class="pt-1 pl-3">
+                              <span><input type="checkbox" name="attendance" formControlName="attendance" (change)="dtrsub()" value="attendance"> Attendance</span><br>
+                              <span><input type="checkbox" name="calendar" formControlName="calendar" (change)="dtrsub()" value="calendar"> Calendar</span><br>
+                              <span><input type="checkbox" name="overtime" formControlName="overtime" (change)="dtrsub()" value="overtime"> Overtime</span><br>
+                              <span><input type="checkbox" name="timelogss" formControlName="timelogss" (change)="dtrsub()" value="timelogss"> Timelogss</span><br>
+                            </div>
+                          </div>
+
+
+
+
+
+
+                          <div class="col-4 p-3" style="border: 1px solid grey;">
+                            <span><input type="checkbox" name="progressbilling" formControlName="progressbilling" value="progressbilling" (change)="progressbillingChange()"><b> Progress Billing</b></span><hr>
+                            <div [ngClass]="{'disabled': disableSubModules('progressbilling')}" class="pt-1 pl-3">
+                              <span><input type="checkbox" name="projects" formControlName="projects" (change)="progressbillingsub()" value="projects"> Projects</span><br>
+                            </div>
+                          </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+                          <!-- Recruitment -->
+                          <!-- <div class="col-4 p-3" style="border: 1px solid grey;">
+                            <span><input type="checkbox" name="recruitment" formControlName="recruitment" value="recruitment" (change)="recruitmentChange()"><b> Recruitment</b></span><hr>
+                               <div [ngClass]="{'disabled': disableSubModules('recruitment')}" class="pt-0 pl-3" >
+                                <span><input type="checkbox" name="application" formControlName="application" (change)="recruitmentsub()" value="application"> Application</span><br>
+                                <span><input type="checkbox" name="requiredDocs" formControlName="requiredDocs" (change)="recruitmentsub()" value="requiredDocs"> Required Docs</span><br>
+                              </div>
+                          </div>     -->
+
+                          <!-- Settings -->
+                          <div class="col-4 p-3" style="border: 1px solid grey;">
+                            <span><input type="checkbox" name="settings" formControlName="settings" value="settings" (change)="settingsChange()"><b> Settings</b></span><hr>
+                                <div  [ngClass]="{'disabled': disableSubModules('settings')}"  class="pt-1 pl-3">
+                                  <span><input type="checkbox" name="userRoles" formControlName="userRoles" (change)="settingssub()" value="userRoles"> User Roles</span><br>
+                                  <span><input type="checkbox" name="tlogs" formControlName="tlogs" (change)="settingssub()" value="tlogs"> User T-Logs</span><br>
+                                  <span><input type="checkbox" name="acl" formControlName="acl" (change)="settingssub()"  value="acl"> ACL</span><br>
+                                  <span><input type="checkbox" name="positions" formControlName="positions" (change)="settingssub()"  value="positions"> Positions</span><br>
+                                  <span><input type="checkbox" name="institutions" formControlName="institutions" (change)="settingssub()"  value="institutions"> Institutions</span><br>
+                                  <span><input type="checkbox" name="branches" formControlName="branches" (change)="settingssub()"  value="branches"> Branches</span><br>
+                                  <span><input type="checkbox" name="divisions" formControlName="divisions" (change)="settingssub()"  value="divisions"> Divisions</span><br>
+                                  <span><input type="checkbox" name="departments" formControlName="departments" (change)="settingssub()"  value="departments"> Departments</span><br>
+                                </div>
+                          </div>               
+                      </div>
+                    </form>
+                  </div>
+              </div>
+            </div>
+          </div>
+        </div>
+    </div>
+  </section>

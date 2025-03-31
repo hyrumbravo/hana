@@ -1,0 +1,71 @@
+.red-text {
+    background-color: rgb(224, 127, 127);
+  }
+
+.green-text {
+  background-color: lightgreen;
+}
+
+.disabled-link {
+  pointer-events: none; /* This will prevent click events on the link */
+  opacity: 0.5; /* You can reduce the opacity to visually indicate it is disabled */
+  cursor: default; /* Change the cursor to the default arrow cursor */
+}
+
+.sign-button {
+  background-color: #1976d2;
+  color: white;
+  font-weight: 600;
+  height: 35px;
+  border-radius: 3px;
+  border: none;
+}
+
+.sign-button:disabled {
+  background-color: #8dc2f7; /* Change the background color to grey */
+  cursor: not-allowed; /* Change the cursor to indicate it's not clickable */
+}
+
+.img-preview {
+  border: 1px solid black;
+}
+
+.dp-hidden {
+  width: 0;
+  margin: 0;
+  border: none;
+  padding: 0;
+}
+.custom-day {
+    text-align: center;
+    padding: 0.185rem 0.25rem;
+    display: inline-block;
+    height: 2rem;
+    width: 2rem;
+}
+.custom-day.focused {
+    background-color: #e6e6e6;
+}
+.custom-day.range,
+.custom-day:hover {
+    background-color: rgb(2, 117, 216);
+    color: white;
+}
+.custom-day.faded {
+    background-color: rgba(2, 117, 216, 0.5);
+}
+
+.card-header {
+    position: relative;
+    border-bottom: none !important;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;  // controls where the border starts
+    right: 20px; // controls where the border ends
+    height: 1px;
+    background-color: #dee2e6; // or your preferred border color
+}

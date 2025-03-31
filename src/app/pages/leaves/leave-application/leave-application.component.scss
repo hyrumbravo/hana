@@ -1,0 +1,46 @@
+.center-div-items {
+    display: flex; justify-content: center; align-items: center;
+  }
+
+.credit-div  {
+  border: 1px solid #ccc;
+  padding: 10px;
+}
+
+.no-bottom {
+  margin-bottom: 0px;
+  padding-bottom: 0px;
+}
+
+.sign-button {
+  background-color: #1976d2;
+  color: white;
+  font-weight: 600;
+  height: 35px;
+  border-radius: 3px;
+  border: none;
+}
+
+.sign-button:disabled {
+  background-color: #8dc2f7; /* Change the background color to grey */
+  cursor: not-allowed; /* Change the cursor to indicate it's not clickable */
+}
+
+.img-preview {
+  border: 1px solid black;
+}
+
+.card-header {
+    position: relative;
+    border-bottom: none !important;
+}
+
+.card-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 20px;  // controls where the border starts
+    right: 20px; // controls where the border ends
+    height: 1px;
+    background-color: #dee2e6; // or your preferred border color
+}
