@@ -136,8 +136,59 @@ export class ProjectsService {
   updateMilestone(milestone: any): Observable<any> {
     return this.http.put(`${this.milestoneBaseUrl}/${milestone._id}`, milestone, { headers: this.headers });
   }
+
+
+
+
+  updateProjectProgress(projectId: string): Observable<any> {
+    const findUrl = `${this.projectBaseUrl}/_find`;
+    const requestBody = {
+      selector: { projectId: projectId },
+      fields: ["_id", "_rev", "progress", "projectName", "projectDescription", "clientName", "startDate", "deadline", "totalAmount", "downPayment", "projectId"]
+    };
+  
+    return this.http.post(findUrl, requestBody, { headers: this.headers }).pipe(
+      switchMap((response: any) => {
+        if (response.docs.length > 0) {
+          const project = response.docs[0]; // Get the project document
+  
+          // Fetch all phases for the project
+          return this.getPhases(projectId).pipe(
+            switchMap((phaseResponse: any) => {
+              let totalProgress = 0;
+  
+              if (phaseResponse.docs.length > 0) {
+                phaseResponse.docs.forEach((phase: any) => {
+                  const phaseContribution = (phase.progress / 100) * phase.percentage;
+                  totalProgress += phaseContribution;
+                });
+              }
+  
+              const newProgress = Math.round(totalProgress);
+  
+              // Update the project's progress
+              const updateUrl = `${this.projectBaseUrl}/${project._id}?rev=${project._rev}`;
+              const updatedProject = { ...project, progress: newProgress };
+  
+              return this.http.put(updateUrl, updatedProject, { headers: this.headers });
+            })
+          );
+        } else {
+          return of(null);
+        }
+      })
+    );
+  }
   
   
+  
+  
+
+
+
+
+
+
   
 
 }

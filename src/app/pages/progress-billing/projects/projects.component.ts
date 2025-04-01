@@ -504,6 +504,52 @@ export class ProjectsComponent implements OnInit {
   }
 
 
+  // savesPhase(phases: any, project: any) {
+  //   if (!phases._id) {
+  //     console.error("Phase ID is missing!");
+  //     return;
+  //   }
+  
+  //   // Calculate the total percentage of all phases, excluding the one being edited
+  //   const otherPhasesTotal = project.phases
+  //     .filter((p: any) => p._id !== phases._id) // Exclude the current phase
+  //     .reduce((sum: number, p: any) => sum + p.percentage, 0);
+  
+  //   const newTotal = otherPhasesTotal + phases.percentage;
+  
+  //   if (newTotal > 100) {
+  //     this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
+  //     return;
+  // }
+  
+  //   // Fetch the latest revision (_rev) before updating
+  //   this.projectsService.getPhaseById(phases._id).subscribe(
+  //     (latestPhase: any) => {
+  //       if (latestPhase._rev) {
+  //         phases._rev = latestPhase._rev; // Update the latest _rev
+  
+  //         // Now update the phase with the correct revision
+  //         this.projectsService.updatePhase(phases).subscribe(
+  //           (response: any) => {
+  //             console.log("Phase updated successfully:", response);
+  //             phases.isEditing = false; // Exit edit mode after saving
+  //           },
+  //           (error) => {
+  //             console.error("Error updating phase:", error);
+  //           }
+  //         );
+  //       } else {
+  //         console.error("Failed to fetch latest revision (_rev).");
+  //       }
+  //     },
+  //     (error) => {
+  //       console.error("Error fetching latest _rev:", error);
+  //     }
+  //   );
+  // }
+
+
+
   savesPhase(phases: any, project: any) {
     if (!phases._id) {
       console.error("Phase ID is missing!");
@@ -520,19 +566,30 @@ export class ProjectsComponent implements OnInit {
     if (newTotal > 100) {
       this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
       return;
-  }
+    }
   
-    // Fetch the latest revision (_rev) before updating
+    // Fetch the latest _rev before updating the phase
     this.projectsService.getPhaseById(phases._id).subscribe(
       (latestPhase: any) => {
         if (latestPhase._rev) {
-          phases._rev = latestPhase._rev; // Update the latest _rev
+          phases._rev = latestPhase._rev; // Update to the latest _rev
   
-          // Now update the phase with the correct revision
+          // Update the phase
           this.projectsService.updatePhase(phases).subscribe(
             (response: any) => {
               console.log("Phase updated successfully:", response);
-              phases.isEditing = false; // Exit edit mode after saving
+  
+              // After phase update, recalculate project progress
+              this.projectsService.updateProjectProgress(project.projectId).subscribe(
+                (projectUpdateResponse) => {
+                  console.log("Project progress updated successfully:", projectUpdateResponse);
+                  this.toastr.success("Project progress updated!");
+                  phases.isEditing = false; // Exit edit mode after saving
+                },
+                (error) => {
+                  console.error("Error updating project progress:", error);
+                }
+              );
             },
             (error) => {
               console.error("Error updating phase:", error);
@@ -547,6 +604,7 @@ export class ProjectsComponent implements OnInit {
       }
     );
   }
+  
   
 
 
