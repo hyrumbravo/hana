@@ -114,10 +114,66 @@ export class ProjectsService {
   }
 
 
-  // Update a phase
+
+
+
+
+
   updatePhase(phase: any): Observable<any> {
+    const totalMilestones = phase.milestones.length;
+    const progressPerMilestone = 100 / totalMilestones; // This is the percentage each milestone represents
+    
+    // Distribute the phase progress to the milestones
+    let progressRemaining = phase.progress; // This is the overall phase progress
+    
+    phase.milestones = phase.milestones.map((milestone, index) => {
+      let milestoneProgress = 0;
+  
+      if (progressRemaining > 0) {
+        // Calculate the percentage for each milestone
+        if (progressRemaining >= progressPerMilestone) {
+          milestoneProgress = 100; // This milestone gets full progress
+          progressRemaining -= progressPerMilestone; // Subtract the progress taken by this milestone
+        } else {
+          milestoneProgress = (progressRemaining / progressPerMilestone) * 100; // Partial progress for this milestone
+          progressRemaining = 0; // No more remaining progress
+        }
+      }
+  
+      return {
+        ...milestone,
+        previous: milestoneProgress, // Set the milestone progress based on phase progress
+      };
+    });
+  
     return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
   }
+  
+
+  // updatePhase(phase: any): Observable<any> {
+  //   // If progress is 100%, update all milestones
+  //   if (phase.progress === 100) {
+  //     phase.milestones = phase.milestones.map((milestone: any) => ({
+  //       ...milestone,
+  //       previous: 100,
+  //     }));
+  //   }
+
+  //   if (phase.progress === 0) {
+  //     phase.milestones = phase.milestones.map((milestone: any) => ({
+  //       ...milestone,
+  //       previous: 0,
+  //     }));
+  //   }
+  //   return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
+  // }
+
+
+
+
+
+
+  
   //get phases by ID for updating
   getPhaseById(phaseId: string): Observable<any> {
     return this.http.get(`${this.phaseBaseUrl}/${phaseId}`, { headers: this.headers });
@@ -125,17 +181,6 @@ export class ProjectsService {
 
 
 
-
-  // Fetch a milestone by ID
-  getMilestoneById(milestoneId: string): Observable<any> {
-    return this.http.get(`${this.milestoneBaseUrl}/${milestoneId}`, { headers: this.headers });
-  }
-
-  
-  // Update milestone
-  updateMilestone(milestone: any): Observable<any> {
-    return this.http.put(`${this.milestoneBaseUrl}/${milestone._id}`, milestone, { headers: this.headers });
-  }
 
 
 
@@ -180,14 +225,6 @@ export class ProjectsService {
     );
   }
   
-  
-  
-  
-
-
-
-
-
 
   
 

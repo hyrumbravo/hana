@@ -5,6 +5,7 @@ import 'datatables.net-buttons/js/buttons.html5.js';
 import 'datatables.net-buttons/js/buttons.print.js';
 import { Modal } from 'bootstrap';
 import { ProjectsService } from '@services/projects/projects.service';
+import { forkJoin } from 'rxjs';
 
 
 
@@ -487,66 +488,53 @@ export class ProjectsComponent implements OnInit {
 
 
 
+  // editPhase(phase: any) {
+  //   // Store original values in case user cancels
+  //   phase.originalData = { ...phase };
+  //   phase.isEditing = true;
+  // }
+
   editPhase(phase: any) {
     // Store original values in case user cancels
-    phase.originalData = { ...phase };
+    if (!phase.originalData) {
+      phase.originalData = [];
+    }
+  
+    // Limit the number of backups to 3
+    if (phase.originalData.length >= 3) {
+      phase.originalData.shift(); // Remove the oldest backup
+    }
+  
+    // Store the current state as a backup
+    phase.originalData.push({ ...phase });
     phase.isEditing = true;
   }
+  
 
   
+
+
+  // cancelEditPhase(phase: any) {
+  //   // Restore original values
+  //   Object.assign(phase, phase.originalData);
+  //   delete phase.originalData;
+  //   phase.isEditing = false;
+  // }
 
 
   cancelEditPhase(phase: any) {
-    // Restore original values
-    Object.assign(phase, phase.originalData);
-    delete phase.originalData;
+    if (phase.originalData && phase.originalData.length > 0) {
+      // Restore the most recent backup
+      Object.assign(phase, phase.originalData[phase.originalData.length - 1]);
+      // Remove the last backup after restoring
+      phase.originalData.pop();
+    }
+  
     phase.isEditing = false;
   }
+  
 
 
-  // savesPhase(phases: any, project: any) {
-  //   if (!phases._id) {
-  //     console.error("Phase ID is missing!");
-  //     return;
-  //   }
-  
-  //   // Calculate the total percentage of all phases, excluding the one being edited
-  //   const otherPhasesTotal = project.phases
-  //     .filter((p: any) => p._id !== phases._id) // Exclude the current phase
-  //     .reduce((sum: number, p: any) => sum + p.percentage, 0);
-  
-  //   const newTotal = otherPhasesTotal + phases.percentage;
-  
-  //   if (newTotal > 100) {
-  //     this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
-  //     return;
-  // }
-  
-  //   // Fetch the latest revision (_rev) before updating
-  //   this.projectsService.getPhaseById(phases._id).subscribe(
-  //     (latestPhase: any) => {
-  //       if (latestPhase._rev) {
-  //         phases._rev = latestPhase._rev; // Update the latest _rev
-  
-  //         // Now update the phase with the correct revision
-  //         this.projectsService.updatePhase(phases).subscribe(
-  //           (response: any) => {
-  //             console.log("Phase updated successfully:", response);
-  //             phases.isEditing = false; // Exit edit mode after saving
-  //           },
-  //           (error) => {
-  //             console.error("Error updating phase:", error);
-  //           }
-  //         );
-  //       } else {
-  //         console.error("Failed to fetch latest revision (_rev).");
-  //       }
-  //     },
-  //     (error) => {
-  //       console.error("Error fetching latest _rev:", error);
-  //     }
-  //   );
-  // }
 
 
 
@@ -574,16 +562,21 @@ export class ProjectsComponent implements OnInit {
         if (latestPhase._rev) {
           phases._rev = latestPhase._rev; // Update to the latest _rev
   
+          // Remove the originalData property to avoid circular references before sending to the backend
+          delete phases.originalData;
+  
           // Update the phase
           this.projectsService.updatePhase(phases).subscribe(
             (response: any) => {
               console.log("Phase updated successfully:", response);
+              this.toastr.success("Phase updated successfully!");
+              
   
               // After phase update, recalculate project progress
               this.projectsService.updateProjectProgress(project.projectId).subscribe(
                 (projectUpdateResponse) => {
                   console.log("Project progress updated successfully:", projectUpdateResponse);
-                  this.toastr.success("Project progress updated!");
+                  // this.toastr.success("Project progress updated!");
                   phases.isEditing = false; // Exit edit mode after saving
                 },
                 (error) => {
@@ -605,6 +598,8 @@ export class ProjectsComponent implements OnInit {
     );
   }
   
+
+
   
 
 
@@ -625,84 +620,67 @@ export class ProjectsComponent implements OnInit {
   }
 
 
-
-  // saveMilestone(phase: any, milestone: any) {
-  //   if (!phase._id) {
-  //     console.error("Phase ID is missing!");
-  //     return;
-  //   }
-  
-  //   // Fetch the latest _rev before updating
-  //   this.projectsService.getPhaseById(phase._id).subscribe(
-  //     (latestPhase: any) => {
-  //       if (latestPhase._rev) {
-  //         phase._rev = latestPhase._rev; // Ensure the latest _rev is used
-  
-  //         // Update the milestones array
-  //         const updatedMilestones = phase.milestones.map((m: any) =>
-  //           m === milestone ? { ...milestone, isEditing: false } : m
-  //         );
-  
-  //         const updatedPhase = { ...phase, milestones: updatedMilestones };
-  
-  //         this.projectsService.updatePhase(updatedPhase).subscribe(
-  //           (response: any) => {
-  //             console.log("Milestone updated successfully:", response);
-  //             milestone.isEditing = false; // Exit edit mode
-  //           },
-  //           (error) => {
-  //             console.error("Error updating milestone:", error);
-  //           }
-  //         );
-  //       } else {
-  //         console.error("Failed to fetch latest revision (_rev).");
-  //       }
-  //     },
-  //     (error) => {
-  //       console.error("Error fetching latest _rev:", error);
-  //     }
-  //   );
-  // }
-
-
-
   saveMilestone(phase: any, milestone: any, project: any) {
     if (!phase._id) {
       console.error("Phase ID is missing!");
       return;
     }
-
+  
     // Fetch the latest _rev before updating
     this.projectsService.getPhaseById(phase._id).subscribe(
       (latestPhase: any) => {
         if (latestPhase._rev) {
           phase._rev = latestPhase._rev; // Ensure the latest _rev is used
-
-          // Calculate the total allowed milestone amount
+  
+          // Calculate milestone limits
           const maxMilestoneAmount = this.calculatePhaseAmount(project.totalAmount, project.downPayment, phase.percentage);
           const currentTotalMilestones = phase.milestones.reduce((sum: number, m: any) => sum + (m.amount || 0), 0);
           const remainingAmount = maxMilestoneAmount - (currentTotalMilestones - milestone.amount);
-
-          // Check if new milestone amount exceeds the allowed limit
+  
           if (currentTotalMilestones > maxMilestoneAmount) {
-            this.toastr.error(
-              `Cannot save milestone. You can only allocate ₱${remainingAmount.toLocaleString()} more.`,
-              'Error'
-            );
+            this.toastr.error(`Cannot save milestone. You can only allocate ₱${remainingAmount.toLocaleString()} more.`, 'Error');
             return;
           }
-
+  
+          // Update milestone progress
+          milestone.progress = milestone.previous === 100 ? "Completed" : "In Progress";
+  
+          // ✅ Recalculate phase progress dynamically
+          const totalMilestones = phase.milestones.length;
+          let totalProgress = 0;
+  
+          phase.milestones.forEach((m: any) => {
+            const milestoneProgressPercentage = m.previous;
+            totalProgress += (milestoneProgressPercentage / 100) * (100 / totalMilestones);
+          });
+  
+          phase.progress = totalProgress; // ✅ Update phase progress
+  
+          // ✅ Immediately update project progress locally
+          this.updateProjectProgress(project);
+  
           // Update the milestones array
           const updatedMilestones = phase.milestones.map((m: any) =>
             m === milestone ? { ...milestone, isEditing: false } : m
           );
-
+  
           const updatedPhase = { ...phase, milestones: updatedMilestones };
-
+  
+          // Save the updated phase and milestone
           this.projectsService.updatePhase(updatedPhase).subscribe(
             (response: any) => {
               console.log("Milestone updated successfully:", response);
               milestone.isEditing = false; // Exit edit mode
+  
+              // ✅ After saving the phase, update the project progress in the backend
+              this.projectsService.updateProjectProgress(project.projectId).subscribe(
+                (projectUpdateResponse) => {
+                  console.log("Project progress updated successfully:", projectUpdateResponse);
+                },
+                (error) => {
+                  console.error("Error updating project progress:", error);
+                }
+              );
             },
             (error) => {
               console.error("Error updating milestone:", error);
@@ -716,7 +694,14 @@ export class ProjectsComponent implements OnInit {
         console.error("Error fetching latest _rev:", error);
       }
     );
-  }
+}
+
+
+  
+  
+  
+  
+  
 
 
 
@@ -724,27 +709,7 @@ export class ProjectsComponent implements OnInit {
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+  //frontend display
   updateProjectProgress(project: any) {
     let totalProgress = 0;
   
@@ -755,13 +720,31 @@ export class ProjectsComponent implements OnInit {
   
     project.progress = Math.round(totalProgress); // Update project progress
   }
-  
+
+
+
+  calculateAmountDue(milestone: any) {
+    if (milestone.present !== null && milestone.amount !== null) {
+      milestone.amountDue = (milestone.present / 100) * milestone.amount;
+    } else {
+      milestone.amountDue = 0;
+    }
+  }
+
+  getTotalAmountDue(milestones: any[]): number {
+    return milestones.reduce((sum, milestone) => sum + (milestone.amountDue || 0), 0);
+  }
 
 
 
   
+  
+  
+
+  
 
 
+  
 
 
   
