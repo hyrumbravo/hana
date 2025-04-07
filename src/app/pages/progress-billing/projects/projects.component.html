@@ -65,8 +65,16 @@
                 <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td>
                 <td>{{ item.progress | number }}%</td>
                 <td>
-                  <button class="delete-btn expand-collapse-btn"  (click)="toggleExpand(i)">{{ item.expanded ? 'Collapse' : 'Expand' }}</button> 
-                  <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(i)">Delete</button>
+                  <!-- <button class="delete-btn expand-collapse-btn"  (click)="toggleExpand(i)">{{ item.expanded ? 'Collapse' : 'Expand' }}</button>  -->
+                  <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(i)">
+                    <i class="fas" [ngClass]="item.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                  </button>
+                  
+                  <!-- <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(i)">Delete</button> -->
+                  <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(i)">
+                    <i class="fas fa-trash"></i> <!-- Font Awesome Trash Icon -->
+                  </button>
+                  
                   
                 </td>
               </tr>
@@ -138,13 +146,24 @@
                           
         
                           <td>
-                            <button *ngIf="!phases.isEditing" (click)="editPhase(phases)">Edit</button>
-                            <!-- <button *ngIf="phases.isEditing" (click)="savesPhase(phases)">Save</button> -->
-                            <button *ngIf="phases.isEditing" (click)="savesPhase(phases, item)">Save Phase</button>
-                            <button *ngIf="phases.isEditing" (click)="cancelEditPhase(phases)">Cancel</button>
-                            <button (click)="togglePhaseExpand(i, j)">
-                              {{ phases.expanded ? 'Hide Milestone' : 'View Milestone' }}
+                            <button  *ngIf="!phases.isEditing" (click)="editPhase(phases)">
+                              <i class="fas fa-edit"></i> Edit <!-- Font Awesome Edit Icon -->
                             </button>
+                            
+                            
+                            <!-- <button *ngIf="phases.isEditing" (click)="savesPhase(phases)">Save</button> -->
+                            <button class="phase-action-btn save-btn" *ngIf="phases.isEditing" (click)="savesPhase(phases, item)">
+                              <i class="fas fa-check"></i> Save
+                            </button>
+                            
+                            <button class="phase-action-btn cancel-btn" *ngIf="phases.isEditing" (click)="cancelEditPhase(phases)">
+                              <i class="fas fa-times"></i> Cancel
+                            </button>
+                  
+                            <button  (click)="togglePhaseExpand(i, j)">
+                              <i class="fas" [ngClass]="phases.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                            </button>
+
                           </td>
                         </tr>
 
@@ -187,18 +206,25 @@
                                     <ng-container *ngIf="milestone.previous > 0 && milestone.previous < 100">In Progress</ng-container>
                                   </td>
                                   <td>
-                                    <button *ngIf="!milestone.isEditing" (click)="editMilestone(phases, milestone)">Edit Milestone</button>
-                                    <button *ngIf="milestone.isEditing" (click)="saveMilestone(phases, milestone, item)">Save</button>
-                                    <button *ngIf="milestone.isEditing" (click)="cancelEditMilestone(milestone)">Cancel</button>
+                                    <button *ngIf="!milestone.isEditing" (click)="editMilestone(phases, milestone)">
+                                      <i class="fas fa-edit fa-sm"></i> Edit <!-- Font Awesome Edit Icon -->
+                                    </button>
+                                    <button class="milestone-action-btn milestone-save-btn" *ngIf="milestone.isEditing" (click)="saveMilestone(phases, milestone, item)">
+                                      <i class="fas fa-check fa-sm"></i> Save
+                                    </button>
+                                    <button class="milestone-action-btn milestone-cancel-btn" *ngIf="milestone.isEditing" (click)="cancelEditMilestone(milestone)">
+                                      <i class="fas fa-times fa-sm"></i> Cancel
+                                    </button>
                                   </td>
                                 </tr>
-
                                 <tr>
                                   <td colspan="4" style="text-align: right; font-weight: bold;">Total Amount Due:</td>
                                   <td style="font-weight: bold;">₱{{ getTotalAmountDue(phases.milestones) | number }}</td>
                                   <td></td>
                                   <td colspan="2">
-                                    <button (click)="saveAndGenerateInvoice(phases)">Save/Generate Invoice</button>
+                                    <button class="phase-action-btn save-btn" (click)="saveAndGenerateInvoice(phases)">
+                                      <i class="fas fa-save fa-lg"></i>Save
+                                    </button>
                                   </td>
                                 </tr>
                               </tbody>

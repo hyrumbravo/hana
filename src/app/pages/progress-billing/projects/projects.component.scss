@@ -1,3 +1,4 @@
+
 .card-header {
   position: relative;
   border-bottom: none !important;
@@ -12,7 +13,6 @@
   height: 1px;
   background-color: #dee2e6; // or your preferred border color
 }
-
 
 table {
   border-collapse: collapse;
@@ -37,6 +37,8 @@ button {
   background-color: rgb(27, 114, 200);
   color: white;
   border-radius: 5px;
+  font-size: 16px;
+  transition: all 0.3s ease-in-out;
 }
 
 button:hover {
@@ -72,103 +74,99 @@ input[type="number"] {
   text-align: center;
 }
 
-
 .expanded-row {
-  border: 2px solid #007bff; 
-  background-color: #f9f9f9; 
+  border: 2px solid #007bff;
+  background-color: #f9f9f9;
 }
 
-
-
-
-
-/* Base button styles */
-.delete-btn {
-font-size: 16px;
-padding: 10px 20px;
-border: none;
-border-radius: 5px;
-cursor: pointer;
-transition: all 0.3s ease-in-out;
+/* Button sizes (for expand/collapse and delete) */
+.delete-btn, .expand-collapse-btn {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
 }
 
-
-
+.delete-btn i, .expand-collapse-btn i {
+  font-size: 20px;  /* Icon size adjustment */
+}
 
 /* Cancel button (Blue) */
 .cancel-btn {
-background-color: #007bff; 
-color: white;
+  background-color: #007bff;
+  color: white;
 }
 
 .cancel-btn:hover {
-background-color: #0056b3; 
+  background-color: #0056b3;
 }
 
 /* Delete button (Red) */
 .delete-confirm-btn {
-background-color: #dc3545; /* Bootstrap danger red */
-color: white;
+  background-color: #dc3545; /* Bootstrap danger red */
+  color: white;
 }
 
 .delete-confirm-btn:hover {
-background-color: #a71d2a; /* Darker red */
+  background-color: #a71d2a; /* Darker red */
 }
 
-
-
 .expand-collapse-btn {
-background-color: #007bff; /* Bootstrap primary blue */
-color: white;
+  background-color: #007bff; /* Bootstrap primary blue */
+  color: white;
 }
 
 .expand-collapse-btn:hover {
-background-color: #0056b3; /* Darker blue */
+  background-color: #0056b3; /* Darker blue */
 }
 
-
+/* Table Row Styling */
 .project-table tbody tr {
-border-bottom: 1px solid #ddd;
+  border-bottom: 1px solid #ddd;
 }
 
-
-/* Delete button (Red) */
+/* Delete phase button (Red) */
 .delete-phase-btn {
-background-color: #dc3545; /* Bootstrap danger red */
-color: white;
-width: 100%;
+  background-color: #dc3545; /* Bootstrap danger red */
+  color: white;
+  width: 100%;
 }
 
 .delete-phase-btn:hover {
-background-color: #a71d2a; /* Darker red */
+  background-color: #a71d2a; /* Darker red */
 }
 
+/* Close button */
 .btn-close {
-position: absolute;
-top: 10px;
-right: 15px;
-background: none;
-border: none;
-font-size: 1.5rem;
-color: black;
-font-weight: bold;
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: black;
+  font-weight: bold;
 }
 
 .btn-close:hover {
-background: transparent;
+  background: transparent;
 }
 
 .highlight {
-background-color: lightblue !important;
-transition: background-color 1s ease-in-out;
+  background-color: lightblue !important;
+  transition: background-color 1s ease-in-out;
 }
 
-
+/* Invalid input highlighting */
 input.ng-invalid.ng-touched,
 textarea.ng-invalid.ng-touched {
-border-color: red;
+  border-color: red;
 }
-
 
 .text-danger {
   font-size: 0.875rem; /* or smaller like 0.75rem */
@@ -179,3 +177,71 @@ border-color: red;
   pointer-events: none; /* This will make the backdrop unclickable */
 }
 
+
+
+.phase-action-btn {
+  padding: 8px 16px;
+  font-size: 15px;
+  min-width: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  gap: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.save-btn {
+  background-color: #0b8c0b;
+}
+
+.save-btn:hover {
+  background-color: #056005;
+}
+
+.cancel-btn {
+  background-color: #dc3545;
+}
+
+.cancel-btn:hover {
+  background-color: #a71d2a;
+}
+
+
+
+
+
+
+.milestone-action-btn {
+  padding: 8px 16px;
+  font-size: 15px;
+  min-width: 100px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: 5px;
+  color: white;
+  cursor: pointer;
+  gap: 5px;
+  transition: background-color 0.3s ease;
+}
+
+.milestone-save-btn {
+  background-color: #0b8c0b;
+}
+
+.milestone-save-btn:hover {
+  background-color: #056005;
+}
+
+.milestone-cancel-btn {
+  background-color: #dc3545;
+}
+
+.milestone-cancel-btn:hover {
+  background-color: #a71d2a;
+}

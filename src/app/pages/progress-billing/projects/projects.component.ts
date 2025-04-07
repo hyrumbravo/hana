@@ -88,6 +88,7 @@ export class ProjectsComponent implements OnInit {
     totalAmount: null,
     downPayment: 0,
     progress: 0, // Default progress value
+
   };
 
   // phase array for display
@@ -105,6 +106,8 @@ export class ProjectsComponent implements OnInit {
 
 
   ngOnInit(): void {
+    
+  
     this.route.queryParams.subscribe(params => {
         const projectName = params['projectName'];
         const storedProject = sessionStorage.getItem('pendingProject');
@@ -159,15 +162,41 @@ export class ProjectsComponent implements OnInit {
     });
 } 
 
+  // loadProjects(callback?: () => void): void {
+  //   this.projectsService.getProjects().subscribe({
+  //       next: (response) => {
+  //           if (response.rows) {
+  //               this.projects = response.rows.map((row: any) => ({
+  //                   ...row.doc,
+  //                   expanded: false, // Ensure expanded is false initially
+  //                   phases: [], // Each project has its own phases array
+  //               }));
+
+  //               if (callback) {
+  //                   callback(); // Run the callback after projects have loaded
+  //               }
+  //           }
+  //       },
+  //       error: (error) => {
+  //           this.toastr.error('Failed to load projects', 'Error');
+  //           console.error('Error fetching projects:', error);
+  //       },
+  //   });
+  // }
+
   loadProjects(callback?: () => void): void {
     this.projectsService.getProjects().subscribe({
         next: (response) => {
             if (response.rows) {
+                // Map the projects and sort them by projectId in descending order
                 this.projects = response.rows.map((row: any) => ({
                     ...row.doc,
                     expanded: false, // Ensure expanded is false initially
                     phases: [], // Each project has its own phases array
                 }));
+
+                // Sort projects in descending order based on projectId
+                this.projects.sort((a, b) => b.projectId - a.projectId);
 
                 if (callback) {
                     callback(); // Run the callback after projects have loaded
@@ -179,7 +208,8 @@ export class ProjectsComponent implements OnInit {
             console.error('Error fetching projects:', error);
         },
     });
-  }
+}
+
 
   isHighlighted: boolean = false; // Add this property to track highlighting
 
