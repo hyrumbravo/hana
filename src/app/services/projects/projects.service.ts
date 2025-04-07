@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
-import { Observable, of, forkJoin } from 'rxjs';
+import { Observable, of, forkJoin, catchError } from 'rxjs';
 import { switchMap } from 'rxjs/operators';
 
 
@@ -10,7 +10,9 @@ import { switchMap } from 'rxjs/operators';
 export class ProjectsService {
   private projectBaseUrl = 'http://18.139.82.238:4000/database/projects'; // Base URL
   private phaseBaseUrl = 'http://18.139.82.238:4000/database/project_phase';
-  private milestoneBaseUrl = 'http://18.139.82.238:4000/database/phase_milestones';
+
+
+
 
   headers = new HttpHeaders()
     .set('Authorization', `Basic ${btoa('admin:h@n@')}`) // Basic Auth
@@ -33,13 +35,6 @@ export class ProjectsService {
   }
 
 
-
-
-  // Save Milestone(create form)
-  createMilestone(milestoneData: any): Observable<any> {
-    return this.http.post(this.milestoneBaseUrl, milestoneData, { headers: this.headers });
-  }
-
 // ✅ DELETE PROJECT BY projectId
   deleteProjectByProjectId(projectId: string): Observable<any> {
     const findUrl = `${this.projectBaseUrl}/_find`;
@@ -60,13 +55,6 @@ export class ProjectsService {
       })
     );
   }
-
-  
-
-
-
-
-
 
 
   // Fetch phases with Project ID
@@ -150,28 +138,6 @@ export class ProjectsService {
   }
   
 
-  // updatePhase(phase: any): Observable<any> {
-  //   // If progress is 100%, update all milestones
-  //   if (phase.progress === 100) {
-  //     phase.milestones = phase.milestones.map((milestone: any) => ({
-  //       ...milestone,
-  //       previous: 100,
-  //     }));
-  //   }
-
-  //   if (phase.progress === 0) {
-  //     phase.milestones = phase.milestones.map((milestone: any) => ({
-  //       ...milestone,
-  //       previous: 0,
-  //     }));
-  //   }
-  //   return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
-  // }
-
-
-
-
-
 
   
   //get phases by ID for updating
@@ -224,8 +190,39 @@ export class ProjectsService {
       })
     );
   }
-  
 
   
+  updateMilestone(phaseId: string, milestone: any): Observable<any> {
+    const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
+    
+    return this.http.get(phaseUrl, { headers: this.headers }).pipe(
+      switchMap((phase: any) => {
+        // Find the milestone index in the phase milestones array
+        const milestoneIndex = phase.milestones.findIndex(m => m._id === milestone._id);
+        
+        if (milestoneIndex !== -1) {
+          // Ensure that we are updating the correct milestone in the array
+          const updatedPhase = { ...phase }; // Make a shallow copy of the phase
+          updatedPhase.milestones = [...phase.milestones]; // Make a shallow copy of the milestones array
+  
+          // Update the specific milestone in the copied array
+          updatedPhase.milestones[milestoneIndex] = { ...milestone }; // Ensure a deep copy of the updated milestone
+  
+          // Save the updated phase back to the database
+          return this.http.put(`${this.phaseBaseUrl}/${updatedPhase._id}?rev=${updatedPhase._rev}`, updatedPhase, { headers: this.headers });
+        }
+        
+        return of(null); // If the milestone doesn't exist
+      })
+    );
+  }
+  
+  
+
+
+
+
+
+
 
 }

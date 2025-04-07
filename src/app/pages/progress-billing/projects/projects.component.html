@@ -1,4 +1,4 @@
-  <section class="content-header">
+<section class="content-header">
   <div class="container-fluid">
       <div class="row mb-2">
         <div class="col-lg-12">
@@ -36,6 +36,7 @@
         <table class="project-table"   width="100%"  >
           <thead>
             <tr style="background-color: #F6F6F6; color: black; height: 56px; ">
+              <th>#</th>
               <th>Project Name</th>
               <th>Client Name</th>
               <th>Start Date</th>
@@ -52,10 +53,9 @@
               <td colspan="12" class="text-center" style="font-style: italic;">No projects available</td>
             </tr>
             <ng-container *ngFor="let item of projects; let i = index">
-
-
-
-              <tr [class.expanded-row]="item.expanded">
+              
+              <tr [class.expanded-row]="item.expanded"[id]="'project-' + i">
+                <td>{{ i + 1 }}</td> <!-- Row number -->
                 <td>{{ item.projectName }}</td>
                 <td>{{ item.clientName }}</td>
                 <td>{{ item.startDate }}</td>
@@ -67,6 +67,7 @@
                 <td>
                   <button class="delete-btn expand-collapse-btn"  (click)="toggleExpand(i)">{{ item.expanded ? 'Collapse' : 'Expand' }}</button> 
                   <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(i)">Delete</button>
+                  
                 </td>
               </tr>
 
@@ -82,7 +83,8 @@
                   <table width="100%" class="phases-table">
                     <thead>
                       <tr>
-                        <th>Phase Namse</th>
+                        <th>#</th>
+                        <th>Phase Name</th>
                         <th>Start Date</th>
                         <th>Deadline</th>
                         <th>Phase %</th>
@@ -95,6 +97,7 @@
                       
                       <ng-container  *ngFor="let phases of item.phases; let j = index">
                         <tr>
+                          <td>{{ j + 1 }}</td> <!-- Phase Number -->
                           <td>
                             <input *ngIf="phases.isEditing" type="text" [(ngModel)]="phases.phaseName" />
                             <span *ngIf="!phases.isEditing">{{ phases.phaseName }}</span>
@@ -114,13 +117,27 @@
                           <td>
                             ₱{{ calculatePhaseAmount(item.totalAmount, item.downPayment, phases.percentage) | number }}
                           </td>
-                          <td>
+                          <!-- <td>
                             <input *ngIf="phases.isEditing" type="number" [(ngModel)]="phases.progress" min="0" max="100" (change)="updateProjectProgress(item)" />
                             <span *ngIf="!phases.isEditing">{{ phases.progress }}%</span>
+                          </td> -->
+                          <td>
+                            <input
+                              *ngIf="phases.isEditing"
+                              type="number"
+                              [(ngModel)]="phases.progress"
+                              min="0"
+                              max="100"
+                              (input)="limitProgressInput($event, phases)"
+                              (change)="updateProjectProgress(item)"
+                            />
+                            <span *ngIf="!phases.isEditing">{{ phases.progress }}%</span>
                           </td>
+                          
+        
+                          
         
                           <td>
-
                             <button *ngIf="!phases.isEditing" (click)="editPhase(phases)">Edit</button>
                             <!-- <button *ngIf="phases.isEditing" (click)="savesPhase(phases)">Save</button> -->
                             <button *ngIf="phases.isEditing" (click)="savesPhase(phases, item)">Save Phase</button>
@@ -153,7 +170,6 @@
                                   </td>
                                   <td>
                                     <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.amount" type="number" />
-                                    <!-- <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.amount" type="number"  (change)="validateMilestoneAmount(phases, milestone)" min="0"/> -->
                                     <span *ngIf="!milestone.isEditing">₱{{ milestone.amount | number }}</span>
                                   </td>
                                   <td>
@@ -161,7 +177,7 @@
                                     <span *ngIf="!milestone.isEditing">{{ milestone.previous }}%</span>
                                   </td>
                                   <td>
-                                    <input type="number" [(ngModel)]="milestone.present" (ngModelChange)="calculateAmountDue(milestone)"  min="0" max="100"  style="width: 60px;" />%
+                                    <input type="number" [(ngModel)]="milestone.present" (ngModelChange)="calculateAmountDue(milestone)"  min="0" max="100"  style="width: 60px;" [disabled]="milestone.previous === 100"  />%
                                   </td>
                                   
                                   <td>{{ milestone.amountDue }}</td>
@@ -174,7 +190,6 @@
                                     <button *ngIf="!milestone.isEditing" (click)="editMilestone(phases, milestone)">Edit Milestone</button>
                                     <button *ngIf="milestone.isEditing" (click)="saveMilestone(phases, milestone, item)">Save</button>
                                     <button *ngIf="milestone.isEditing" (click)="cancelEditMilestone(milestone)">Cancel</button>
- 
                                   </td>
                                 </tr>
 
@@ -183,13 +198,9 @@
                                   <td style="font-weight: bold;">₱{{ getTotalAmountDue(phases.milestones) | number }}</td>
                                   <td></td>
                                   <td colspan="2">
-                                    <button>Save/Generate Invoice</button>
-
-
+                                    <button (click)="saveAndGenerateInvoice(phases)">Save/Generate Invoice</button>
                                   </td>
                                 </tr>
-
-
                               </tbody>
                             </table>
                           </td>
@@ -209,7 +220,7 @@
 
 
 
-<div class="modal fade" #deleteModal tabindex="-1" aria-hidden="true">
+<div class="modal fade" #deleteModal tabindex="-1" aria-hidden="true" >
   <div class="modal-dialog">
     <div class="modal-content">
       <div class="modal-header" style="background-color: rgb(242, 86, 86);">
@@ -229,54 +240,138 @@
 
 
 
-<div class="modal fade" #projectModal tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg">
-    <div class="modal-content">
-      <div class="modal-body">
+<div class="modal fade" #projectModal tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg" >
+    <div class="modal-content" >
+      <div class="modal-body" >
         <h6 class="fw-bold" style="font-size: 32px;">Create New Project</h6>
+
         <form #projectForm="ngForm">
+          <!-- <div class="mb-3">
+            <label class="form-label fw-bold">PROJECT NAME 
+            <span class="text-danger">*</span>
+          </label>
+            <input type="text" class="form-control" #projectNameRef [(ngModel)]="newProject.projectName" name="projectName" required />
+          </div> -->
           <div class="mb-3">
-            <label class="form-label fw-bold">PROJECT NAME</label>
-            <input type="text" class="form-control" [(ngModel)]="newProject.projectName" name="projectName" required>
+            <label class="form-label fw-bold">
+              PROJECT NAME 
+              <span class="text-danger">*</span>
+              <span class="text-danger" *ngIf="projectNameModel.invalid && projectNameModel.touched">This field is required</span>
+            </label>
+            <input
+              type="text"
+              class="form-control"
+              #projectNameRef
+              [(ngModel)]="newProject.projectName"
+              name="projectName"
+              required
+              #projectNameModel="ngModel"
+            />
           </div>
-
+          
+        
+          <!-- <div class="mb-3">
+            <label class="form-label fw-bold">PROJECT DESCRIPTION <span class="text-danger">*</span> </label>
+            <textarea class="form-control" rows="3" #projectDescriptionRef [(ngModel)]="newProject.projectDescription" name="projectDescription"  required></textarea>
+          </div> -->
           <div class="mb-3">
-            <label class="form-label fw-bold">PROJECT DESCRIPTION</label>
-            <textarea class="form-control" rows="3" [(ngModel)]="newProject.projectDescription" name="projectDescription"></textarea>
+            <label class="form-label fw-bold">
+              PROJECT DESCRIPTION <span class="text-danger">*</span>
+              <span class="text-danger" *ngIf="projectDescriptionModel.invalid && projectDescriptionModel.touched">This field is required</span>
+            </label>
+            <textarea
+              class="form-control"
+              rows="3"
+              #projectDescriptionRef
+              [(ngModel)]="newProject.projectDescription"
+              name="projectDescription"
+              required
+              #projectDescriptionModel="ngModel"
+            ></textarea>
           </div>
-
+          
+        
+          <!-- <div class="mb-3">
+            <label class="form-label fw-bold">CLIENT NAME <span class="text-danger">*</span></label>
+            <input type="text" class="form-control"#clientNameRef [(ngModel)]="newProject.clientName" name="clientName" required />
+          </div> -->
           <div class="mb-3">
-            <label class="form-label fw-bold">CLIENT NAME</label>
-            <input type="text" class="form-control" [(ngModel)]="newProject.clientName" name="clientName">
+            <label class="form-label fw-bold">
+              CLIENT NAME <span class="text-danger">*</span>
+              <span class="text-danger" *ngIf="clientNameModel.invalid && clientNameModel.touched">This field is required</span>
+            </label>
+            <input type="text" class="form-control" #clientNameRef [(ngModel)]="newProject.clientName" name="clientName" required #clientNameModel="ngModel" />
           </div>
-
+        
+          <!-- <div class="row">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">START DATE <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" #startDateRef [(ngModel)]="newProject.startDate" name="startDate" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">COMPLETION DATE <span class="text-danger">*</span></label>
+              <input type="date" class="form-control" #deadlineRef [(ngModel)]="newProject.deadline" name="deadline" required />
+            </div>
+          </div> -->
           <div class="row">
             <div class="col-md-6">
-              <label class="form-label fw-bold">START DATE</label>
-              <input type="date" class="form-control" [(ngModel)]="newProject.startDate" name="startDate" required>
+              <label class="form-label fw-bold">
+                START DATE <span class="text-danger">*</span>
+                <span class="text-danger" *ngIf="startDateModel.invalid && startDateModel.touched">This field is required</span>
+              </label>
+              <input type="date" class="form-control" #startDateRef [(ngModel)]="newProject.startDate" name="startDate" required #startDateModel="ngModel" />
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">COMPLETION DATE</label>
-              <input type="date" class="form-control" [(ngModel)]="newProject.deadline" name="deadline" required>
+              <label class="form-label fw-bold">
+                COMPLETION DATE <span class="text-danger">*</span>
+                <span class="text-danger" *ngIf="deadlineModel.invalid && deadlineModel.touched">This field is required</span>
+              </label>
+              <input type="date" class="form-control" #deadlineRef [(ngModel)]="newProject.deadline" name="deadline" required #deadlineModel="ngModel" />
             </div>
           </div>
-
+        
+          <!-- <div class="row mt-3">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">TOTAL PROJECT AMOUNT <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" #totalAmountRef [(ngModel)]="newProject.totalAmount" name="totalAmount" required />
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">INITIAL DOWN PAYMENT (%) <span class="text-danger">*</span></label>
+              <input type="number" class="form-control" #downPaymentRef [(ngModel)]="newProject.downPayment" name="downPayment" required />
+            </div>
+          </div> -->
           <div class="row mt-3">
             <div class="col-md-6">
-              <label class="form-label fw-bold">TOTAL PROJECT AMOUNT</label>
-              <input type="number" class="form-control" [(ngModel)]="newProject.totalAmount" name="totalAmount">
+              <label class="form-label fw-bold">
+                TOTAL PROJECT AMOUNT <span class="text-danger">*</span>
+                <span class="text-danger" *ngIf="totalAmountModel.invalid && totalAmountModel.touched">This field is required</span>
+              </label>
+              <input type="number" class="form-control" #totalAmountRef [(ngModel)]="newProject.totalAmount" name="totalAmount" required #totalAmountModel="ngModel" />
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">INITIAL DOWN PAYMENT (%)</label>
-              <input type="number" class="form-control" 
-                     [(ngModel)]="newProject.downPayment"  
-                     (ngModelChange)="validateDownPayment()" 
-                     name="downPayment">
-            </div>
+              <label class="form-label fw-bold">
+                INITIAL DOWN PAYMENT (%) <span class="text-danger">*</span>
+                <span class="text-danger" *ngIf="downPaymentModel.errors?.['required'] && downPaymentModel.touched">This field is required</span>
+              </label>
+              <!-- <input type="number" class="form-control" #downPaymentRef [(ngModel)]="newProject.downPayment" name="downPayment" required #downPaymentModel="ngModel" /> -->
+              <input
+              type="number"
+              class="form-control"
+              #downPaymentRef
+              [(ngModel)]="newProject.downPayment"
+              name="downPayment"
+              required
+              max="100"
+              min="0"
+              maxlength="3"
+              (input)="limitInputLength($event, 3)"
+              #downPaymentModel="ngModel"/>
             
+            </div>
           </div>
         </form>
-
+        
         <hr class="my-4" style="height: 3px; background-color: black; border: none;"> 
 
 
@@ -288,13 +383,13 @@
         <form>
           <div class="mb-2">
             <label class="form-label fw-bold">PHASE NAME</label>
-            <input type="text" class="form-control" [(ngModel)]="newPhase.phaseName" name="phaseName">
+            <input type="text" class="form-control" [(ngModel)]="newPhase.phaseName" name="phaseName" >
           </div>
 
           <div class="row">
             <div class="col-md-6">
               <label class="form-label fw-bold">START DATE</label>
-              <input type="date" class="form-control" [(ngModel)]="newPhase.startDate" name="phaseStartDate">
+              <input type="date" class="form-control" [(ngModel)]="newPhase.startDate" name="phaseStartDate" >
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold">COMPLETION DATE</label>
@@ -303,10 +398,21 @@
           </div>
 
           <div class="row mt-2">
-            <div class="col-md-6">
+            <!-- <div class="col-md-6">
               <label class="form-label fw-bold">PHASE (%)</label>
               <input type="number" class="form-control" [(ngModel)]="newPhase.percentage" name="phasePercentage" (ngModelChange)="calculateAmountToBill()">
+            </div> -->
+            <div class="col-md-6">
+              <label class="form-label fw-bold">PHASE (%)</label>
+              <input
+                type="number"
+                class="form-control"
+                [(ngModel)]="newPhase.percentage"
+                name="phasePercentage"
+                (input)="limitPhasePercentageInput($event)"
+                (ngModelChange)="calculateAmountToBill()" />
             </div>
+            
             <div class="col-md-6">
               <label class="form-label fw-bold">AMOUNT TO BILL</label>
               <input type="number" class="form-control" [(ngModel)]="newPhase.amountToBill" name="amountToBill" readonly>
@@ -403,7 +509,8 @@
 
       <div class="modal-footer">
         <button type="button" class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
-        <button type="button" class="btn btn-primary" (click)="saveProject()">Save</button>
+        <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="saveProject()">Save</button>
+        <!-- <button type="button" class="btn btn-primary" (click)="saveProject()">Save</button> -->
       </div>
 
     </div>

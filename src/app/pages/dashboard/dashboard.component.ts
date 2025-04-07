@@ -1,5 +1,5 @@
 import { BakcEndService } from '@/bakc-end.service';
-import {Component, OnInit} from '@angular/core';
+import {Component, OnInit, ViewChild, ElementRef } from '@angular/core';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import { LeaveService } from '@services/leave/leave.service';
@@ -8,6 +8,9 @@ import { RecruitmentService } from '@services/recruitment/recruitment.service';
 import { ToastrService } from 'ngx-toastr';
 import { environment } from 'environments/environment';
 import { CreditEarningService } from '@services/leave/credit-earning.service';
+import { Modal } from 'bootstrap';
+import { ProjectsService } from '@services/projects/projects.service';
+import { Router } from '@angular/router';
 
 @Component({
     selector: 'app-dashboard',
@@ -61,12 +64,25 @@ export class DashboardComponent implements OnInit {
     buttons: [] // Remove all buttons
   };
 
+  @ViewChild('deleteModal') deleteModalRef!: ElementRef;
+  deleteModal!: any;
+  selectedProjectIndex!: number;
+  selectedProjectId!: string; // Store the Project ID
+  @ViewChild('projectModal') projectModal!: ElementRef;
+  modalInstance!: Modal;
+  @ViewChild('pendingModal', { static: false }) pendingModal!: ElementRef;
+    pendingmodalInstance!: any;
+
+
   employees: any = []
   announcements: any = [];
   currentUser:any = null;
   currentGroup:any = null;
 
-  constructor(private ceService: CreditEarningService, private profileService: ProfileService,private recruitmentService: RecruitmentService, private toastr: ToastrService, private leaveService: LeaveService, private service: BakcEndService) {
+  projects:any = [];
+  pendingProjects: any[] = [];
+
+  constructor(private ceService: CreditEarningService, private profileService: ProfileService,private recruitmentService: RecruitmentService, private toastr: ToastrService, private leaveService: LeaveService, private service: BakcEndService, private projectsService: ProjectsService, private router: Router) {
 
   }
 
@@ -85,6 +101,9 @@ export class DashboardComponent implements OnInit {
   ]).then(() => {
     // Once all the necessary data has been fetched, set loading to false
     this.loading = false;
+
+    this.loadProjects();
+
   }).catch((error) => {
     // Handle any errors that occur during the data fetching process
     this.toastr.error(error);
@@ -95,6 +114,148 @@ export class DashboardComponent implements OnInit {
   });
   }
 
+  ngAfterViewInit() {
+    // Initialize Bootstrap modal after view loads
+    this.deleteModal = new Modal(this.deleteModalRef.nativeElement);
+
+    if (this.pendingModal) {
+      this.pendingmodalInstance = new Modal(this.pendingModal.nativeElement);
+    }
+  }
+
+  loadProjects(): void {
+    this.projectsService.getProjects().subscribe({
+      next: (response) => {
+        if (response.rows) {
+          this.projects = response.rows.map((row: any) => ({
+            ...row.doc,
+            expanded: false, // Ensure expanded is false initially
+            phases: [], // Each project has its own phases array
+          }));
+          
+           // Filter pending projects with a deadline within the next 7 days
+           this.pendingProjects = this.projects.filter((project: any) => {
+            console.log("Checking project:", project.projectName, "Deadline:", project.deadline); // Debugging
+          
+            if (project.progress >= 100) return false; // Exclude completed projects
+
+            if (!project.deadline) return false; // Ensure deadline exists
+          
+            const deadline = new Date(project.deadline.replace(/-/g, '/'));
+            if (isNaN(deadline.getTime())) {
+              console.error("Invalid date for project:", project.projectName, "Raw Value:", project.deadline);
+              return false; // Skip invalid dates
+            }
+          
+            const today = new Date();
+            const timeDiff = deadline.getTime() - today.getTime();
+            const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+          
+            // console.log("Days left for", project.projectName, ":", daysLeft); // Debugging
+          
+            return daysLeft <= 7 && daysLeft >= 0            
+
+            // if (daysLeft <= 7 && daysLeft >= 0) {
+            //   // 🔹 Show Toastr notification for each pending project
+            //   this.toastr.info(
+            //     `${project.projectName} has ${daysLeft} day(s) left until completion!`,
+            //     'Project Deadline',
+            //     { timeOut: 3000 }
+            //   );              
+            //   return true;
+            // }
+            // return false;
+          });
+
+          // Show modal only if pending projects exist
+          if (this.pendingProjects.length > 0 && this.pendingModal) {
+            setTimeout(() => {
+              if (this.pendingModal) {
+                this.pendingmodalInstance = new Modal(this.pendingModal.nativeElement);
+                console.log("Pending Projects:", this.pendingProjects);
+                this.pendingmodalInstance.show();
+              }
+            }, 0);
+          }
+        }
+      },
+      
+      error: (error) => {
+        this.toastr.error('Failed to load projects', 'Error');
+        console.error('Error fetching projects:', error);
+      },
+    });
+  }
+
+  closePendingModal() {
+    if (this.pendingmodalInstance) {
+      this.pendingmodalInstance.hide();
+    }
+  
+    // Ensure Bootstrap removes the modal backdrop
+    document.querySelectorAll('.modal-backdrop').forEach(backdrop => {
+      backdrop.remove();
+    });
+  
+    // Remove 'modal-open' class from body to fix scrolling issue
+    document.body.classList.remove('modal-open');
+  }
+  
+  viewPendingProject(projectName: string) {
+    if (this.projects.length === 0) {
+      this.toastr.error('Project data is still loading. Please try again.', 'Error');
+      return;
+    }
+
+    // Find the index of the project in the projects table
+    const projectIndex = this.projects.findIndex(proj => 
+      proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
+    );
+  
+    if (this.projects.length === 0) {
+      this.toastr.error('Project data is still loading. Please try again.', 'Error');
+      return;
+    }
+  
+    if (projectIndex !== -1) {
+      // Expand the project if needed
+      this.projects[projectIndex].expanded = true;
+  
+      // Close the pending modal before scrolling
+      this.closePendingModal();
+  
+      const today = new Date();
+      // Use the project retrieved by index
+      const project = this.projects[projectIndex];  // Fix: Declare 'project' using the index
+      const deadline = new Date(project.deadline.replace(/-/g, '/'));
+      const timeDiff = deadline.getTime() - today.getTime();
+      const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  
+      // Set a flag in sessionStorage before redirecting
+      sessionStorage.setItem('redirectedFromPending', 'true');
+  
+      // Store the project name and days left in sessionStorage
+      sessionStorage.setItem('pendingProject', JSON.stringify({ projectName, daysLeft }));
+  
+      this.router.navigate(['/projects'], { queryParams: { projectName: projectName } });
+  
+      // Use a timeout to allow Angular to update the DOM before scrolling
+      setTimeout(() => {
+        const projectRow = document.getElementById('project-' + projectIndex);
+        if (projectRow) {
+          projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+          // 🔹 Highlight the project row for better visibility
+          projectRow.classList.add('highlight');
+          setTimeout(() => projectRow.classList.remove('highlight'), 4000); // Remove highlight after 2 sec
+        } else {
+          this.toastr.error('Could not locate the project in the table.', 'Error');
+        }
+      }, 500); // Slightly longer delay ensures modal is closed before scrolling
+    } else {
+      this.toastr.error('Project not found', 'Error');
+    }
+  }
 
   getCurrentUser() {
     return new Promise((resolve, reject) => {

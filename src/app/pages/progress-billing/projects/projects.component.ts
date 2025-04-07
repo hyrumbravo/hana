@@ -6,6 +6,12 @@ import 'datatables.net-buttons/js/buttons.print.js';
 import { Modal } from 'bootstrap';
 import { ProjectsService } from '@services/projects/projects.service';
 import { forkJoin } from 'rxjs';
+import { ActivatedRoute } from '@angular/router';
+import { Router } from '@angular/router';
+import { NgModel } from '@angular/forms';
+
+
+
 
 
 
@@ -15,10 +21,33 @@ import { forkJoin } from 'rxjs';
   styleUrls: ['./projects.component.scss']
 })
 export class ProjectsComponent implements OnInit {
+  
+
+  @ViewChild('projectNameRef') projectNameRef!: ElementRef;
+  @ViewChild('projectDescriptionRef') projectDescriptionRef!: ElementRef;
+  @ViewChild('clientNameRef') clientNameRef!: ElementRef;
+  @ViewChild('startDateRef') startDateRef!: ElementRef;
+  @ViewChild('deadlineRef') deadlineRef!: ElementRef;
+  @ViewChild('totalAmountRef') totalAmountRef!: ElementRef;
+  @ViewChild('downPaymentRef') downPaymentRef!: ElementRef;
+
+  @ViewChild('projectNameModel') projectNameModel: NgModel;
+  @ViewChild('projectDescriptionModel') projectDescriptionModel: NgModel;
+  @ViewChild('clientNameModel') clientNameModel: NgModel;
+  @ViewChild('startDateModel') startDateModel: NgModel;
+  @ViewChild('deadlineModel') deadlineModel: NgModel;
+  @ViewChild('totalAmountModel') totalAmountModel: NgModel;
+  @ViewChild('downPaymentModel') downPaymentModel: NgModel;
+
+
+
+
   @ViewChild('deleteModal') deleteModalRef!: ElementRef;
   deleteModal!: any;
   selectedProjectIndex!: number;
   selectedProjectId!: string; // Store the Project ID
+
+
   
   @ViewChild('projectModal') projectModal!: ElementRef;
   modalInstance!: Modal;
@@ -28,16 +57,27 @@ export class ProjectsComponent implements OnInit {
   pendingmodalInstance!: any;
 
 
-  
-
-
-
   totalPhasePercentage: number = 0; // Tracks total percentage used
-
-  
   
   // Projects array for display
   projects:any = [];
+
+
+
+
+
+
+  pendingProjects: any[] = [];
+
+
+
+
+
+
+
+
+
+
   
   newProject: any = {
     projectName: '',
@@ -47,13 +87,11 @@ export class ProjectsComponent implements OnInit {
     deadline: '',
     totalAmount: null,
     downPayment: 0,
-    progress: 0 // Default progress value
+    progress: 0, // Default progress value
   };
 
   // phase array for display
   phases:any = [];
-
-
   
   dtOptions: DataTables.Settings = {};
   loading = false; // Flag for showing a loading spinner
@@ -63,14 +101,32 @@ export class ProjectsComponent implements OnInit {
   timeIn: string = '';
   timeOut: string = '';
   
-  constructor(private toastr: ToastrService, private projectsService: ProjectsService) {}
+  constructor(private toastr: ToastrService, private projectsService: ProjectsService, private router: Router, private route: ActivatedRoute) {}
 
 
   ngOnInit(): void {
-    this.loadProjects();
+    this.route.queryParams.subscribe(params => {
+        const projectName = params['projectName'];
+        const storedProject = sessionStorage.getItem('pendingProject');
 
-    
+        if (storedProject) {
+            const { projectName: storedName, daysLeft } = JSON.parse(storedProject);
 
+            if (projectName === storedName) {
+                this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 4500 });
+                sessionStorage.removeItem('pendingProject'); // Ensure it only appears once
+            }
+        }
+
+        if (projectName && sessionStorage.getItem('highlightedProject') !== projectName) {
+            this.loadProjects(() => {
+                this.highlightProject(projectName);
+                this.clearQueryParams();
+            });
+        } else {
+            this.loadProjects();
+        }
+    });
 
     // datatables cofig
     this.dtOptions = {
@@ -89,23 +145,130 @@ export class ProjectsComponent implements OnInit {
 
   }
 
-  
-
+  modalElement: HTMLElement;
   ngAfterViewInit() {
+
     // Initialize Bootstrap modal after view loads
     this.deleteModal = new Modal(this.deleteModalRef.nativeElement);
   }
+
+  clearQueryParams() {
+    this.router.navigate([], {
+        queryParams: {},
+        queryParamsHandling: 'merge', // Remove projectName while keeping other params
+    });
+} 
+
+  loadProjects(callback?: () => void): void {
+    this.projectsService.getProjects().subscribe({
+        next: (response) => {
+            if (response.rows) {
+                this.projects = response.rows.map((row: any) => ({
+                    ...row.doc,
+                    expanded: false, // Ensure expanded is false initially
+                    phases: [], // Each project has its own phases array
+                }));
+
+                if (callback) {
+                    callback(); // Run the callback after projects have loaded
+                }
+            }
+        },
+        error: (error) => {
+            this.toastr.error('Failed to load projects', 'Error');
+            console.error('Error fetching projects:', error);
+        },
+    });
+  }
+
+  isHighlighted: boolean = false; // Add this property to track highlighting
+
+
+  highlightProject(projectName: string) {
+    if (this.isHighlighted || sessionStorage.getItem('highlightedProject') === projectName) return; // Prevent multiple highlights
+
+    const projectIndex = this.projects.findIndex(proj => 
+        proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
+    );
+
+    if (projectIndex !== -1) {
+        setTimeout(() => {
+            const projectRow = document.getElementById('project-' + projectIndex);
+            if (projectRow) {
+                projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                projectRow.classList.add('highlight');
+
+                // Remove highlight after 4 seconds
+                setTimeout(() => projectRow.classList.remove('highlight'), 4000);
+
+                this.isHighlighted = true; // Mark as highlighted
+                sessionStorage.setItem('highlightedProject', projectName); // Save highlight state in sessionStorage
+            }
+        }, 500);
+    } else {
+        this.toastr.error('Project not found in the list.', 'Error');
+    }
+  }
+
+  ngOnDestroy() {
+    sessionStorage.removeItem('highlightedProject'); // Clear highlight state when user leaves the page
+  }
+  
+
+  // viewPendingProject(projectName: string) {
+  //   if (this.projects.length === 0) {
+  //     this.toastr.error('Project data is still loading. Please try again.', 'Error');
+  //     return;
+  //   }
+
+  //   // Find the index of the project in the projects table
+  //   const projectIndex = this.projects.findIndex(proj => 
+  //     proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
+  //   );
+  
+
+  //   if (projectIndex !== -1) {
+  //     // Expand the project if needed
+  //     // this.projects[projectIndex].expanded = true;
+
+  //     // Close the pending modal before scrolling
+  //     this.closePendingModal();
+  
+  //     // Use a timeout to allow Angular to update the DOM before scrolling
+  //     setTimeout(() => {
+  //       const projectRow = document.getElementById('project-' + projectIndex);
+  //       if (projectRow) {
+          
+  //           // this.projects[projectIndex].expanded = true;
+  //           projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+  //           // 🔹 Highlight the project row for better visibility
+  //           projectRow.classList.add('highlight');
+  //           setTimeout(() => projectRow.classList.remove('highlight'), 2000); // Remove highlight after 2 sec
+  //       } else {
+  //           this.toastr.error('Could not locate the project in the table.', 'Error');
+  //       }
+  //     }, 500); // Slightly longer delay ensures modal is closed before scrolling
+  //   } else {
+  //       this.toastr.error('Project not found', 'Error');
+  //   }
+  // }
+
 
   // openDeleteModal(index: number) {
   //   this.selectedProjectIndex = index; // Store the project index (if needed)
   //   this.deleteModal?.show(); // Show modal
   // }
+  
+
 
   openDeleteModal(index: number) {
     this.selectedProjectIndex = index;
     this.selectedProjectId = this.projects[index].projectId; // Get Project ID
     this.deleteModal.show();
   }
+
+
 
 
   deleteProject() {
@@ -126,26 +289,6 @@ export class ProjectsComponent implements OnInit {
   closeDeleteModal() {
     this.deleteModal?.hide(); // Hide modal
   }
-
-
-  loadProjects(): void {
-    this.projectsService.getProjects().subscribe({
-      next: (response) => {
-        if (response.rows) {
-          this.projects = response.rows.map((row: any) => ({
-            ...row.doc,
-            expanded: false, // Ensure expanded is false initially
-            phases: [], // Each project has its own phases array
-          }));
-        }
-      },
-      error: (error) => {
-        this.toastr.error('Failed to load projects', 'Error');
-        console.error('Error fetching projects:', error);
-      },
-    });
-  }
-  
   
 
   loadPhases(index: number, projectId: string): void {
@@ -166,15 +309,21 @@ export class ProjectsComponent implements OnInit {
     );
   }
   
-  
 
   // refresh timelogs
-  
+
+  // createProject(): void {
+  //   this.modalInstance = new Modal(this.projectModal.nativeElement);
+  //   this.modalInstance.show();
+  // }
 
   createProject(): void {
-    this.modalInstance = new Modal(this.projectModal.nativeElement);
-    this.modalInstance.show();
-  }
+  this.modalInstance = new Modal(this.projectModal.nativeElement, {
+    backdrop: 'static',  // Prevents closing the modal when clicking outside
+    keyboard: false      // Prevents closing the modal when pressing the Escape key
+  });
+  this.modalInstance.show();
+}
 
 
   toggleExpand(index: number) {
@@ -184,8 +333,6 @@ export class ProjectsComponent implements OnInit {
       this.loadPhases(index, this.projects[index].projectId);
     }
   }
-  
-  
   
 
   togglePhaseExpand(projectIndex: number, phaseIndex: number) {
@@ -246,69 +393,215 @@ export class ProjectsComponent implements OnInit {
 
   //project creation
     
+//   saveProject() {
+//   // this.newProject.progress = 0;
+//   if (!this.newProject.projectName || !this.newProject.startDate || !this.newProject.deadline) {
+//     this.toastr.warning('Please fill in the fields', 'Warning');
+//     return;
+//   }
+
+//   this.projectsService.getProjects().subscribe(
+//     (response) => {
+//       const projects = response.rows.map((row: any) => row.doc);
+
+//       // Find the highest existing projectId
+//       let maxId = 0;
+//       projects.forEach((project: any) => {
+//         if (project.projectId && !isNaN(Number(project.projectId))) {
+//           maxId = Math.max(maxId, Number(project.projectId));
+//         }
+//       });
+
+//       // Generate a new projectId
+//       const newProjectId = (maxId + 1).toString().padStart(4, '0');
+
+//       // Assign projectId
+//       this.newProject.projectId = newProjectId;
+
+//       // Step 1: Save project to CouchDB (projects database)
+//       this.projectsService.createProject(this.newProject).subscribe(
+//         (projectResponse) => {
+//           this.toastr.success('Project saved successfully', 'Success');
+//           this.loadProjects();
+
+//           // Step 2: Save each phase separately in CouchDB (project_phase database)
+//           this.newPhases.forEach((phase) => {
+//             const phaseData = {
+//               ...phase,
+//               projectId: newProjectId // Link phase to the project
+//             };
+
+//             this.projectsService.createPhase(phaseData).subscribe(
+//               (phaseResponse) => {
+//                 console.log('Phase saved:', phaseResponse);
+//               },
+//               (phaseError) => {
+//                 console.error('Error saving phase:', phaseError);
+//                 this.toastr.error('Failed to save phase', 'Error');
+//               }
+//             );
+//           });
+//           this.cancelForm();
+//           this.modalInstance.hide();
+//         },
+//         (error) => {
+//           this.toastr.error('Failed to save project', 'Error');
+//           console.error(error);
+//         }
+//       );
+//     },
+//     (error) => {
+//       this.toastr.error('Failed to fetch projects', 'Error');
+//       console.error(error);
+//     }
+//   );
+// }
+
+
+  isSaving = false; // Flag to track saving state
+
   saveProject() {
-  // this.newProject.progress = 0;
-  if (!this.newProject.projectName || !this.newProject.startDate || !this.newProject.deadline) {
-    this.toastr.warning('Please fill in the fields', 'Warning');
-    return;
+    if (this.isSaving) return; // If already saving, prevent multiple clicks
+
+    this.isSaving = true; // Set the flag to true to indicate saving is in progress
+
+    const clearErrorStyles = (ref: ElementRef) => {
+      if (ref.nativeElement && ref.nativeElement.classList) {
+        ref.nativeElement.classList.remove('ng-touched');
+        ref.nativeElement.classList.remove('ng-invalid');
+      }
+    };
+    clearErrorStyles(this.projectNameRef);
+    clearErrorStyles(this.projectDescriptionRef);
+    clearErrorStyles(this.clientNameRef);
+    clearErrorStyles(this.startDateRef);
+    clearErrorStyles(this.deadlineRef);
+    clearErrorStyles(this.totalAmountRef);
+    clearErrorStyles(this.downPaymentRef);  
+
+    
+    this.projectNameModel.control.markAsTouched();
+    this.projectDescriptionModel.control.markAsTouched();
+    this.clientNameModel.control.markAsTouched();
+    this.startDateModel.control.markAsTouched();
+    this.deadlineModel.control.markAsTouched();
+    this.totalAmountModel.control.markAsTouched();
+    this.downPaymentModel.control.markAsTouched();
+
+    
+   
+    
+
+    const missingFields: string[] = [];
+
+    if (!this.newProject.projectName) {
+      this.scrollTo(this.projectNameRef);
+      this.isSaving = false;
+      return;
+    }
+    if (!this.newProject.projectDescription) {
+      this.scrollTo(this.projectDescriptionRef);
+      return;
+    }
+    if (!this.newProject.clientName) {
+      this.scrollTo(this.clientNameRef);
+      return;
+    }
+    if (!this.newProject.startDate) {
+      this.scrollTo(this.startDateRef);
+      return;
+    }
+    if (!this.newProject.deadline) {
+      this.scrollTo(this.deadlineRef);
+      return;
+    }
+    if (this.newProject.totalAmount == null) {
+      this.scrollTo(this.totalAmountRef);
+      return;
+    }
+    if (this.newProject.downPayment == null) {
+      this.scrollTo(this.downPaymentRef);
+      return;
+    }
+
+    this.projectsService.getProjects().subscribe(
+      (response) => {
+        const projects = response.rows.map((row: any) => row.doc);
+        let maxId = 0;
+
+        projects.forEach((project: any) => {
+          if (project.projectId && !isNaN(Number(project.projectId))) {
+            maxId = Math.max(maxId, Number(project.projectId));
+          }
+        });
+
+        const newProjectId = (maxId + 1).toString().padStart(4, '0');
+        this.newProject.projectId = newProjectId;
+
+        this.projectsService.createProject(this.newProject).subscribe(
+          (projectResponse) => {
+            this.toastr.success('Project saved successfully', 'Success');
+            this.loadProjects();
+
+            this.newPhases.forEach((phase) => {
+              const phaseData = {
+                ...phase,
+                projectId: newProjectId
+              };
+
+              this.projectsService.createPhase(phaseData).subscribe(
+                (phaseResponse) => {
+                  console.log('Phase saved:', phaseResponse);
+                },
+                (phaseError) => {
+                  console.error('Error saving phase:', phaseError);
+                  this.toastr.error('Failed to save phase', 'Error');
+                }
+              );
+            });
+
+            this.cancelForm();
+            this.modalInstance.hide();
+            this.isSaving = false;
+            
+          },
+          (error) => {
+            this.toastr.error('Failed to save project', 'Error');
+            console.error(error);
+            this.isSaving = false;
+          }
+        );
+      },
+      (error) => {
+        this.toastr.error('Failed to fetch projects', 'Error');
+        console.error(error);
+      }
+    );
   }
 
-  this.projectsService.getProjects().subscribe(
-    (response) => {
-      const projects = response.rows.map((row: any) => row.doc);
 
-      // Find the highest existing projectId
-      let maxId = 0;
-      projects.forEach((project: any) => {
-        if (project.projectId && !isNaN(Number(project.projectId))) {
-          maxId = Math.max(maxId, Number(project.projectId));
-        }
-      });
-
-      // Generate a new projectId
-      const newProjectId = (maxId + 1).toString().padStart(4, '0');
-
-      // Assign projectId
-      this.newProject.projectId = newProjectId;
-
-      // Step 1: Save project to CouchDB (projects database)
-      this.projectsService.createProject(this.newProject).subscribe(
-        (projectResponse) => {
-          this.toastr.success('Project saved successfully', 'Success');
-          this.loadProjects();
-
-          // Step 2: Save each phase separately in CouchDB (project_phase database)
-          this.newPhases.forEach((phase) => {
-            const phaseData = {
-              ...phase,
-              projectId: newProjectId // Link phase to the project
-            };
-
-            this.projectsService.createPhase(phaseData).subscribe(
-              (phaseResponse) => {
-                console.log('Phase saved:', phaseResponse);
-              },
-              (phaseError) => {
-                console.error('Error saving phase:', phaseError);
-                this.toastr.error('Failed to save phase', 'Error');
-              }
-            );
-          });
-          this.cancelForm();
-          this.modalInstance.hide();
-        },
-        (error) => {
-          this.toastr.error('Failed to save project', 'Error');
-          console.error(error);
-        }
-      );
-    },
-    (error) => {
-      this.toastr.error('Failed to fetch projects', 'Error');
-      console.error(error);
+  scrollTo(ref: ElementRef) {
+    ref.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    ref.nativeElement.focus();
+  
+    // Mark as touched to trigger validation styles
+    if (ref.nativeElement && ref.nativeElement.classList) {
+      ref.nativeElement.classList.add('ng-touched');
+      ref.nativeElement.classList.add('ng-invalid');
     }
-  );
-}
+  }
+
+  resetValidation(model: NgModel, ref: ElementRef) {
+    if (ref.nativeElement && ref.nativeElement.classList) {
+      ref.nativeElement.classList.remove('ng-touched');
+      ref.nativeElement.classList.remove('ng-invalid');
+    }
+    model.control.markAsPristine();
+    model.control.markAsUntouched();
+  }
+  
+  
+
 
 
   addPhase() {
@@ -384,6 +677,23 @@ export class ProjectsComponent implements OnInit {
   
 
   cancelForm() {
+
+    const clearErrorStyles = (ref: ElementRef) => {
+      if (ref.nativeElement && ref.nativeElement.classList) {
+        ref.nativeElement.classList.remove('ng-touched');
+        ref.nativeElement.classList.remove('ng-invalid');
+      }
+    };
+    this.resetValidation(this.projectNameModel, this.projectNameRef);
+    this.resetValidation(this.projectDescriptionModel, this.projectDescriptionRef);
+    this.resetValidation(this.clientNameModel, this.clientNameRef);
+    this.resetValidation(this.startDateModel, this.startDateRef);
+    this.resetValidation(this.deadlineModel, this.deadlineRef);
+    this.resetValidation(this.totalAmountModel, this.totalAmountRef);
+    this.resetValidation(this.downPaymentModel, this.downPaymentRef);
+
+
+    
     this.newProject = {
       projectName: '',
       projectDescription: '',
@@ -697,17 +1007,6 @@ export class ProjectsComponent implements OnInit {
 }
 
 
-  
-  
-  
-  
-  
-
-
-
-
-
-
 
   //frontend display
   updateProjectProgress(project: any) {
@@ -719,6 +1018,10 @@ export class ProjectsComponent implements OnInit {
     });
   
     project.progress = Math.round(totalProgress); // Update project progress
+
+    if (project.progress >= 100) {
+      this.pendingProjects = this.pendingProjects.filter(p => p.projectName !== project.projectName);
+    }
   }
 
 
@@ -737,15 +1040,187 @@ export class ProjectsComponent implements OnInit {
 
 
 
+
+  // saveAndGenerateInvoice(phases: any) {
+  //   let isValid = true;
+  
+  //   phases.milestones.forEach((milestone: any) => {
+  //     if (milestone.present > 0) {
+  //       const newPrevious = milestone.previous + milestone.present;
+  //       const remainingPercent = 100 - milestone.previous; // Calculate how much can still be added
+  
+  //       // Check if previous will exceed 100%
+  //       if (newPrevious > 100) {
+  //         // Show a warning toast with the remaining percentage
+  //         this.toastr.warning(`Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`, 'Warning');
+  //         isValid = false;
+  //         return;
+  //       }
+  //     }
+  //   });
+  
+  //   // Stop the process if any milestone exceeds 100%
+  //   if (!isValid) {
+  //     return;
+  //   }
+  
+  //   // Proceed with saving
+  //   phases.milestones.forEach((milestone: any) => {
+  //     if (milestone.present > 0) {
+  //       milestone.previous = Math.min(100, milestone.previous + milestone.present);
+  //       milestone.present = 0;
+  //       this.calculateAmountDue(milestone);
+  //     }
+  //   });
+  
+  //   // Generate invoice
+  //   this.generateInvoice(phases.milestones);
+  // }
+
+  // generateInvoice(milestones: any[]) {
+  //   console.log('Generating Invoice for milestones:', milestones);
+  //   this.toastr.success('Invoice generated successfully!', 'Success');
+  // }
+
+
+  saveAndGenerateInvoice(phases: any) {
+    let isValid = true;
+  
+    phases.milestones.forEach((milestone: any) => {
+      if (milestone.present > 0) {
+        const newPrevious = milestone.previous + milestone.present;
+        const remainingPercent = 100 - milestone.previous; // Calculate how much can still be added
+  
+        // Check if previous will exceed 100%
+        if (newPrevious > 100) {
+          // Show a warning toast with the remaining percentage
+          this.toastr.warning(
+            `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
+            'Warning'
+          );
+          isValid = false; // Set the validity to false to prevent further action
+          return;
+        }
+  
+        // Add present to previous but not exceeding 100%
+        milestone.previous = newPrevious;
+        
+        // Reset present to 0
+        milestone.present = 0;
+  
+        // Make sure to only update the specific milestone
+        const updatedMilestone = { ...milestone };
+  
+        // Update milestone in CouchDB for this specific milestone
+        this.projectsService.updateMilestone(phases._id, updatedMilestone).subscribe({
+          next: (updatedMilestone) => {
+            console.log('Milestone updated successfully', updatedMilestone);
+          },
+          error: (err) => {
+            console.error('Error updating milestone:', err);
+          }
+        });
+  
+        // Recalculate amountDue (if needed)
+        this.calculateAmountDue(milestone);
+      }
+    });
+  
+    // Stop the process if any milestone exceeds 100%
+    if (!isValid) {
+      return;
+    }
+  
+    // Optional: Call a function to generate invoice
+    this.generateInvoice(phases.milestones);
+  }
+  
+  
+  
+  generateInvoice(milestones: any[]) {
+    console.log('Generating Invoice for milestones:', milestones);
+    this.toastr.success('Invoice generated successfully!', 'Success');
+  }
+
+  //initial downpayment creation form
+  limitInputLength(event: any, maxLength: number) {
+    const input = event.target.value;
+  
+    // If input is longer than allowed digits
+    if (input.length > maxLength) {
+      event.target.value = input.slice(0, maxLength);
+    }
+  
+    // If input is greater than 100, force it to 100
+    if (+event.target.value > 100) {
+      event.target.value = '100';
+    }
+  
+    // Update ngModel binding manually
+    this.newProject.downPayment = parseInt(event.target.value, 10);
+  }
+
+
+  limitProgressInput(event: any, phases: any) {
+    let inputValue = event.target.value;
+  
+    // If the input is empty or null, set it to 0
+    if (inputValue === '' || inputValue === null) {
+      inputValue = '0';
+    }
+  
+    // If the input length exceeds 3 digits, slice it to 3 digits
+    if (inputValue.length > 3) {
+      inputValue = inputValue.slice(0, 3);
+    }
+  
+    // If the input is greater than 100, reset to 100
+    if (+inputValue > 100) {
+      inputValue = '100';
+    }
+  
+    // Update the phases progress with the cleaned value
+    phases.progress = parseInt(inputValue, 10);
+  }
+  
+
+  limitPhasePercentageInput(event: any) {
+    let inputValue = event.target.value;
+  
+    // If input is null or empty, set to 0
+    if (inputValue === '' || inputValue === null) {
+      inputValue = '0';
+    }
+  
+    // Limit to 3 digits
+    if (inputValue.length > 3) {
+      inputValue = inputValue.slice(0, 3);
+    }
+  
+    // Enforce 0 to 100 range
+    const numericValue = +inputValue;
+    if (numericValue > 100) {
+      inputValue = '100';
+    } else if (numericValue < 0) {
+      inputValue = '0';
+    }
+  
+    // Update the input field
+    event.target.value = inputValue;
+  
+    // Update the model
+    this.newPhase.percentage = parseInt(inputValue, 10);
+  }
+  
   
   
   
 
   
 
-
   
 
+  
 
   
   

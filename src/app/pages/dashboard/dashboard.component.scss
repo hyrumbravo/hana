@@ -127,3 +127,54 @@ flex-grow: 1;
     height: 1px;
     background-color: #dee2e6; // or your preferred border color
 }  
+
+.modal-body {
+  display: flex;
+  flex-direction: row; // make items line up horizontally
+  flex-wrap: wrap;     // wrap if not enough space
+  gap: 1rem;           // optional: spacing between items
+  align-items: center; // vertically align center
+  justify-content: space-between; // optional: adjust alignment
+}
+
+.modal-body > * {
+  flex: 1 1 auto; // let them grow and shrink
+  min-width: 100px; // prevent breaking too early
+}
+
+.modal-dialog {
+  max-width: 60%; // or 100%, or a custom value like 800px
+}
+
+
+.btn-close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: black;
+  font-weight: bold;
+}
+
+.btn-close:hover {
+  background: transparent;
+}
+
+.btn-view{
+  background-color: #007bff;
+  color: white; /* Bootstrap primary blue */
+  font-size: 14px;
+  padding: 8px 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+
+}
+
+.highlight {
+  background-color: lightblue !important;
+  transition: background-color 1s ease-in-out;
+}
