@@ -40,8 +40,6 @@ export class ProjectsComponent implements OnInit {
   @ViewChild('downPaymentModel') downPaymentModel: NgModel;
 
 
-
-
   @ViewChild('deleteModal') deleteModalRef!: ElementRef;
   deleteModal!: any;
   selectedProjectIndex!: number;
@@ -62,22 +60,7 @@ export class ProjectsComponent implements OnInit {
   // Projects array for display
   projects:any = [];
 
-
-
-
-
-
   pendingProjects: any[] = [];
-
-
-
-
-
-
-
-
-
-
   
   newProject: any = {
     projectName: '',
@@ -99,13 +82,24 @@ export class ProjectsComponent implements OnInit {
   
   currentEmployee: any = {}; 
   currentTimelog: any = {}; 
-  timeIn: string = '';
-  timeOut: string = '';
   
   constructor(private toastr: ToastrService, private projectsService: ProjectsService, private router: Router, private route: ActivatedRoute) {}
 
 
   ngOnInit(): void {
+
+    this.dtOptions = {
+      language: {
+        search: '',
+        searchPlaceholder: 'Search',
+        lengthMenu: 'Show _MENU_ entries'
+      },
+      ordering: true,
+      paging: true,
+      pageLength: 10,
+      searching: true,
+      lengthChange: true,
+    };
     
   
     this.route.queryParams.subscribe(params => {
@@ -132,18 +126,7 @@ export class ProjectsComponent implements OnInit {
     });
 
     // datatables cofig
-    this.dtOptions = {
-      language: {
-        search: '',
-        searchPlaceholder: 'Search',
-        lengthMenu: 'Show _MENU_ entries'
-      },
-      ordering: true,
-      paging: true,
-      pageLength: 10,
-      searching: true,
-      lengthChange: true,
-    };
+
 
 
   }
@@ -244,60 +227,11 @@ export class ProjectsComponent implements OnInit {
     sessionStorage.removeItem('highlightedProject'); // Clear highlight state when user leaves the page
   }
   
-
-  // viewPendingProject(projectName: string) {
-  //   if (this.projects.length === 0) {
-  //     this.toastr.error('Project data is still loading. Please try again.', 'Error');
-  //     return;
-  //   }
-
-  //   // Find the index of the project in the projects table
-  //   const projectIndex = this.projects.findIndex(proj => 
-  //     proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
-  //   );
-  
-
-  //   if (projectIndex !== -1) {
-  //     // Expand the project if needed
-  //     // this.projects[projectIndex].expanded = true;
-
-  //     // Close the pending modal before scrolling
-  //     this.closePendingModal();
-  
-  //     // Use a timeout to allow Angular to update the DOM before scrolling
-  //     setTimeout(() => {
-  //       const projectRow = document.getElementById('project-' + projectIndex);
-  //       if (projectRow) {
-          
-  //           // this.projects[projectIndex].expanded = true;
-  //           projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-
-  //           // 🔹 Highlight the project row for better visibility
-  //           projectRow.classList.add('highlight');
-  //           setTimeout(() => projectRow.classList.remove('highlight'), 2000); // Remove highlight after 2 sec
-  //       } else {
-  //           this.toastr.error('Could not locate the project in the table.', 'Error');
-  //       }
-  //     }, 500); // Slightly longer delay ensures modal is closed before scrolling
-  //   } else {
-  //       this.toastr.error('Project not found', 'Error');
-  //   }
-  // }
-
-
-  // openDeleteModal(index: number) {
-  //   this.selectedProjectIndex = index; // Store the project index (if needed)
-  //   this.deleteModal?.show(); // Show modal
-  // }
-  
-
-
   openDeleteModal(index: number) {
     this.selectedProjectIndex = index;
     this.selectedProjectId = this.projects[index].projectId; // Get Project ID
     this.deleteModal.show();
   }
-
 
 
 
@@ -763,9 +697,12 @@ export class ProjectsComponent implements OnInit {
     phase.milestones.push({ 
       name: phase.newMilestone.name, 
       amount: phase.newMilestone.amount ,
+      previousOld:0,
       previous: 0,
       present: 0,
+      presentValue: 0,
       amountDue: 0,
+      presentMilestoneDue:0,
       progress: "On Progress"
     });
 
@@ -1034,10 +971,13 @@ export class ProjectsComponent implements OnInit {
         console.error("Error fetching latest _rev:", error);
       }
     );
-}
+  }
 
 
 
+
+
+  
   //frontend display
   updateProjectProgress(project: any) {
     let totalProgress = 0;
@@ -1069,101 +1009,194 @@ export class ProjectsComponent implements OnInit {
   }
 
 
-
-
   // saveAndGenerateInvoice(phases: any) {
   //   let isValid = true;
   
   //   phases.milestones.forEach((milestone: any) => {
   //     if (milestone.present > 0) {
   //       const newPrevious = milestone.previous + milestone.present;
-  //       const remainingPercent = 100 - milestone.previous; // Calculate how much can still be added
+  //       const remainingPercent = 100 - milestone.previous;
   
-  //       // Check if previous will exceed 100%
   //       if (newPrevious > 100) {
-  //         // Show a warning toast with the remaining percentage
-  //         this.toastr.warning(`Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`, 'Warning');
+  //         this.toastr.warning(
+  //           `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
+  //           'Warning'
+  //         );
   //         isValid = false;
   //         return;
   //       }
-  //     }
-  //   });
   
-  //   // Stop the process if any milestone exceeds 100%
-  //   if (!isValid) {
-  //     return;
-  //   }
+  //       // ✅ Store old values before updating
+  //       milestone.previousOld = milestone.previous;
+  //       milestone.presentValue = milestone.present;
   
-  //   // Proceed with saving
-  //   phases.milestones.forEach((milestone: any) => {
-  //     if (milestone.present > 0) {
-  //       milestone.previous = Math.min(100, milestone.previous + milestone.present);
+  //       // ✅ Save the current amountDue to presentMilestoneDue
+  //       milestone.presentMilestoneDue = milestone.amountDue;
+  
+  //       // ✅ Reset amountDue
+  //       milestone.amountDue = 0;
+  
+  //       // ✅ Update values
+  //       milestone.previous = newPrevious;
   //       milestone.present = 0;
+  
+  //       // ✅ Prepare only required fields to update (prevent entire object overwrite)
+  //       const updatedMilestone = {
+  //         name: milestone.name,
+  //         previous: milestone.previous,
+  //         previousOld: milestone.previousOld,
+  //         present: milestone.present,
+  //         presentValue: milestone.presentValue,
+  //         amountDue: milestone.amountDue,
+  //         presentMilestoneDue: milestone.presentMilestoneDue,
+  //         progress: milestone.progress
+  //       };
+  
+  //       // ✅ Save to CouchDB using minimal payload
+  //       this.projectsService.updateMilestone(phases._id, updatedMilestone).subscribe({
+  //         next: (res) => {
+  //           console.log('Milestone updated successfully', res);
+  //         },
+  //         error: (err) => {
+  //           console.error('Error updating milestone:', err);
+  //         }
+  //       });
+  
+  //       // ✅ Optional: Recalculate after update (if needed)
   //       this.calculateAmountDue(milestone);
   //     }
   //   });
   
-  //   // Generate invoice
+  //   if (!isValid) {
+  //     return;
+  //   }
+  
+  //   // ✅ Recalculate phase progress
+  //   this.updatePhaseProgressFromMilestones(phases);
+  
+  //   // ✅ Generate invoice with updated milestones
   //   this.generateInvoice(phases.milestones);
   // }
 
-  // generateInvoice(milestones: any[]) {
-  //   console.log('Generating Invoice for milestones:', milestones);
-  //   this.toastr.success('Invoice generated successfully!', 'Success');
-  // }
 
+  
 
   saveAndGenerateInvoice(phases: any) {
     let isValid = true;
   
+    // Array to hold updated milestones
+    const updatedMilestones: any[] = [];
+  
+    // Process each milestone
     phases.milestones.forEach((milestone: any) => {
       if (milestone.present > 0) {
         const newPrevious = milestone.previous + milestone.present;
-        const remainingPercent = 100 - milestone.previous; // Calculate how much can still be added
+        const remainingPercent = 100 - milestone.previous;
   
-        // Check if previous will exceed 100%
         if (newPrevious > 100) {
-          // Show a warning toast with the remaining percentage
           this.toastr.warning(
             `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
             'Warning'
           );
-          isValid = false; // Set the validity to false to prevent further action
+          isValid = false;
           return;
         }
   
-        // Add present to previous but not exceeding 100%
+        // ✅ Update milestone fields
+        milestone.previousOld = milestone.previous;
+        milestone.presentValue = milestone.present;
+        milestone.presentMilestoneDue = milestone.amountDue;
+        milestone.amountDue = 0;
         milestone.previous = newPrevious;
-        
-        // Reset present to 0
         milestone.present = 0;
   
-        // Make sure to only update the specific milestone
-        const updatedMilestone = { ...milestone };
-  
-        // Update milestone in CouchDB for this specific milestone
-        this.projectsService.updateMilestone(phases._id, updatedMilestone).subscribe({
-          next: (updatedMilestone) => {
-            console.log('Milestone updated successfully', updatedMilestone);
-          },
-          error: (err) => {
-            console.error('Error updating milestone:', err);
-          }
+        // ✅ Collect updated milestones
+        updatedMilestones.push({
+          name: milestone.name,
+          previous: milestone.previous,
+          previousOld: milestone.previousOld,
+          present: milestone.present,
+          presentValue: milestone.presentValue,
+          amountDue: milestone.amountDue,
+          presentMilestoneDue: milestone.presentMilestoneDue,
+          progress: milestone.progress
         });
   
-        // Recalculate amountDue (if needed)
+        // Optional: Recalculate UI
         this.calculateAmountDue(milestone);
       }
     });
   
-    // Stop the process if any milestone exceeds 100%
-    if (!isValid) {
+    if (!isValid || updatedMilestones.length === 0) return;
+  
+    // ✅ Fetch phase from DB and update all changed milestones in one go
+    this.projectsService.getPhaseById(phases._id).subscribe({
+      next: (phaseFromDb: any) => {
+        const updatedPhase = { ...phaseFromDb };
+        updatedPhase.milestones = phaseFromDb.milestones.map((milestone: any) => {
+          const updated = updatedMilestones.find(m => m.name === milestone.name);
+          return updated ? { ...milestone, ...updated } : milestone;
+        });
+  
+        // ✅ Recalculate phase progress dynamically
+        const totalMilestones = updatedPhase.milestones.length;
+        let totalProgress = 0;
+  
+        updatedPhase.milestones.forEach((m: any) => {
+          const milestoneProgressPercentage = m.previous;
+          totalProgress += (milestoneProgressPercentage / 100) * (100 / totalMilestones);
+        });
+  
+        updatedPhase.progress = totalProgress; // Update phase progress
+  
+        // ✅ Save entire phase doc with updated milestones
+        this.projectsService.updateFullPhase(updatedPhase).subscribe({
+          next: (res) => {
+            console.log('Phase with milestones updated successfully', res);
+  
+            // After updating the phase, update the project progress in the backend
+            this.projectsService.updateProjectProgress(phases.projectId).subscribe(
+              (projectUpdateResponse) => {
+                console.log("Project progress updated successfully:", projectUpdateResponse);
+              },
+              (error) => {
+                console.error("Error updating project progress:", error);
+              }
+            );
+            this.updatePhaseProgressFromMilestones(phases);
+            // this.updateProjectProgress(project);
+
+            // Generate invoice with updated milestones
+            this.generateInvoice(updatedPhase.milestones);
+          },
+          error: (err) => {
+            console.error('Error updating phase:', err);
+          }
+        });
+      },
+      error: (err) => {
+        console.error('Error fetching phase from DB:', err);
+      }
+    });
+  }
+  
+  
+  
+  
+
+
+  updatePhaseProgressFromMilestones(phase: any) {
+    if (!phase.milestones || phase.milestones.length === 0) {
+      phase.progress = 0;
       return;
     }
   
-    // Optional: Call a function to generate invoice
-    this.generateInvoice(phases.milestones);
+    const total = phase.milestones.reduce((acc: number, m: any) => acc + (m.previous || 0), 0);
+    const average = total / phase.milestones.length;
+    phase.progress = Math.min(Math.round(average), 100); // Optional: Round and cap at 100
   }
+  
+  
   
   
   
@@ -1243,15 +1276,41 @@ export class ProjectsComponent implements OnInit {
   }
   
   
+
+  limitMilestoneInputLength(event: any, milestone: any, maxLength: number): void {
+    let inputValue = event.target.value;
+  
+    // Limit max characters
+    if (inputValue.length > maxLength) {
+      inputValue = inputValue.slice(0, maxLength);
+      event.target.value = inputValue;
+    }
+  
+    // Limit value to max 100
+    if (+inputValue > 100) {
+      inputValue = '100';
+      event.target.value = inputValue;
+    }
+  
+    // Limit value to min 0
+    if (+inputValue < 0) {
+      inputValue = '0';
+      event.target.value = inputValue;
+    }
+  
+    // Update ngModel manually
+    milestone.present = parseInt(inputValue, 10) || 0;
+  
+    // Optionally recalculate
+    this.calculateAmountDue(milestone);
+  }
+  
   
   
 
-  
+
 
   
-
-  
-
   
   
 

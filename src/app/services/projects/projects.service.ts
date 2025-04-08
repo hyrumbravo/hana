@@ -151,6 +151,15 @@ export class ProjectsService {
   }
 
 
+  updateFullPhase(phase: any): Observable<any> {
+    return this.http.put(`${this.phaseBaseUrl}/${phase._id}?rev=${phase._rev}`, phase, {
+      headers: this.headers
+    });
+  }
+
+  
+
+
 
 
 
@@ -197,31 +206,70 @@ export class ProjectsService {
   }
 
   
-  updateMilestone(phaseId: string, milestone: any): Observable<any> {
-    const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
+  // updateMilestone(phaseId: string, milestone: any): Observable<any> {
+  //   const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
     
+  //   return this.http.get(phaseUrl, { headers: this.headers }).pipe(
+  //     switchMap((phase: any) => {
+  //       // Find the milestone index in the phase milestones array
+  //       const milestoneIndex = phase.milestones.findIndex(m => m._id === milestone._id);
+        
+  //       if (milestoneIndex !== -1) {
+  //         // Ensure that we are updating the correct milestone in the array
+  //         const updatedPhase = { ...phase }; // Make a shallow copy of the phase
+  //         updatedPhase.milestones = [...phase.milestones]; // Make a shallow copy of the milestones array
+  
+  //         // Update the specific milestone in the copied array
+  //         updatedPhase.milestones[milestoneIndex] = { ...milestone }; // Ensure a deep copy of the updated milestone
+  
+  //         // Save the updated phase back to the database
+  //         return this.http.put(`${this.phaseBaseUrl}/${updatedPhase._id}?rev=${updatedPhase._rev}`, updatedPhase, { headers: this.headers });
+  //       }
+        
+  //       return of(null); // If the milestone doesn't exist
+  //     })
+  //   );
+  // }
+  
+  updateMilestone(phaseId: string, updatedMilestone: any): Observable<any> {
+    const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
+  
     return this.http.get(phaseUrl, { headers: this.headers }).pipe(
       switchMap((phase: any) => {
-        // Find the milestone index in the phase milestones array
-        const milestoneIndex = phase.milestones.findIndex(m => m._id === milestone._id);
-        
+        const milestoneIndex = phase.milestones.findIndex(
+          (m: any) => m.name === updatedMilestone.name // Match by unique milestone name
+        );
+  
         if (milestoneIndex !== -1) {
-          // Ensure that we are updating the correct milestone in the array
-          const updatedPhase = { ...phase }; // Make a shallow copy of the phase
-          updatedPhase.milestones = [...phase.milestones]; // Make a shallow copy of the milestones array
+          // Clone the phase object
+          const updatedPhase = { ...phase };
+          updatedPhase.milestones = [...phase.milestones];
   
-          // Update the specific milestone in the copied array
-          updatedPhase.milestones[milestoneIndex] = { ...milestone }; // Ensure a deep copy of the updated milestone
+          // Only update the specific fields instead of replacing the whole milestone object
+          const originalMilestone = updatedPhase.milestones[milestoneIndex];
+          updatedPhase.milestones[milestoneIndex] = {
+            ...originalMilestone,
+            previous: updatedMilestone.previous,
+            present: updatedMilestone.present,
+            presentValue: updatedMilestone.presentValue,
+            previousOld: updatedMilestone.previousOld,
+            amountDue: updatedMilestone.amountDue,
+            presentMilestoneDue: updatedMilestone.presentMilestoneDue,
+            progress: updatedMilestone.progress || originalMilestone.progress
+          };
   
-          // Save the updated phase back to the database
-          return this.http.put(`${this.phaseBaseUrl}/${updatedPhase._id}?rev=${updatedPhase._rev}`, updatedPhase, { headers: this.headers });
+          // Save the updated phase back to CouchDB
+          return this.http.put(
+            `${this.phaseBaseUrl}/${updatedPhase._id}?rev=${updatedPhase._rev}`,
+            updatedPhase,
+            { headers: this.headers }
+          );
         }
-        
-        return of(null); // If the milestone doesn't exist
+  
+        return of(null); // Milestone not found
       })
     );
   }
-  
   
 
 
