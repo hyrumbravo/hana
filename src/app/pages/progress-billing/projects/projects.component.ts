@@ -9,6 +9,9 @@ import { forkJoin } from 'rxjs';
 import { ActivatedRoute } from '@angular/router';
 import { Router } from '@angular/router';
 import { NgModel } from '@angular/forms';
+import { ChangeDetectorRef } from '@angular/core';
+
+
 
 
 
@@ -55,10 +58,13 @@ export class ProjectsComponent implements OnInit {
   pendingmodalInstance!: any;
 
 
+
   totalPhasePercentage: number = 0; // Tracks total percentage used
   
   // Projects array for display
   projects:any = [];
+
+  searchTerm: string = '';
 
   pendingProjects: any[] = [];
   
@@ -77,29 +83,29 @@ export class ProjectsComponent implements OnInit {
   // phase array for display
   phases:any = [];
   
-  dtOptions: DataTables.Settings = {};
   loading = false; // Flag for showing a loading spinner
   
-  currentEmployee: any = {}; 
-  currentTimelog: any = {}; 
   
-  constructor(private toastr: ToastrService, private projectsService: ProjectsService, private router: Router, private route: ActivatedRoute) {}
+  constructor(private toastr: ToastrService, private projectsService: ProjectsService, private router: Router, private route: ActivatedRoute, private cdRef: ChangeDetectorRef) {}
 
 
+
+  // get filteredProjects() {
+  //   return this.projects.filter(project =>
+  //     project.projectName.toLowerCase().includes(this.searchTerm.toLowerCase())
+  //   );
+  // }
+
+  get filteredProjects() {
+    return this.projects.filter(project =>
+      project.projectName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
+      project.clientName.toLowerCase().includes(this.searchTerm.toLowerCase())
+    );
+  }
+  
+  
   ngOnInit(): void {
 
-    this.dtOptions = {
-      language: {
-        search: '',
-        searchPlaceholder: 'Search',
-        lengthMenu: 'Show _MENU_ entries'
-      },
-      ordering: true,
-      paging: true,
-      pageLength: 10,
-      searching: true,
-      lengthChange: true,
-    };
     
   
     this.route.queryParams.subscribe(params => {
@@ -167,6 +173,8 @@ export class ProjectsComponent implements OnInit {
   //   });
   // }
 
+  
+
   loadProjects(callback?: () => void): void {
     this.projectsService.getProjects().subscribe({
         next: (response) => {
@@ -191,64 +199,123 @@ export class ProjectsComponent implements OnInit {
             console.error('Error fetching projects:', error);
         },
     });
-}
+  }
 
 
   isHighlighted: boolean = false; // Add this property to track highlighting
 
 
+  // highlightProject(projectName: string) {
+  //   if (this.isHighlighted || sessionStorage.getItem('highlightedProject') === projectName) return; // Prevent multiple highlights
+
+  //   const projectIndex = this.projects.findIndex(proj => 
+  //       proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
+  //   );
+
+  //   if (projectIndex !== -1) {
+  //       setTimeout(() => {
+  //           const projectRow = document.getElementById('project-' + projectIndex);
+  //           if (projectRow) {
+  //               projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  //               projectRow.classList.add('highlight');
+
+  //               // Remove highlight after 4 seconds
+  //               setTimeout(() => projectRow.classList.remove('highlight'), 4000);
+
+  //               this.isHighlighted = true; // Mark as highlighted
+  //               sessionStorage.setItem('highlightedProject', projectName); // Save highlight state in sessionStorage
+  //           }
+  //       }, 500);
+  //   } else {
+  //       this.toastr.error('Project not found in the list.', 'Error');
+  //   }
+  // }
+
+
   highlightProject(projectName: string) {
     if (this.isHighlighted || sessionStorage.getItem('highlightedProject') === projectName) return; // Prevent multiple highlights
-
+  
+    // Ensure the projects are sorted before proceeding
+    this.projects.sort((a, b) => b.projectId - a.projectId); 
+  
     const projectIndex = this.projects.findIndex(proj => 
-        proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
+      proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
     );
-
+  
     if (projectIndex !== -1) {
-        setTimeout(() => {
-            const projectRow = document.getElementById('project-' + projectIndex);
-            if (projectRow) {
-                projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                projectRow.classList.add('highlight');
-
-                // Remove highlight after 4 seconds
-                setTimeout(() => projectRow.classList.remove('highlight'), 4000);
-
-                this.isHighlighted = true; // Mark as highlighted
-                sessionStorage.setItem('highlightedProject', projectName); // Save highlight state in sessionStorage
-            }
-        }, 500);
+      setTimeout(() => {
+        const projectRow = document.getElementById('project-' + projectIndex);
+        if (projectRow) {
+          projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          projectRow.classList.add('highlight');
+  
+          // Remove highlight after 4 seconds
+          setTimeout(() => projectRow.classList.remove('highlight'), 4000);
+  
+          this.isHighlighted = true; // Mark as highlighted
+          sessionStorage.setItem('highlightedProject', projectName); // Save highlight state in sessionStorage
+        }
+      }, 500);
     } else {
-        this.toastr.error('Project not found in the list.', 'Error');
+      this.toastr.error('Project not found in the list.', 'Error');
     }
   }
+  
 
   ngOnDestroy() {
     sessionStorage.removeItem('highlightedProject'); // Clear highlight state when user leaves the page
   }
   
-  openDeleteModal(index: number) {
-    this.selectedProjectIndex = index;
-    this.selectedProjectId = this.projects[index].projectId; // Get Project ID
+  // openDeleteModal(project: any) {
+  //   this.selectedProjectId = project.projectId; // Correctly assign ID from the clicked item
+  //   this.selectedProjectIndex = this.projects.findIndex(p => p.projectId === project.projectId); // Optional: if you still need the original index
+  //   this.deleteModal.show();
+  // }
+
+  openDeleteModal(project: any) {
+    this.selectedProjectId = project.projectId;
+    this.selectedProjectIndex = this.projects.findIndex(p => p.projectId === project.projectId);
+  
+    // Re-initialize the modal with options
+    this.deleteModal = new Modal(this.deleteModalRef.nativeElement, {
+      backdrop: 'static',
+      keyboard: false
+    });
+  
     this.deleteModal.show();
   }
+  
+  
 
 
+
+  // deleteProject() {
+  //   if (!this.selectedProjectId) return;
+
+  //   // 1. Delete the project by projectId
+  //   this.projectsService.deleteProjectByProjectId(this.selectedProjectId).subscribe(() => {
+  //     this.toastr.success('Project deleted successfully!', 'Success')
+  //     // 2. Delete related phases
+  //     this.projectsService.deletePhasesByProjectId(this.selectedProjectId).subscribe(() => {
+  //       // 3. Refresh project list
+  //       this.loadProjects();
+  //       this.closeDeleteModal();
+  //     });
+  //   });
+  // }
 
   deleteProject() {
     if (!this.selectedProjectId) return;
-
-    // 1. Delete the project by projectId
+  
     this.projectsService.deleteProjectByProjectId(this.selectedProjectId).subscribe(() => {
-      this.toastr.success('Project deleted successfully!', 'Success')
-      // 2. Delete related phases
+      this.toastr.success('Project deleted successfully!', 'Success');
       this.projectsService.deletePhasesByProjectId(this.selectedProjectId).subscribe(() => {
-        // 3. Refresh project list
         this.loadProjects();
         this.closeDeleteModal();
       });
     });
   }
+  
 
   closeDeleteModal() {
     this.deleteModal?.hide(); // Hide modal
@@ -272,14 +339,6 @@ export class ProjectsComponent implements OnInit {
       }
     );
   }
-  
-
-  // refresh timelogs
-
-  // createProject(): void {
-  //   this.modalInstance = new Modal(this.projectModal.nativeElement);
-  //   this.modalInstance.show();
-  // }
 
   createProject(): void {
   this.modalInstance = new Modal(this.projectModal.nativeElement, {
@@ -290,18 +349,32 @@ export class ProjectsComponent implements OnInit {
 }
 
 
-  toggleExpand(index: number) {
-    this.projects[index].expanded = !this.projects[index].expanded;
+  toggleExpand(project: any) {
+    project.expanded = !project.expanded;
   
-    if (this.projects[index].expanded) {
-      this.loadPhases(index, this.projects[index].projectId);
+    if (project.expanded) {
+      this.loadPhasesById(project);
     }
   }
   
 
-  togglePhaseExpand(projectIndex: number, phaseIndex: number) {
-    this.projects[projectIndex].phases[phaseIndex].expanded = 
-      !this.projects[projectIndex].phases[phaseIndex].expanded;
+  loadPhasesById(project: any) {
+    const index = this.projects.findIndex(p => p.projectId === project.projectId);
+    if (index !== -1) {
+      this.loadPhases(index, project.projectId); // Keep your original method for phase loading
+    }
+  }
+  
+  
+
+  // togglePhaseExpand(projectIndex: number, phaseIndex: number) {
+  //   this.projects[projectIndex].phases[phaseIndex].expanded = 
+  //     !this.projects[projectIndex].phases[phaseIndex].expanded;
+  // }
+  
+
+  togglePhaseExpand(project: any, phase: any) {
+    phase.expanded = !phase.expanded;
   }
   
 
@@ -320,26 +393,6 @@ export class ProjectsComponent implements OnInit {
     return totalAmount - downPaymentAmount;
   }
   
-
-  // editPhase(projectIndex: number, phaseIndex: number) {
-  //   this.phases[phaseIndex].isEditing = true;
-  // }
-
-  // savePhase(projectIndex: number, phaseIndex: number) {
-  //   const project = this.projects[projectIndex];
-  //   const phase = this.phases[phaseIndex];
-
-  //   const totalPhasePercentage = this.phases.reduce((sum, p, i) => sum + (i === phaseIndex ? phase.percentage : p.percentage), 0);
-  //   if (totalPhasePercentage > 100) {
-  //     alert("Total phase percentage cannot exceed 100%");
-  //     return;
-  //   }
-
-  //   phase.isEditing = false;
-  // }
-
-
-
 
   //phase creation
   newPhases: any[] = [];
@@ -465,26 +518,32 @@ export class ProjectsComponent implements OnInit {
     }
     if (!this.newProject.projectDescription) {
       this.scrollTo(this.projectDescriptionRef);
+      this.isSaving = false;
       return;
     }
     if (!this.newProject.clientName) {
       this.scrollTo(this.clientNameRef);
+      this.isSaving = false;
       return;
     }
     if (!this.newProject.startDate) {
       this.scrollTo(this.startDateRef);
+      this.isSaving = false;
       return;
     }
     if (!this.newProject.deadline) {
       this.scrollTo(this.deadlineRef);
+      this.isSaving = false;
       return;
     }
     if (this.newProject.totalAmount == null) {
       this.scrollTo(this.totalAmountRef);
+      this.isSaving = false;
       return;
     }
     if (this.newProject.downPayment == null) {
       this.scrollTo(this.downPaymentRef);
+      this.isSaving = false;
       return;
     }
 
@@ -615,13 +674,13 @@ export class ProjectsComponent implements OnInit {
   }
   
 
-  toggleMilestoneForm(phase: any): void {
-    phase.showMilestoneForm = !phase.showMilestoneForm;
+  // toggleMilestoneForm(phase: any): void {
+  //   phase.showMilestoneForm = !phase.showMilestoneForm;
     
-    if (!phase.newMilestone) {
-      phase.newMilestone = { name: '', amount: null };
-    }
-  }
+  //   if (!phase.newMilestone) {
+  //     phase.newMilestone = { name: '', amount: null };
+  //   }
+  // }
 
   getTotalMilestoneAmount(phase: any): number {
     return phase.milestones?.reduce((sum: number, milestone: any) => sum + milestone.amount, 0) || 0;
@@ -667,6 +726,9 @@ export class ProjectsComponent implements OnInit {
       totalAmount: null,
       downPayment: null
     };
+
+    this.isSaving = false;
+
     this.modalInstance.hide();
     this.resetPhaseForm();
     this.newPhases = [];    
@@ -1079,106 +1141,108 @@ export class ProjectsComponent implements OnInit {
   // }
 
 
-  
+
+
 
   saveAndGenerateInvoice(phases: any) {
-    let isValid = true;
-  
-    // Array to hold updated milestones
-    const updatedMilestones: any[] = [];
-  
-    // Process each milestone
-    phases.milestones.forEach((milestone: any) => {
-      if (milestone.present > 0) {
-        const newPrevious = milestone.previous + milestone.present;
-        const remainingPercent = 100 - milestone.previous;
-  
-        if (newPrevious > 100) {
-          this.toastr.warning(
-            `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
-            'Warning'
-          );
-          isValid = false;
-          return;
-        }
-  
-        // ✅ Update milestone fields
-        milestone.previousOld = milestone.previous;
-        milestone.presentValue = milestone.present;
-        milestone.presentMilestoneDue = milestone.amountDue;
-        milestone.amountDue = 0;
-        milestone.previous = newPrevious;
-        milestone.present = 0;
-  
-        // ✅ Collect updated milestones
-        updatedMilestones.push({
-          name: milestone.name,
-          previous: milestone.previous,
-          previousOld: milestone.previousOld,
-          present: milestone.present,
-          presentValue: milestone.presentValue,
-          amountDue: milestone.amountDue,
-          presentMilestoneDue: milestone.presentMilestoneDue,
-          progress: milestone.progress
-        });
-  
-        // Optional: Recalculate UI
-        this.calculateAmountDue(milestone);
-      }
-    });
-  
-    if (!isValid || updatedMilestones.length === 0) return;
-  
-    // ✅ Fetch phase from DB and update all changed milestones in one go
-    this.projectsService.getPhaseById(phases._id).subscribe({
-      next: (phaseFromDb: any) => {
-        const updatedPhase = { ...phaseFromDb };
-        updatedPhase.milestones = phaseFromDb.milestones.map((milestone: any) => {
-          const updated = updatedMilestones.find(m => m.name === milestone.name);
-          return updated ? { ...milestone, ...updated } : milestone;
-        });
-  
-        // ✅ Recalculate phase progress dynamically
-        const totalMilestones = updatedPhase.milestones.length;
-        let totalProgress = 0;
-  
-        updatedPhase.milestones.forEach((m: any) => {
-          const milestoneProgressPercentage = m.previous;
-          totalProgress += (milestoneProgressPercentage / 100) * (100 / totalMilestones);
-        });
-  
-        updatedPhase.progress = totalProgress; // Update phase progress
-  
-        // ✅ Save entire phase doc with updated milestones
-        this.projectsService.updateFullPhase(updatedPhase).subscribe({
-          next: (res) => {
-            console.log('Phase with milestones updated successfully', res);
-  
-            // After updating the phase, update the project progress in the backend
-            this.projectsService.updateProjectProgress(phases.projectId).subscribe(
-              (projectUpdateResponse) => {
-                console.log("Project progress updated successfully:", projectUpdateResponse);
-              },
-              (error) => {
-                console.error("Error updating project progress:", error);
-              }
-            );
-            this.updatePhaseProgressFromMilestones(phases);
-            // this.updateProjectProgress(project);
+  let isValid = true;
+  const updatedMilestones: any[] = [];
 
-            // Generate invoice with updated milestones
-            this.generateInvoice(updatedPhase.milestones);
-          },
-          error: (err) => {
-            console.error('Error updating phase:', err);
-          }
-        });
-      },
-      error: (err) => {
-        console.error('Error fetching phase from DB:', err);
+  phases.milestones.forEach((milestone: any) => {
+    if (milestone.present > 0) {
+      const newPrevious = milestone.previous + milestone.present;
+      const remainingPercent = 100 - milestone.previous;
+
+      if (newPrevious > 100) {
+        this.toastr.warning(
+          `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
+          'Warning'
+        );
+        isValid = false;
+        return;
       }
-    });
-  }
+
+      milestone.previousOld = milestone.previous;
+      milestone.presentValue = milestone.present;
+      milestone.presentMilestoneDue = milestone.amountDue;
+      milestone.amountDue = 0;
+      milestone.previous = newPrevious;
+      milestone.present = 0;
+
+      updatedMilestones.push({
+        name: milestone.name,
+        previous: milestone.previous,
+        previousOld: milestone.previousOld,
+        present: milestone.present,
+        presentValue: milestone.presentValue,
+        amountDue: milestone.amountDue,
+        presentMilestoneDue: milestone.presentMilestoneDue,
+        progress: milestone.progress
+      });
+
+      this.calculateAmountDue(milestone);
+    }
+  });
+
+  if (!isValid || updatedMilestones.length === 0) return;
+
+  this.projectsService.getPhaseById(phases._id).subscribe({
+    next: (phaseFromDb: any) => {
+      const updatedPhase = { ...phaseFromDb };
+      updatedPhase.milestones = phaseFromDb.milestones.map((milestone: any) => {
+        const updated = updatedMilestones.find(m => m.name === milestone.name);
+        return updated ? { ...milestone, ...updated } : milestone;
+      });
+
+      const totalMilestones = updatedPhase.milestones.length;
+      let totalProgress = 0;
+
+      updatedPhase.milestones.forEach((m: any) => {
+        const milestoneProgressPercentage = m.previous;
+        totalProgress += (milestoneProgressPercentage / 100) * (100 / totalMilestones);
+      });
+
+      updatedPhase.progress = totalProgress;
+
+      // ✅ Immediately update project progress locally
+      this.updateProjectProgress({ phases: [updatedPhase], projectId: phases.projectId });
+
+      // Update the progress in the filteredProjects array
+      const updatedProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
+      if (updatedProject) {
+        updatedProject.progress = updatedPhase.progress;
+        this.cdRef.detectChanges(); // Trigger change detection manually
+      }
+
+      this.projectsService.updateFullPhase(updatedPhase).subscribe({
+        next: (res) => {
+          console.log('Phase with milestones updated successfully', res);
+
+          // ✅ Then update project progress in DB
+          this.projectsService.updateProjectProgress(phases.projectId).subscribe(
+            (projectUpdateResponse) => {
+              console.log("Project progress updated successfully:", projectUpdateResponse);
+            },
+            (error) => {
+              console.error("Error updating project progress:", error);
+            }
+          );
+
+          this.updatePhaseProgressFromMilestones(phases);
+          this.generateInvoice(updatedPhase.milestones);
+        },
+        error: (err) => {
+          console.error('Error updating phase:', err);
+        }
+      });
+    },
+    error: (err) => {
+      console.error('Error fetching phase from DB:', err);
+    }
+  });
+}
+
+
   
   
   
@@ -1198,8 +1262,7 @@ export class ProjectsComponent implements OnInit {
   
   
   
-  
-  
+  //jasperreports
   generateInvoice(milestones: any[]) {
     console.log('Generating Invoice for milestones:', milestones);
     this.toastr.success('Invoice generated successfully!', 'Success');
@@ -1247,6 +1310,35 @@ export class ProjectsComponent implements OnInit {
   }
   
 
+  // limitPhasePercentageInput(event: any) {
+  //   let inputValue = event.target.value;
+  
+  //   // If input is null or empty, set to 0
+  //   if (inputValue === '' || inputValue === null) {
+  //     inputValue = '0';
+  //   }
+  
+  //   // Limit to 3 digits
+  //   if (inputValue.length > 3) {
+  //     inputValue = inputValue.slice(0, 3);
+  //   }
+  
+  //   // Enforce 0 to 100 range
+  //   const numericValue = +inputValue;
+  //   if (numericValue > 100) {
+  //     inputValue = '100';
+  //   } else if (numericValue < 0) {
+  //     inputValue = '0';
+  //   }
+  
+  //   // Update the input field
+  //   event.target.value = inputValue;
+  
+  //   // Update the model
+  //   this.newPhase.percentage = parseInt(inputValue, 10);
+  // }
+  
+  
   limitPhasePercentageInput(event: any) {
     let inputValue = event.target.value;
   
@@ -1255,7 +1347,7 @@ export class ProjectsComponent implements OnInit {
       inputValue = '0';
     }
   
-    // Limit to 3 digits
+    // Limit to 3 digits (for safety, in case someone tries to type '1000' or something larger)
     if (inputValue.length > 3) {
       inputValue = inputValue.slice(0, 3);
     }
@@ -1268,14 +1360,15 @@ export class ProjectsComponent implements OnInit {
       inputValue = '0';
     }
   
-    // Update the input field
+    // Update the input field value
     event.target.value = inputValue;
   
-    // Update the model
-    this.newPhase.percentage = parseInt(inputValue, 10);
+    // Update the model (this binds the percentage value to the model for two-way binding)
+    this.phases.percentage = parseInt(inputValue, 10);
   }
   
-  
+
+
 
   limitMilestoneInputLength(event: any, milestone: any, maxLength: number): void {
     let inputValue = event.target.value;
@@ -1304,14 +1397,167 @@ export class ProjectsComponent implements OnInit {
     // Optionally recalculate
     this.calculateAmountDue(milestone);
   }
+
+
+
+  // markMilestoneAsComplete(phase: any, milestone: any, project: any) {
+  //   if (!phase._id) {
+  //     console.error("Phase ID is missing!");
+  //     return;
+  //   }
   
+  //   // Set milestone to complete
+  //   milestone.previous = 100;
+  //   milestone.present = 0; // optional: clear input
+  //   milestone.progress = "Completed";
   
+  //   this.saveMilestone(phase, milestone, project); // reuse your existing logic
+  // }
+
+  markMilestoneAsComplete(phase: any, milestone: any, project: any) {
+    if (!phase._id) {
+      console.error("Phase ID is missing!");
+      return;
+    }
   
+    // ✅ Reset milestone data
+    milestone.present = 0;        // Clear the input
+    milestone.amountDue = 0;      // Clear the amount due
+    milestone.previous = 100;     // Mark as completed
+    milestone.progress = "Completed";
+  
+    this.saveMilestone(phase, milestone, project); // Reuse existing logic
+  }
+  
+
+
+
+
+
+// markPhaseAsComplete(phase: any, project: any): void {
+//   if (!phase._id) {
+//     console.error("Phase ID is missing!");
+//     return;
+//   }
+
+//   // Fetch the latest _rev before updating
+//   this.projectsService.getPhaseById(phase._id).subscribe(
+//     (latestPhase: any) => {
+//       if (latestPhase._rev) {
+//         phase._rev = latestPhase._rev;
+
+//         // ✅ Set all milestones to 100%
+//         phase.milestones = phase.milestones.map((milestone: any) => ({
+//           ...milestone,
+//           previous: 100,
+//           progress: "Completed"
+//         }));
+        
+
+//         // ✅ Set phase progress to 100%
+//         phase.progress = 100;
+
+//         // ✅ Mark the phase as completed (this flag will be used in the template)
+//         phase.completed = true;
+
+//         // ✅ Update project progress locally
+//         this.updateProjectProgress(project);
+
+//         // ✅ Save updated phase
+//         this.projectsService.updatePhase(phase).subscribe(
+//           (response: any) => {
+//             console.log("Phase marked as complete:", response);
+
+//             // ✅ Update the overall project progress in DB
+//             this.projectsService.updateProjectProgress(project.projectId).subscribe(
+//               (projectUpdateResponse) => {
+//                 console.log("Project progress updated:", projectUpdateResponse);
+//               },
+//               (error) => {
+//                 console.error("Error updating project progress:", error);
+//               }
+//             );
+//           },
+//           (error) => {
+//             console.error("Error updating phase:", error);
+//           }
+//         );
+//       } else {
+//         console.error("Could not fetch latest _rev.");
+//       }
+//     },
+//     (error) => {
+//       console.error("Error fetching phase _rev:", error);
+//     }
+//   );
+// }
+
+
+
+
+
+
+markPhaseAsComplete(phase: any, project: any): void {
+  if (!phase._id) {
+    console.error("Phase ID is missing!");
+    return;
+  }
+
+  this.projectsService.getPhaseById(phase._id).subscribe(
+    (latestPhase: any) => {
+      if (latestPhase._rev) {
+        phase._rev = latestPhase._rev;
+
+        // ✅ Reset milestone.present and amountDue to 0 before marking complete
+        phase.milestones = phase.milestones.map((milestone: any) => ({
+          ...milestone,
+          present: 0,
+          amountDue: 0,
+          previous: 100,
+          progress: "Completed"
+        }));
+
+        // ✅ Set phase progress to 100%
+        phase.progress = 100;
+        phase.completed = true;
+
+        this.updateProjectProgress(project);
+
+        this.projectsService.updatePhase(phase).subscribe(
+          (response: any) => {
+            console.log("Phase marked as complete:", response);
+
+            this.projectsService.updateProjectProgress(project.projectId).subscribe(
+              (projectUpdateResponse) => {
+                console.log("Project progress updated:", projectUpdateResponse);
+              },
+              (error) => {
+                console.error("Error updating project progress:", error);
+              }
+            );
+          },
+          (error) => {
+            console.error("Error updating phase:", error);
+          }
+        );
+      } else {
+        console.error("Could not fetch latest _rev.");
+      }
+    },
+    (error) => {
+      console.error("Error fetching phase _rev:", error);
+    }
+  );
+}
 
 
 
   
   
+
+
   
 
+
+  
 }

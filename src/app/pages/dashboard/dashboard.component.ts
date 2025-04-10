@@ -201,21 +201,75 @@ export class DashboardComponent implements OnInit {
     document.body.classList.remove('modal-open');
   }
   
+  // viewPendingProject(projectName: string) {
+  //   if (this.projects.length === 0) {
+  //     this.toastr.error('Project data is still loading. Please try again.', 'Error');
+  //     return;
+  //   }
+
+  //   // Find the index of the project in the projects table
+  //   const projectIndex = this.projects.findIndex(proj => 
+  //     proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
+  //   );
+  
+  //   if (this.projects.length === 0) {
+  //     this.toastr.error('Project data is still loading. Please try again.', 'Error');
+  //     return;
+  //   }
+  
+  //   if (projectIndex !== -1) {
+  //     // Expand the project if needed
+  //     this.projects[projectIndex].expanded = true;
+  
+  //     // Close the pending modal before scrolling
+  //     this.closePendingModal();
+  
+  //     const today = new Date();
+  //     // Use the project retrieved by index
+  //     const project = this.projects[projectIndex];  // Fix: Declare 'project' using the index
+  //     const deadline = new Date(project.deadline.replace(/-/g, '/'));
+  //     const timeDiff = deadline.getTime() - today.getTime();
+  //     const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+  
+  //     // Set a flag in sessionStorage before redirecting
+  //     sessionStorage.setItem('redirectedFromPending', 'true');
+  
+  //     // Store the project name and days left in sessionStorage
+  //     sessionStorage.setItem('pendingProject', JSON.stringify({ projectName, daysLeft }));
+  
+  //     this.router.navigate(['/projects'], { queryParams: { projectName: projectName } });
+  
+  //     // Use a timeout to allow Angular to update the DOM before scrolling
+  //     setTimeout(() => {
+  //       const projectRow = document.getElementById('project-' + projectIndex);
+  //       if (projectRow) {
+  //         projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  
+  //         // 🔹 Highlight the project row for better visibility
+  //         projectRow.classList.add('highlight');
+  //         setTimeout(() => projectRow.classList.remove('highlight'), 4000); // Remove highlight after 2 sec
+  //       } else {
+  //         this.toastr.error('Could not locate the project in the table.', 'Error');
+  //       }
+  //     }, 500); // Slightly longer delay ensures modal is closed before scrolling
+  //   } else {
+  //     this.toastr.error('Project not found', 'Error');
+  //   }
+  // }
+
   viewPendingProject(projectName: string) {
     if (this.projects.length === 0) {
       this.toastr.error('Project data is still loading. Please try again.', 'Error');
       return;
     }
-
+  
+    // Ensure the projects are sorted before proceeding
+    this.projects.sort((a, b) => b.projectId - a.projectId); 
+  
     // Find the index of the project in the projects table
     const projectIndex = this.projects.findIndex(proj => 
       proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
     );
-  
-    if (this.projects.length === 0) {
-      this.toastr.error('Project data is still loading. Please try again.', 'Error');
-      return;
-    }
   
     if (projectIndex !== -1) {
       // Expand the project if needed
@@ -256,6 +310,7 @@ export class DashboardComponent implements OnInit {
       this.toastr.error('Project not found', 'Error');
     }
   }
+  
 
   getCurrentUser() {
     return new Promise((resolve, reject) => {

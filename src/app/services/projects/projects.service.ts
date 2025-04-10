@@ -143,7 +143,6 @@ export class ProjectsService {
   }
   
 
-
   
   //get phases by ID for updating
   getPhaseById(phaseId: string): Observable<any> {
@@ -156,14 +155,6 @@ export class ProjectsService {
       headers: this.headers
     });
   }
-
-  
-
-
-
-
-
-
 
   updateProjectProgress(projectId: string): Observable<any> {
     const findUrl = `${this.projectBaseUrl}/_find`;
@@ -204,32 +195,6 @@ export class ProjectsService {
       })
     );
   }
-
-  
-  // updateMilestone(phaseId: string, milestone: any): Observable<any> {
-  //   const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
-    
-  //   return this.http.get(phaseUrl, { headers: this.headers }).pipe(
-  //     switchMap((phase: any) => {
-  //       // Find the milestone index in the phase milestones array
-  //       const milestoneIndex = phase.milestones.findIndex(m => m._id === milestone._id);
-        
-  //       if (milestoneIndex !== -1) {
-  //         // Ensure that we are updating the correct milestone in the array
-  //         const updatedPhase = { ...phase }; // Make a shallow copy of the phase
-  //         updatedPhase.milestones = [...phase.milestones]; // Make a shallow copy of the milestones array
-  
-  //         // Update the specific milestone in the copied array
-  //         updatedPhase.milestones[milestoneIndex] = { ...milestone }; // Ensure a deep copy of the updated milestone
-  
-  //         // Save the updated phase back to the database
-  //         return this.http.put(`${this.phaseBaseUrl}/${updatedPhase._id}?rev=${updatedPhase._rev}`, updatedPhase, { headers: this.headers });
-  //       }
-        
-  //       return of(null); // If the milestone doesn't exist
-  //     })
-  //   );
-  // }
   
   updateMilestone(phaseId: string, updatedMilestone: any): Observable<any> {
     const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;

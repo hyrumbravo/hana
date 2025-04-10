@@ -13,6 +13,7 @@
   background-color: #dee2e6; /* or your preferred border color */
 }
 
+
 table {
   border-collapse: collapse;
   width: 100%;
@@ -55,17 +56,22 @@ button:hover {
   margin-top: 10px;
 }
 
+
 .phases-table th, .phases-table td, .sub-phases-table th, .sub-phases-table td {
   padding: 8px;
   border: 1px solid #ddd;
   background-color: #ffffff; /* White background for table rows */
 }
 
+
 .phases-table th, .sub-phases-table th {
-  background-color: #F6F6F6;
-  color: black;
+  background-color: #454d55;
+  color: rgb(243, 241, 241);
   height: 56px;
 }
+
+
+
 
 input[type="number"] {
   width: 100%;
@@ -73,10 +79,20 @@ input[type="number"] {
   text-align: center;
 }
 
+// for project expand
 .expanded-row {
   border: 2px solid #007bff;
-  background-color: #e0dddd;
+
 }
+
+
+
+
+
+
+
+
+
 
 /* Button sizes (for expand/collapse and delete) */
 .delete-btn, .expand-collapse-btn {
@@ -245,3 +261,7 @@ input.no-validation-border.ng-invalid.ng-touched {
 .milestone-cancel-btn:hover {
   background-color: #a71d2a;
 }
+
+
+
+

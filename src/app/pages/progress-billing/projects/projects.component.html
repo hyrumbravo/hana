@@ -24,19 +24,30 @@
       </div>
        
         
-        <div class="col-lg-12 text-right">
-          <button (click)="createProject()" class="btn btn-primary mr-2">
-            <i class="bi bi-plus-circle"></i> Create Project
-          </button>
-          
-        </div>
+      <div class="col-lg-12 d-flex justify-content-between">
+        <!-- Search Bar -->
+        <input
+          type="text"
+          class="form-control"
+          placeholder="Search projects"
+          [(ngModel)]="searchTerm"
+          style="max-width: 250px;"
+        />
+      
+        <!-- Create Project Button -->
+        <button (click)="createProject()" class="btn btn-primary ml-2">
+          <i class="bi bi-plus-circle"></i> Create Project
+        </button>
+      </div>
+      
+      
     </div>
     
     <div class="card-body">
       <div class="table-responsive mt-2" > 
-        <table class="project-table"   width="100%"  datatable [dtOptions]="dtOptions" >
+        <table class="project-table"   width="100%"    >
           <thead>
-            <tr style="background-color: #F6F6F6; color: black; height: 56px; ">
+            <tr style="background-color: #454d55; color: rgb(243, 241, 241); height: 56px; ">
               <th>#</th>
               <th>Project Name</th>
               <th>Client Name</th>
@@ -51,9 +62,10 @@
           </thead>
           <tbody>
             <tr *ngIf="projects.length === 0">
-              <td colspan="12" class="text-center" style="font-style: italic;">No projects available</td>
+              <td colspan="12" class="text-center" style="font-style: italic; background-color: #f0f0f0;" >No projects available</td>
             </tr>
-            <ng-container *ngFor="let item of projects; let i = index">
+            <!-- <ng-container *ngFor="let item of projects; let i = index"> -->
+            <ng-container *ngFor="let item of filteredProjects; let i = index">
               
               <tr style="background-color: white;" [class.expanded-row]="item.expanded"[id]="'project-' + i">
                 <td>{{ i + 1 }}</td> <!-- Row number -->
@@ -66,14 +78,13 @@
                 <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td>
                 <td>{{ item.progress | number }}%</td>
                 <td>
-                  <!-- <button class="delete-btn expand-collapse-btn"  (click)="toggleExpand(i)">{{ item.expanded ? 'Collapse' : 'Expand' }}</button>  -->
-                  <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(i)">
+                  <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(item)">
                     <i class="fas" [ngClass]="item.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
                   </button>
                   
-                  <!-- <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(i)">Delete</button> -->
-                  <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(i)">
-                    <i class="fas fa-trash"></i> <!-- Font Awesome Trash Icon -->
+
+                  <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(item)">
+                    <i class="fas fa-trash"></i>
                   </button>
                   
                   
@@ -88,7 +99,7 @@
         
   
               <tr *ngIf="item.expanded" [class.expanded-row]="item.expanded">
-                <td colspan="12">
+                <td style="background-color: #d6d4d4;" colspan="12">
                   <table width="100%" class="phases-table" >
                     <thead>
                       <tr>
@@ -103,9 +114,13 @@
                       </tr>
                     </thead>
                     <tbody>
-                      
+
+                      <tr *ngIf="!item.phases || item.phases.length === 0">
+                        <td colspan="8" class="text-center" style="font-style: italic;">No phases available</td>
+                      </tr>
+
                       <ng-container  *ngFor="let phases of item.phases; let j = index">
-                        <tr>
+                        <tr >
                           <td>{{ j + 1 }}</td> <!-- Phase Number -->
                           <td>
                             <input *ngIf="phases.isEditing" type="text" [(ngModel)]="phases.phaseName" />
@@ -119,10 +134,22 @@
                             <input *ngIf="phases.isEditing" type="date" [(ngModel)]="phases.deadline" />
                             <span *ngIf="!phases.isEditing">{{ phases.deadline }}</span>
                           </td>
-                          <td>
+                          <!-- <td>
                             <input *ngIf="phases.isEditing" type="number" [(ngModel)]="phases.percentage" min="0" max="100" />
                             <span *ngIf="!phases.isEditing">{{ phases.percentage }}%</span>
+                          </td> -->
+                          <td>
+                            <input 
+                              *ngIf="phases.isEditing" 
+                              type="number" 
+                              [(ngModel)]="phases.percentage" 
+                              min="0" 
+                              max="100" 
+                              (input)="limitPhasePercentageInput($event)"
+                            />
+                            <span *ngIf="!phases.isEditing">{{ phases.percentage }}%</span>
                           </td>
+                          
                           <td>
                             ₱{{ calculatePhaseAmount(item.totalAmount, item.downPayment, phases.percentage) | number }}
                           </td>
@@ -147,29 +174,37 @@
                           
         
                           <td>
+                            <button *ngIf="!phases.isEditing && phases.progress !== 100" (click)="markPhaseAsComplete(phases, item)">
+                              <i class="fa-solid fa-circle-check"></i> Mark as complete
+                            </button>
+                            
+                            
+                            
+
                             <button  *ngIf="!phases.isEditing" (click)="editPhase(phases)">
-                              <i class="fas fa-edit"></i> Edit <!-- Font Awesome Edit Icon -->
+                              <i class="fas fa-edit"></i> Edit
                             </button>
                             
                             
                             <!-- <button *ngIf="phases.isEditing" (click)="savesPhase(phases)">Save</button> -->
                             <button class="phase-action-btn save-btn" *ngIf="phases.isEditing" (click)="savesPhase(phases, item)">
-                              <i class="fas fa-check"></i> Save
+                              <i class="fas fa-check"></i> Saves
                             </button>
                             
                             <button class="phase-action-btn cancel-btn" *ngIf="phases.isEditing" (click)="cancelEditPhase(phases)">
                               <i class="fas fa-times"></i> Cancel
                             </button>
                   
-                            <button  (click)="togglePhaseExpand(i, j)">
+                            <!-- <button  (click)="togglePhaseExpand(i, j)"> -->
+                            <button (click)="togglePhaseExpand(item, phases)">
                               <i class="fas" [ngClass]="phases.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
                             </button>
 
                           </td>
                         </tr>
 
-                        <tr *ngIf="phases.expanded">
-                          <td colspan="12">
+                        <tr *ngIf="phases.expanded" >
+                          <td  colspan="12">
                             <table width="100%" class="sub-phases-table">
                               <thead>
                                 <tr>
@@ -182,8 +217,13 @@
                                   <th>Action </th>
                                 </tr>
                               </thead>
-                              <tbody>
-                                <tr *ngFor="let milestone of phases.milestones">
+                              <tbody >
+
+                                <tr *ngIf="phases.milestones.length === 0" [class.expanded]="phases.expanded">
+                                  <td colspan="12" class="text-center" style="font-style: italic;">No milestone available</td>
+                                </tr>
+
+                                <tr *ngFor="let milestone of phases.milestones" >
                                   <td>
                                     <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.name" />
                                     <span *ngIf="!milestone.isEditing">{{ milestone.name }}</span>
@@ -214,7 +254,6 @@
                                     />%
                                   </td>
                                   
-                                  
                                   <td>{{ milestone.amountDue }}</td>
                                   <td>
                                     <ng-container *ngIf="milestone.previous === 0">Not Started</ng-container>
@@ -222,8 +261,18 @@
                                     <ng-container *ngIf="milestone.previous > 0 && milestone.previous < 100">In Progress</ng-container>
                                   </td>
                                   <td>
+
+                                    <!-- <button *ngIf="!milestone.isEditing" >
+                                      <i class="fa-solid fa-circle-check"></i> Mark as Complete
+                                    </button> -->
+                                    <button *ngIf="!milestone.isEditing && milestone.previous < 100"
+                                      (click)="markMilestoneAsComplete(phases, milestone, item)">
+                                      <i class="fa-solid fa-circle-check"></i> Mark as Complete
+                                    </button>
+
+                                    
                                     <button *ngIf="!milestone.isEditing" (click)="editMilestone(phases, milestone)">
-                                      <i class="fas fa-edit fa-sm"></i> Edit <!-- Font Awesome Edit Icon -->
+                                      <i class="fas fa-edit fa-sm"></i> Edit 
                                     </button>
                                     <button class="milestone-action-btn milestone-save-btn" *ngIf="milestone.isEditing" (click)="saveMilestone(phases, milestone, item)">
                                       <i class="fas fa-check fa-sm"></i> Save
@@ -233,14 +282,14 @@
                                     </button>
                                   </td>
                                 </tr>
-                                <tr>
+                                <tr style="border-bottom: 3px solid #000;">
                                   <td colspan="4" style="text-align: right; font-weight: bold;">Total Amount Due:</td>
                                   <td style="font-weight: bold;">₱{{ getTotalAmountDue(phases.milestones) | number }}</td>
                                   <td></td>
                                   <td colspan="2">
                                     <button class="phase-action-btn save-btn" (click)="saveAndGenerateInvoice(phases)">
                                       <i class="fas fa-save fa-lg"></i>Save
-                                    </button>
+                                    </button>       
                                   </td>
                                 </tr>
                               </tbody>
@@ -289,12 +338,6 @@
         <h6 class="fw-bold" style="font-size: 32px;">Create New Project</h6>
 
         <form #projectForm="ngForm">
-          <!-- <div class="mb-3">
-            <label class="form-label fw-bold">PROJECT NAME 
-            <span class="text-danger">*</span>
-          </label>
-            <input type="text" class="form-control" #projectNameRef [(ngModel)]="newProject.projectName" name="projectName" required />
-          </div> -->
           <div class="mb-3">
             <label class="form-label fw-bold">
               PROJECT NAME 
@@ -312,11 +355,7 @@
             />
           </div>
           
-        
-          <!-- <div class="mb-3">
-            <label class="form-label fw-bold">PROJECT DESCRIPTION <span class="text-danger">*</span> </label>
-            <textarea class="form-control" rows="3" #projectDescriptionRef [(ngModel)]="newProject.projectDescription" name="projectDescription"  required></textarea>
-          </div> -->
+      
           <div class="mb-3">
             <label class="form-label fw-bold">
               PROJECT DESCRIPTION <span class="text-danger">*</span>
@@ -334,10 +373,6 @@
           </div>
           
         
-          <!-- <div class="mb-3">
-            <label class="form-label fw-bold">CLIENT NAME <span class="text-danger">*</span></label>
-            <input type="text" class="form-control"#clientNameRef [(ngModel)]="newProject.clientName" name="clientName" required />
-          </div> -->
           <div class="mb-3">
             <label class="form-label fw-bold">
               CLIENT NAME <span class="text-danger">*</span>
@@ -346,16 +381,6 @@
             <input type="text" class="form-control" #clientNameRef [(ngModel)]="newProject.clientName" name="clientName" required #clientNameModel="ngModel" />
           </div>
         
-          <!-- <div class="row">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">START DATE <span class="text-danger">*</span></label>
-              <input type="date" class="form-control" #startDateRef [(ngModel)]="newProject.startDate" name="startDate" required />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">COMPLETION DATE <span class="text-danger">*</span></label>
-              <input type="date" class="form-control" #deadlineRef [(ngModel)]="newProject.deadline" name="deadline" required />
-            </div>
-          </div> -->
           <div class="row">
             <div class="col-md-6">
               <label class="form-label fw-bold">
@@ -373,16 +398,6 @@
             </div>
           </div>
         
-          <!-- <div class="row mt-3">
-            <div class="col-md-6">
-              <label class="form-label fw-bold">TOTAL PROJECT AMOUNT <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" #totalAmountRef [(ngModel)]="newProject.totalAmount" name="totalAmount" required />
-            </div>
-            <div class="col-md-6">
-              <label class="form-label fw-bold">INITIAL DOWN PAYMENT (%) <span class="text-danger">*</span></label>
-              <input type="number" class="form-control" #downPaymentRef [(ngModel)]="newProject.downPayment" name="downPayment" required />
-            </div>
-          </div> -->
           <div class="row mt-3">
             <div class="col-md-6">
               <label class="form-label fw-bold">
@@ -396,7 +411,6 @@
                 INITIAL DOWN PAYMENT (%) <span class="text-danger">*</span>
                 <span class="text-danger" *ngIf="downPaymentModel.errors?.['required'] && downPaymentModel.touched">This field is required</span>
               </label>
-              <!-- <input type="number" class="form-control" #downPaymentRef [(ngModel)]="newProject.downPayment" name="downPayment" required #downPaymentModel="ngModel" /> -->
               <input
               type="number"
               class="form-control"
@@ -440,10 +454,6 @@
           </div>
 
           <div class="row mt-2">
-            <!-- <div class="col-md-6">
-              <label class="form-label fw-bold">PHASE (%)</label>
-              <input type="number" class="form-control" [(ngModel)]="newPhase.percentage" name="phasePercentage" (ngModelChange)="calculateAmountToBill()">
-            </div> -->
             <div class="col-md-6">
               <label class="form-label fw-bold">PHASE (%)</label>
               <input
@@ -471,6 +481,7 @@
           <table class="table table-bordered">
             <thead>
               <tr style="background-color: #b8b8b8; color: black; height: 56px;  " >
+                <th>#</th>
                 <th>Phase</th>
                 <th>Start Date</th>
                 <th>Deadline</th> 
@@ -483,9 +494,9 @@
               <tr *ngIf="newPhases.length === 0">
                 <td colspan="6" class="text-center">No phases available for this project</td>
               </tr>
-              <ng-container *ngFor="let phase of newPhases">
-
+              <ng-container *ngFor="let phase of newPhases; let i = index">
                 <tr style="background-color: #fbfbfb;">
+                  <td>{{ i + 1 }}</td>
                   <td>{{ phase.phaseName }}</td>
                   <td>{{ phase.startDate }}</td>
                   <td>{{ phase.deadline }}</td>
