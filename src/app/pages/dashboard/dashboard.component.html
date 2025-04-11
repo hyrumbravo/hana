@@ -1,3 +1,4 @@
+<!-- 
 <ngx-loading [show]="loading"></ngx-loading>
 <div class="content-header">
     <div class="container-fluid">
@@ -71,11 +72,11 @@
           <div class="modal-content">
             <div class="modal-body">
       
-              <!-- Pending Projects List-->
+
               <div class="mt-3">
                 <h6 class="fw-bold" style="font-size: 32px; ">Reminder: Project Due Date is Almost Here!</h6> 
                 <button type="button" class="btn-close" (click)="closePendingModal()" aria-label="Close">X</button>
-                <hr class="my-4" style="height: 3px; background-color: black; border: none;"> <!-- Divider for separation -->
+                <hr class="my-4" style="height: 3px; background-color: black; border: none;"> 
                 <table class="table table-bordered">
                   <thead>
                     <tr>
@@ -286,4 +287,300 @@
         </div>
       </div>
     </div>
+</section> -->
+
+
+<ngx-loading [show]="loading"></ngx-loading>
+<div class="content-header">
+    <div class="container-fluid">
+        <div class="row mb-2">
+            <div class="col-sm-6">
+                <h1 class="m-0 text-dark">Dashboard</h1>
+            </div>
+            <div class="col-sm-6">
+                <ol class="breadcrumb float-sm-right">
+                    <li class="breadcrumb-item"><a href="#">Home</a></li>
+                    <li class="breadcrumb-item active">Dashboard v1</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+</div>
+
+<section class="content">
+    <div class="container-fluid">
+      <div class="row equal-height">
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-body">
+              <full-calendar [options]="calendarOptions"></full-calendar>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header row">
+              <div class="col-lg-6 mt-2">
+                <h1 class="text-primary">Announcements</h1>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-12" style="position: relative;">
+                  <div style="height: 5.5rem;" *ngIf="loadingAnnouncement">
+                    <span class="loader"></span>
+                  </div>
+                  <mat-accordion *ngIf="!announcements?.length && !loadingAnnouncement">
+                    <div>
+                      <h3>No Announcements</h3>
+                    </div>
+                  </mat-accordion>
+                  <mat-accordion *ngIf="announcements?.length && !loadingAnnouncement">
+                    <div *ngFor="let ann of announcements; let i = index;">
+                      <mat-expansion-panel hideToggle *ngIf="i < 11" class="mb-2">
+                        <mat-expansion-panel-header>
+                          <mat-panel-title>
+                            {{ann.doc.date | date : 'longDate'}}
+                          </mat-panel-title>
+                          <mat-panel-description>
+                            {{ann.doc.purpose}}
+                          </mat-panel-description>
+                        </mat-expansion-panel-header>
+                        <p>{{ann.doc.description}}</p>
+                      </mat-expansion-panel>
+                    </div>
+                  </mat-accordion>
+                  
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal fade" #pendingModal tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg"> 
+          <div class="modal-content">
+            <div class="modal-body">
+      
+              <!-- Pending Projects List-->
+              <div class="mt-3">
+                <h6 class="fw-bold" style="font-size: 32px; ">Reminder: Project Due Date is Almost Here!</h6> 
+                <button type="button" class="btn-close" (click)="closePendingModal()" aria-label="Close">X</button>
+                <hr class="my-4" style="height: 3px; background-color: black; border: none;"> <!-- Divider for separation -->
+                <!-- Scrollable table container -->
+                <div style="max-height: 470px; overflow-y: auto;"> <!-- Adjust max-height if needed -->
+                  <table class="table table-bordered">
+                    <thead class="sticky-top bg-white">
+                      <tr>
+                        <th>Project Name</th>
+                        <th>Client Name</th>
+                        <th>Start Date</th>
+                        <th>Completion Date</th>
+                        <th>Progress(%)</th>
+                        <th>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let item of pendingProjects; let i = index">
+                        <td>{{ item.projectName }}</td>
+                        <td>{{ item.clientName }}</td>
+                        <td>{{ item.startDate }}</td>
+                        <td>{{ item.deadline }}</td>
+                        <td>{{ item.progress | number }}%</td>
+                        <td>
+                          <button (click)="viewPendingProject(item.projectName)" class="btn-view">View Project</button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row equal-height">
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-header row">
+              <div class="col-lg-6 mt-2">
+                <h1 class="text-success">Birthdays</h1>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-12" style="position: relative;">
+                  <div style="height: 5.5rem" *ngIf="loadingBirthday">
+                    <span class="loader"></span>
+                  </div>
+                  <div class="table-responsive mt-2" *ngIf="!employees?.length && !loadingBirthday">
+                    <table class="table-striped" datatable [dtOptions]="dtOptionsNull">
+                      <thead>
+                        <tr>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngIf="!leaves?.length">
+                        <td colspan="8" class="text-center">No Employees Found</td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="table-responsive mt-2" *ngIf="employees?.length && !loadingBirthday">
+                    <table class="table-striped" datatable [dtOptions]="dtOptions">
+                      <thead>
+                        <tr>
+                          <th>Employee Name</th>
+                          <th>Day</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let data of employees; let i = index;">
+                          <td>{{ data.doc.firstName }} {{ data.doc.middleName }} {{ data.doc.lastName }} {{ data.doc.ext }}</td>
+                          <td>{{ data.doc.birthDate | date: 'MMMM d'}}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-12">
+          <div class="card">
+            <div class="card-header row">
+              <div class="col-lg-6 mt-2">
+                <h1 class="text-primary">Employees On-Leave</h1>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-12" style="position: relative;">
+                  <div style="height: 5.5rem" *ngIf="loadingOnLeave">
+                    <span class="loader"></span>
+                  </div>
+                  
+                  <div class="table-responsive mt-2" *ngIf="!leaves?.length && !loadingOnLeave">
+                    <table class="table-striped" datatable [dtOptions]="dtOptionsNull">
+                      <thead>
+                        <tr>
+                          <th></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngIf="!leaves?.length">
+                        <td colspan="8" class="text-center">No Employees on Leave</td>
+                      </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <div class="table-responsive mt-2" *ngIf="leaves?.length && !loadingOnLeave">
+                    <table class="table-striped" datatable [dtOptions]="dtOptions">
+                      <thead>
+                        <tr>
+                          <th>Ref No.</th>
+                          <th>Date Filed</th>
+                          <th>ID No.</th>
+                          <th>Employee Name</th>
+                          <th>Leave Type</th>
+                          <th>Leave Details</th>
+                          <th>Period Covered</th>
+                          <th>Total(Days)</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let data of leaves; let i = index;">
+                          <td>{{ data.doc.referenceNumber }}</td>
+                          <td>{{ data.doc.dateFiled | date:'yyyy-MM-dd' }}</td>
+                          <td>{{ data.doc.id_no }}</td>
+                          <td>{{ data.doc.employeeName }}</td>
+                          <td>{{ data.doc.leaveName === null? 'Others':data.doc.leaveName }}</td>
+                          <td> {{leaveDetails(data.doc)}}</td>
+                          <td>{{ data.doc.startDateTime | date }} - {{ data.doc.finishDateTime | date }}</td>
+                          <td>{{ data.doc.totalDays }}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row equal-height" hidden>
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header row">
+              <div class="col-lg-6 mt-2">
+                <h1 class="text-warning">Job Vacancies</h1>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-12">
+                  <div class="table-responsive mt-2" *ngIf="jobOpenings.length">
+                    <table class="table-striped" datatable [dtOptions]="dtOptions">
+                      <thead>
+                        <tr>
+                          <th>Person(s) Needed</th>
+                          <th>Position</th>
+                          <th>Branch</th>
+                          <th>Employment Type</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let data of jobOpenings;let i = index;">
+                          <td>{{data.doc.requiredForThisPosition}}</td>
+                          <td>{{data.doc.position}}</td>
+                          <td>{{data.doc.branch}}</td>
+                          <td>{{data.doc.employmentType}}</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="col-lg-6">
+          <div class="card">
+            <div class="card-header row">
+              <div class="col-lg-6 mt-2">
+                <h1 class="text-warning">Official Business</h1>
+              </div>
+            </div>
+            <div class="card-body">
+              <div class="row">
+                <div class="col-lg-12">
+                  <div class="table-responsive mt-2" *ngIf="employees.length">
+                    <table class="table-striped" datatable [dtOptions]="dtOptions">
+                      <thead>
+                        <tr>
+                          <th>Employee Name</th>
+                          <th>Position Title</th>
+                          <th>Date</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        <tr *ngFor="let data of employees; let i = index;">
+                          <td>{{ data.doc.firstName }} {{ data.doc.middleName }} {{ data.doc.lastName }} {{ data.doc.ext }}</td>
+                          <td>{{ data.doc.positionTitle }}</td>
+                          <td></td>
+                        </tr>
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 </section>
+

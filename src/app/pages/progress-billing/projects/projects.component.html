@@ -84,7 +84,7 @@
                   
 
                   <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(item)">
-                    <i class="fas fa-trash"></i>
+                    <i class="far fa-trash-alt"></i>
                   </button>
                   
                   
@@ -154,7 +154,15 @@
                             ₱{{ calculatePhaseAmount(item.totalAmount, item.downPayment, phases.percentage) | number }}
                           </td>
                           <!-- <td>
-                            <input *ngIf="phases.isEditing" type="number" [(ngModel)]="phases.progress" min="0" max="100" (change)="updateProjectProgress(item)" />
+                            <input
+                              *ngIf="phases.isEditing"
+                              type="number"
+                              [(ngModel)]="phases.progress"
+                              min="0"
+                              max="100"
+                              (input)="limitProgressInput($event, phases)"
+                              (change)="updateProjectProgress(item)"
+                            />
                             <span *ngIf="!phases.isEditing">{{ phases.progress }}%</span>
                           </td> -->
                           <td>
@@ -169,6 +177,7 @@
                             />
                             <span *ngIf="!phases.isEditing">{{ phases.progress }}%</span>
                           </td>
+                          
                           
         
                           
@@ -188,7 +197,7 @@
                             
                             <!-- <button *ngIf="phases.isEditing" (click)="savesPhase(phases)">Save</button> -->
                             <button class="phase-action-btn save-btn" *ngIf="phases.isEditing" (click)="savesPhase(phases, item)">
-                              <i class="fas fa-check"></i> Saves
+                              <i class="fas fa-check"></i> Save
                             </button>
                             
                             <button class="phase-action-btn cancel-btn" *ngIf="phases.isEditing" (click)="cancelEditPhase(phases)">
@@ -232,10 +241,23 @@
                                     <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.amount" type="number" />
                                     <span *ngIf="!milestone.isEditing">₱{{ milestone.amount | number }}</span>
                                   </td>
-                                  <td>
+                                  <!-- <td>
                                     <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.previous" type="number" />
                                     <span *ngIf="!milestone.isEditing">{{ milestone.previous }}%</span>
+                                  </td> -->
+                                  <td>
+                                    <input 
+                                      *ngIf="milestone.isEditing" 
+                                      type="number" 
+                                      [(ngModel)]="milestone.previous" 
+                                      min="0" 
+                                      max="100" 
+                                      (input)="limitPreviousInput($event, milestone)" 
+                                    />
+                                    <span *ngIf="!milestone.isEditing">{{ milestone.previous }}%</span>
                                   </td>
+                                  
+                                  
                                   <!-- <td>
                                     <input type="number" [(ngModel)]="milestone.present" (ngModelChange)="calculateAmountDue(milestone)"  min="0" max="100"  style="width: 60px;" [disabled]="milestone.previous === 100"  />%
                                   </td> -->
@@ -249,7 +271,7 @@
                                       max="100"
                                       maxlength="3"
                                       style="width: 60px;"
-                                      [disabled]="milestone.previous === 100"
+                                      [disabled]="milestone.previous === 100 || milestone.isEditing"
                                       (input)="limitMilestoneInputLength($event, milestone, 3)"
                                     />%
                                   </td>
@@ -336,6 +358,9 @@
     <div class="modal-content" >
       <div class="modal-body" >
         <h6 class="fw-bold" style="font-size: 32px;">Create New Project</h6>
+        <button type="button" class="btn-close" style="position: absolute; right: 15px; top: 10px;" (click)="cancelForm()">
+          <i class="fas fa-times"></i>
+        </button>
 
         <form #projectForm="ngForm">
           <div class="mb-3">
@@ -472,7 +497,9 @@
           </div>
 
           <div class="mt-3">
-            <button type="button" class="btn btn-primary btn-sm" (click)="addPhase()"[disabled]="totalPhasePercentage >= 100">+ Add Phase</button>
+            <button type="button" class="btn btn-primary btn-sm" (click)="addPhase()"[disabled]="totalPhasePercentage >= 100">
+              <i class="fas fa-plus"></i> Add Phase
+            </button>
           </div>
         </form>
 
@@ -502,9 +529,12 @@
                   <td>{{ phase.deadline }}</td>
                   <td>{{ phase.percentage }}%</td>
                   <td>₱{{ phase.amountToBill | number }}</td>
-                  <td>
-
-                    <button class="delete-btn delete-phase-btn" (click)="deletePhase(phase.phaseId)" >Delete Phase</button>   
+                  <td style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                    <!-- <button class="delete-btn delete-phase-btn" (click)="deletePhase(phase.phaseId)" >Delete Phase</button>    -->
+                    <button class="delete-btn delete-confirm-btn" (click)="deletePhase(phase.phaseId)">
+                      <i class="far fa-trash-alt"></i>
+                    </button>
+                    
                   </td>
                 </tr>
 
@@ -519,7 +549,9 @@
                         <input type="number" class="form-control" [(ngModel)]="phase.newMilestone.amount" placeholder="Milestone Amount">
                       </div>
                       <div class="col-md-2">
-                        <button class="btn btn-primary btn-sm" (click)="addMilestone(phase)">Add Milestone</button>
+                        <button class="btn btn-primary btn-sm" (click)="addMilestone(phase)">
+                          <i class="fas fa-plus"></i> Add 
+                        </button>
                       </div>
 
                       <hr class="my-4" style="height: 3px; background-color: black; border: none;"> 
@@ -534,6 +566,7 @@
                     <table  class="table table-sm table-bordered mt-2" style="border-bottom: 2px solid black;">
                       <thead>
                         <tr style="background-color: #b8b8b8; color: black; height: 56px;">
+                          <th>#</th>
                           <th>Milestone Name</th>
                           <th>Milestone Amount</th>
                           <th> Action</th>
@@ -544,9 +577,14 @@
                           <td colspan="2" class="text-center">No milestones yet</td>
                         </tr>
                         <tr  *ngFor="let milestone of phase.milestones; let i = index">
+                          <td>{{ i + 1 }}</td>
                           <td>{{ milestone.name }}</td>
                           <td>₱{{ milestone.amount | number }}</td>
-                          <td><button  class="delete-btn delete-phase-btn" (click)="deleteMilestone(phase, i)" >Delete Milestone</button></td>
+                          <td style="display: flex; justify-content: center; align-items: center; height: 100%;">
+                            <button class="delete-btn delete-confirm-btn" (click)="deleteMilestone(phase, i)">
+                              <i class="far fa-trash-alt"></i>
+                            </button>
+                          </td>
                         </tr>
                       </tbody>
                     </table>
@@ -561,8 +599,8 @@
       </div>
 
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" (click)="cancelForm()">Cancel</button>
-        <button type="button" class="btn btn-primary" [disabled]="isSaving" (click)="saveProject()">Save</button>
+        <button type="button" class="phase-action-btn cancel-btn" (click)="cancelForm()">Cancel</button>
+        <button type="button" class="phase-action-btn save-btn" [disabled]="isSaving" (click)="saveProject()">Save</button>
         <!-- <button type="button" class="btn btn-primary" (click)="saveProject()">Save</button> -->
       </div>
 

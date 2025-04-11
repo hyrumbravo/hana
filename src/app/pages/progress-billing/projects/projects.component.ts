@@ -950,12 +950,18 @@ export class ProjectsComponent implements OnInit {
 
   editMilestone(phase: any, milestone: any) {
     milestone.isEditing = true;
-    milestone.originalData = { ...milestone }; // Store original values for cancel
+    milestone.originalData = { ...milestone }; // Store original values for cancel // Optional: store original values for cancel
+    // Clear the fields when editing starts
+    milestone.present = 0;
+    milestone.amountDue = 0;
   }
 
   cancelEditMilestone(milestone: any) {
     Object.assign(milestone, milestone.originalData); // Restore original values
     milestone.isEditing = false;
+
+    milestone.present = 0;
+    milestone.amountDue = 0;
   }
 
 
@@ -1034,8 +1040,6 @@ export class ProjectsComponent implements OnInit {
       }
     );
   }
-
-
 
 
 
@@ -1205,14 +1209,28 @@ export class ProjectsComponent implements OnInit {
       updatedPhase.progress = totalProgress;
 
       // ✅ Immediately update project progress locally
-      this.updateProjectProgress({ phases: [updatedPhase], projectId: phases.projectId });
+      // this.updateProjectProgress({ phases: [updatedPhase], projectId: phases.projectId });
 
-      // Update the progress in the filteredProjects array
-      const updatedProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
-      if (updatedProject) {
-        updatedProject.progress = updatedPhase.progress;
+      // // Update the progress in the filteredProjects array
+      // const updatedProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
+      // if (updatedProject) {
+      //   updatedProject.progress = updatedPhase.progress;
+      //   this.cdRef.detectChanges(); // Trigger change detection manually
+      // }
+      // ✅ Find the full project object including all its phases
+      const fullProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
+      if (fullProject) {
+        // Replace the updated phase in the full project phases array
+        fullProject.phases = fullProject.phases.map(phase =>
+          phase._id === updatedPhase._id ? updatedPhase : phase
+        );
+
+        // ✅ Recalculate full project progress based on all phases
+        this.updateProjectProgress(fullProject);
+
         this.cdRef.detectChanges(); // Trigger change detection manually
       }
+
 
       this.projectsService.updateFullPhase(updatedPhase).subscribe({
         next: (res) => {
@@ -1257,7 +1275,7 @@ export class ProjectsComponent implements OnInit {
   
     const total = phase.milestones.reduce((acc: number, m: any) => acc + (m.previous || 0), 0);
     const average = total / phase.milestones.length;
-    phase.progress = Math.min(Math.round(average), 100); // Optional: Round and cap at 100
+    phase.progress = Math.min(Math.round(average), 100);
   }
   
   
@@ -1287,27 +1305,54 @@ export class ProjectsComponent implements OnInit {
   }
 
 
+  // limitProgressInput(event: any, phases: any) {
+  //   let inputValue = event.target.value;
+  
+  //   // If the input is empty or null, set it to 0
+  //   if (inputValue === '' || inputValue === null) {
+  //     inputValue = '0';
+  //   }
+  
+  //   // If the input length exceeds 3 digits, slice it to 3 digits
+  //   if (inputValue.length > 3) {
+  //     inputValue = inputValue.slice(0, 3);
+  //   }
+  
+  //   // If the input is greater than 100, reset to 100
+  //   if (+inputValue > 100) {
+  //     inputValue = '100';
+  //   }
+  
+  //   // Update the phases progress with the cleaned value
+  //   phases.progress = parseInt(inputValue, 10);
+  // }
+
   limitProgressInput(event: any, phases: any) {
     let inputValue = event.target.value;
   
-    // If the input is empty or null, set it to 0
+    // Default to 0 if input is empty or null
     if (inputValue === '' || inputValue === null) {
       inputValue = '0';
     }
   
-    // If the input length exceeds 3 digits, slice it to 3 digits
+    // Limit input to 3 characters max
     if (inputValue.length > 3) {
       inputValue = inputValue.slice(0, 3);
     }
   
-    // If the input is greater than 100, reset to 100
-    if (+inputValue > 100) {
-      inputValue = '100';
+    // Convert to number and enforce range 0–100
+    let numericValue = +inputValue;
+    if (numericValue > 100) {
+      numericValue = 100;
+    } else if (numericValue < 0) {
+      numericValue = 0;
     }
   
-    // Update the phases progress with the cleaned value
-    phases.progress = parseInt(inputValue, 10);
+    // Update input display and model binding
+    event.target.value = numericValue;
+    phases.progress = numericValue;
   }
+  
   
 
   // limitPhasePercentageInput(event: any) {
@@ -1549,6 +1594,33 @@ markPhaseAsComplete(phase: any, project: any): void {
     }
   );
 }
+
+limitPreviousInput(event: any, milestone: any) {
+  let inputValue = event.target.value;
+
+  // Default to 0 if input is empty or null
+  if (inputValue === '' || inputValue === null) {
+    inputValue = '0';
+  }
+
+  // Limit to 3 characters
+  if (inputValue.length > 3) {
+    inputValue = inputValue.slice(0, 3);
+  }
+
+  // Convert to number and clamp between 0–100
+  let numericValue = +inputValue;
+  if (numericValue > 100) {
+    numericValue = 100;
+  } else if (numericValue < 0) {
+    numericValue = 0;
+  }
+
+  // Update both the input field and the model
+  event.target.value = numericValue;
+  milestone.previous = numericValue;
+}
+
 
 
 
