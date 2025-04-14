@@ -392,6 +392,20 @@ export class ProjectsComponent implements OnInit {
     const downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
     return totalAmount - downPaymentAmount;
   }
+
+  // calculateTotalBalance(totalAmount: number, downPayment: number, phases: any[]): number {
+  //   const downPaymentAmount = (downPayment / 100) * totalAmount;
+  
+  //   const completedPhaseAmount = phases
+  //     ?.filter(phase => phase.progress === 100)
+  //     .reduce((sum, phase) => {
+  //       const phaseAmount = (phase.percentage / 100) * (totalAmount - downPaymentAmount);
+  //       return sum + phaseAmount;
+  //     }, 0);
+  
+  //   return (totalAmount - downPaymentAmount - completedPhaseAmount);
+  // }
+  
   
 
   //phase creation
@@ -534,6 +548,11 @@ export class ProjectsComponent implements OnInit {
   //   );
   // }
 
+
+
+
+  isPercentage: boolean = true;
+
   saveProject() {
     if (this.isSaving) return;
   
@@ -597,6 +616,12 @@ export class ProjectsComponent implements OnInit {
         const newProjectId = (maxId + 1).toString().padStart(4, '0');
         this.newProject.projectId = newProjectId;
   
+        // ✅ Calculate and assign totalBalance
+        const totalAmount = this.newProject.totalAmount || 0;
+        const downPaymentPercent = this.newProject.downPayment || 0;
+        const downPaymentAmount = (totalAmount * downPaymentPercent) / 100;
+        this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
+  
         this.projectsService.createProject(this.newProject).subscribe({
           next: (projectResponse) => {
             this.toastr.success('Project saved successfully', 'Success');
@@ -635,6 +660,7 @@ export class ProjectsComponent implements OnInit {
       }
     });
   }
+  
 
 
   scrollTo(ref: ElementRef) {

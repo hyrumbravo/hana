@@ -76,6 +76,8 @@
                 <td>₱{{ item.totalAmount | number }}</td>
                 <td>₱{{ calculateDownPayment(item.totalAmount, item.downPayment) | number }} ({{ item.downPayment }}%)</td>
                 <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td>
+                 <!-- <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment, item.phases) | number }}</td> -->
+
                 <td>{{ item.progress | number }}%</td>
                 <td>
                   <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(item)">
@@ -420,7 +422,9 @@
               </label>
               <input type="text" class="form-control" #totalAmountRef [(ngModel)]="newProject.totalAmount" name="totalAmount" required #totalAmountModel="ngModel" appPesoFormat/>
             </div>
-            <div class="col-md-6">
+
+
+            <!-- <div class="col-md-6">
               <label class="form-label fw-bold">
                 INITIAL DOWN PAYMENT (%) <span class="text-danger">*</span>
                 <span class="text-danger" *ngIf="downPaymentModel.errors?.['required'] && downPaymentModel.touched">This field is required</span>
@@ -438,7 +442,62 @@
               (input)="limitInputLength($event, 3)"
               #downPaymentModel="ngModel"/>
             
+            </div> -->
+            <div class="col-md-6">
+              <label class="form-label fw-bold">
+                INITIAL DOWN PAYMENT 
+                <span class="text-danger">*</span>
+              
+                <!-- Inline Radio Buttons -->
+                <span class="ms-3 d-inline-flex align-items-center gap-2" style="margin-left: 15px;">
+                  <div class="form-check form-check-inline">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      name="downPaymentType"
+                      value="percent"
+                      id="downPaymentPercent"
+                      checked  
+                    />
+                    <label class="form-check-label" for="downPaymentPercent" style="font-weight: normal;">%</label>
+                  </div>
+                  <div class="form-check form-check-inline">
+                    <input
+                      class="form-check-input"
+                      type="radio"
+                      name="downPaymentType"
+                      value="peso"
+                      id="downPaymentPeso"
+                    />
+                    <label class="form-check-label" for="downPaymentPeso" style="font-weight: normal;">₱</label>
+                  </div>
+                </span>
+              
+                <!-- Validation Message -->
+                <span class="text-danger d-block mt-1" *ngIf="downPaymentModel.errors?.['required'] && downPaymentModel.touched">
+                  This field is required
+                </span>
+              </label>
+            
+              <input
+                type="number"
+                class="form-control"
+                #downPaymentRef
+                [(ngModel)]="newProject.downPayment"
+                name="downPayment"
+                required
+                max="100"
+                min="0"
+                maxlength="3"
+                (input)="limitInputLength($event, 3)"
+                #downPaymentModel="ngModel"
+              />
             </div>
+            
+            
+            
+            
+            
           </div>
         </form>
         
@@ -609,6 +668,7 @@
         </button>
         
       </div>
+      
 
     </div>
   </div>
