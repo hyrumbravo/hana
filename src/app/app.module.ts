@@ -90,6 +90,7 @@ import { PayrollModule } from './pages/payroll/payroll.module';
 import { OvertimeComponent } from './pages/dtr/overtime/overtime.component';
 import { CalendarComponent } from './pages/dtr/calendar/calendar.component';
 import { ProjectsComponent } from '@pages/progress-billing/projects/projects.component';
+import { PesoFormatDirective } from './directives/peso-format.directive';
 
 
 defineCustomElements();
@@ -152,6 +153,7 @@ registerLocaleData(localeEn, 'en-EN');
         OvertimeComponent,
         CalendarComponent,
         ProjectsComponent,
+        PesoFormatDirective,
     ],
     imports: [
         CdkTableModule,

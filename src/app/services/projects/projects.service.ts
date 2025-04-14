@@ -8,8 +8,10 @@ import { switchMap } from 'rxjs/operators';
   providedIn: 'root',
 })
 export class ProjectsService {
-  private projectBaseUrl = 'http://18.139.82.238:4000/database/projects'; // Base URL
-  private phaseBaseUrl = 'http://18.139.82.238:4000/database/project_phase';
+  // private projectBaseUrl = 'http://18.139.82.238:4000/database/projects';
+  // private phaseBaseUrl = 'http://18.139.82.238:4000/database/project_phase';
+  private projectBaseUrl = '/database/projects';
+  private phaseBaseUrl = '/database/project_phase';
 
 
 

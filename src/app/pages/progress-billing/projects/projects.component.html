@@ -153,18 +153,7 @@
                           <td>
                             ₱{{ calculatePhaseAmount(item.totalAmount, item.downPayment, phases.percentage) | number }}
                           </td>
-                          <!-- <td>
-                            <input
-                              *ngIf="phases.isEditing"
-                              type="number"
-                              [(ngModel)]="phases.progress"
-                              min="0"
-                              max="100"
-                              (input)="limitProgressInput($event, phases)"
-                              (change)="updateProjectProgress(item)"
-                            />
-                            <span *ngIf="!phases.isEditing">{{ phases.progress }}%</span>
-                          </td> -->
+                        
                           <td>
                             <input
                               *ngIf="phases.isEditing"
@@ -238,7 +227,7 @@
                                     <span *ngIf="!milestone.isEditing">{{ milestone.name }}</span>
                                   </td>
                                   <td>
-                                    <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.amount" type="number" />
+                                    <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.amount" type="text" appPesoFormat />
                                     <span *ngIf="!milestone.isEditing">₱{{ milestone.amount | number }}</span>
                                   </td>
                                   <!-- <td>
@@ -429,7 +418,7 @@
                 TOTAL PROJECT AMOUNT <span class="text-danger">*</span>
                 <span class="text-danger" *ngIf="totalAmountModel.invalid && totalAmountModel.touched">This field is required</span>
               </label>
-              <input type="number" class="form-control" #totalAmountRef [(ngModel)]="newProject.totalAmount" name="totalAmount" required #totalAmountModel="ngModel" />
+              <input type="text" class="form-control" #totalAmountRef [(ngModel)]="newProject.totalAmount" name="totalAmount" required #totalAmountModel="ngModel" appPesoFormat/>
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold">
@@ -460,6 +449,10 @@
         <h6 class="fw-bold text-danger" style="font-size: 20px;">
           Total Balance: ₱{{ getTotalBalance() | number }}
         </h6>
+        <h6 class="fw-bold text-danger" style="font-size: 20px;">
+          Unallocated Percentage: {{ getUnallocatedPercentage() }}% (₱{{ getRemainingTotalBalance() | number }})
+        </h6>
+        
 
         <form>
           <div class="mb-2">
@@ -492,7 +485,10 @@
             
             <div class="col-md-6">
               <label class="form-label fw-bold">AMOUNT TO BILL</label>
-              <input type="number" class="form-control" [(ngModel)]="newPhase.amountToBill" name="amountToBill" readonly>
+              <!-- <input type="number" class="form-control" [(ngModel)]="newPhase.amountToBill" name="amountToBill" readonly> -->
+              <input type="text" class="form-control" 
+              [value]="newPhase.amountToBill | currency:'PHP':'symbol':'1.0-0'" 
+              readonly style="text-align: center;">
             </div>
           </div>
 
@@ -541,21 +537,25 @@
 
                 <tr *ngIf="phase.showMilestoneForm">
                   <td colspan="6">
+                    <!-- <h6 class="fw-bold text-danger" style="font-size: 20px;">
+                      Remaining Amount: ₱{{''}}
+                    </h6> -->
+                    <h6 class="fw-bold text-danger" style="font-size: 20px;">
+                      Remaining Amount: ₱{{ getRemainingAmount(phase) | number }}
+                    </h6>
                     <div class="row">
                       <div class="col-md-5">
                         <input type="text" class="form-control" [(ngModel)]="phase.newMilestone.name" placeholder="Milestone Name">
                       </div>
                       <div class="col-md-5">
-                        <input type="number" class="form-control" [(ngModel)]="phase.newMilestone.amount" placeholder="Milestone Amount">
+                        <input type="text" class="form-control" [(ngModel)]="phase.newMilestone.amount" placeholder="Milestone Amount" appPesoFormat>
                       </div>
                       <div class="col-md-2">
                         <button class="btn btn-primary btn-sm" (click)="addMilestone(phase)">
                           <i class="fas fa-plus"></i> Add 
                         </button>
                       </div>
-
                       <hr class="my-4" style="height: 3px; background-color: black; border: none;"> 
-
                     </div>
                   </td>
                 </tr>
@@ -600,8 +600,14 @@
 
       <div class="modal-footer">
         <button type="button" class="phase-action-btn cancel-btn" (click)="cancelForm()">Cancel</button>
-        <button type="button" class="phase-action-btn save-btn" [disabled]="isSaving" (click)="saveProject()">Save</button>
-        <!-- <button type="button" class="btn btn-primary" (click)="saveProject()">Save</button> -->
+        <!-- <button type="button" class="phase-action-btn save-btn" [disabled]="isSaving" (click)="saveProject()">Save</button> -->
+        <button type="button" class="phase-action-btn save-btn" [disabled]="isSaving" (click)="saveProject()">
+          <span *ngIf="!isSaving"><i class="fas fa-save"></i> Save</span>
+          <span *ngIf="isSaving">
+            <i class="fas fa-spinner fa-spin"></i> Saving...
+          </span>
+        </button>
+        
       </div>
 
     </div>
