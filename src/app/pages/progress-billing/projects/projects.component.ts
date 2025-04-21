@@ -104,38 +104,60 @@ export class ProjectsComponent implements OnInit {
   }
   
   
-  ngOnInit(): void {
+  // ngOnInit(): void {
+  //   this.route.queryParams.subscribe(params => {
+  //       const projectName = params['projectName'];
+  //       const storedProject = sessionStorage.getItem('pendingProject');
 
-    
+  //       if (storedProject) {
+  //           const { projectName: storedName, daysLeft } = JSON.parse(storedProject);
+
+  //           if (projectName === storedName) {
+  //               this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 4500 });
+  //               sessionStorage.removeItem('pendingProject'); // Ensure it only appears once
+  //           }
+  //       }
+
+  //       if (projectName && sessionStorage.getItem('highlightedProject') !== projectName) {
+  //           this.loadProjects(() => {
+  //               this.highlightProject(projectName);
+  //               this.clearQueryParams();
+  //           });
+  //       } else {
+  //           this.loadProjects();
+  //       }
+  //   });
+  // }
+
+  ngOnInit(): void {
+    // Load sort order from localStorage (default to descending)
+    const savedOrder = localStorage.getItem('projectSortOrder');
+    this.isDescending = savedOrder !== 'asc';
   
     this.route.queryParams.subscribe(params => {
-        const projectName = params['projectName'];
-        const storedProject = sessionStorage.getItem('pendingProject');
-
-        if (storedProject) {
-            const { projectName: storedName, daysLeft } = JSON.parse(storedProject);
-
-            if (projectName === storedName) {
-                this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 4500 });
-                sessionStorage.removeItem('pendingProject'); // Ensure it only appears once
-            }
+      const projectName = params['projectName'];
+      const storedProject = sessionStorage.getItem('pendingProject');
+  
+      if (storedProject) {
+        const { projectName: storedName, daysLeft } = JSON.parse(storedProject);
+  
+        if (projectName === storedName) {
+          this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 4500 });
+          sessionStorage.removeItem('pendingProject'); // Show only once
         }
-
-        if (projectName && sessionStorage.getItem('highlightedProject') !== projectName) {
-            this.loadProjects(() => {
-                this.highlightProject(projectName);
-                this.clearQueryParams();
-            });
-        } else {
-            this.loadProjects();
-        }
+      }
+  
+      if (projectName && sessionStorage.getItem('highlightedProject') !== projectName) {
+        this.loadProjects(() => {
+          this.highlightProject(projectName);
+          this.clearQueryParams();
+        });
+      } else {
+        this.loadProjects();
+      }
     });
-
-    // datatables cofig
-
-
-
   }
+  
 
   modalElement: HTMLElement;
   ngAfterViewInit() {
@@ -230,10 +252,17 @@ export class ProjectsComponent implements OnInit {
     });
   }
 
+  // toggleSort() {
+  //   this.isDescending = !this.isDescending;
+  //   this.sortProjects();
+  // }
+
   toggleSort() {
     this.isDescending = !this.isDescending;
+    localStorage.setItem('projectSortOrder', this.isDescending ? 'desc' : 'asc');
     this.sortProjects();
   }
+  
 
 sortProjects() {
   if (this.isDescending) {
@@ -1760,18 +1789,6 @@ limitPreviousInput(event: any, milestone: any) {
   event.target.value = numericValue;
   milestone.previous = numericValue;
 }
-
-
-
-
-
-
-  
-  
-
-
-  
-
 
   
 }
