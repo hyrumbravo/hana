@@ -173,21 +173,50 @@ export class ProjectsComponent implements OnInit {
   //   });
   // }
 
+
+
+  isDescending: boolean = true;
+
   
 
+  // loadProjects(callback?: () => void): void {
+  //   this.projectsService.getProjects().subscribe({
+  //       next: (response) => {
+  //           if (response.rows) {
+  //               // Map the projects and sort them by projectId in descending order
+  //               this.projects = response.rows.map((row: any) => ({
+  //                   ...row.doc,
+  //                   expanded: false, // Ensure expanded is false initially
+  //                   phases: [], // Each project has its own phases array
+  //               }));
+
+  //               // Sort projects in descending order based on projectId
+  //               this.projects.sort((a, b) => b.projectId - a.projectId);
+
+  //               if (callback) {
+  //                   callback(); // Run the callback after projects have loaded
+  //               }
+  //           }
+  //       },
+  //       error: (error) => {
+  //           this.toastr.error('Failed to load projects', 'Error');
+  //           console.error('Error fetching projects:', error);
+  //       },
+  //   });
+  // }
   loadProjects(callback?: () => void): void {
     this.projectsService.getProjects().subscribe({
         next: (response) => {
             if (response.rows) {
-                // Map the projects and sort them by projectId in descending order
+                // Map the projects and sort them by projectId
                 this.projects = response.rows.map((row: any) => ({
                     ...row.doc,
                     expanded: false, // Ensure expanded is false initially
                     phases: [], // Each project has its own phases array
                 }));
 
-                // Sort projects in descending order based on projectId
-                this.projects.sort((a, b) => b.projectId - a.projectId);
+                // Sort projects based on the current sort order (ascending/descending)
+                this.sortProjects();
 
                 if (callback) {
                     callback(); // Run the callback after projects have loaded
@@ -200,6 +229,20 @@ export class ProjectsComponent implements OnInit {
         },
     });
   }
+
+  toggleSort() {
+    this.isDescending = !this.isDescending;
+    this.sortProjects();
+  }
+
+sortProjects() {
+  if (this.isDescending) {
+      this.projects.sort((a, b) => b.projectId - a.projectId); // Descending order
+  } else {
+      this.projects.sort((a, b) => a.projectId - b.projectId); // Ascending order
+  }
+}
+
 
 
   isHighlighted: boolean = false; // Add this property to track highlighting
