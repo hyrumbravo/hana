@@ -689,10 +689,49 @@ sortProjects() {
         this.newProject.projectId = newProjectId;
   
         // ✅ Calculate and assign totalBalance
+        // const totalAmount = this.newProject.totalAmount || 0;
+        // const downPaymentPercent = this.newProject.downPayment || 0;
+        // const downPaymentAmount = (totalAmount * downPaymentPercent) / 100;
+        // this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
+
+
+        // ✅ Calculate down payment amount and total balance
+        // const totalAmount = this.newProject.totalAmount || 0;
+        // const downPaymentValue = this.newProject.downPayment || 0;
+
+        // let downPaymentAmount = 0;
+
+        // if (this.downPaymentType === 'percent') {
+        //   downPaymentAmount = (totalAmount * downPaymentValue) / 100;
+        // } else if (this.downPaymentType === 'peso') {
+        //   downPaymentAmount = downPaymentValue;
+        // }
+
+        // // Save both calculated values
+        // this.newProject.downPaymentAmount = downPaymentAmount;
+        // this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
+
         const totalAmount = this.newProject.totalAmount || 0;
-        const downPaymentPercent = this.newProject.downPayment || 0;
-        const downPaymentAmount = (totalAmount * downPaymentPercent) / 100;
+        const inputValue = this.newProject.downPayment || 0;
+        let downPaymentAmount = 0;
+        let downPaymentPercentage = 0;
+
+        if (this.downPaymentType === 'percent') {
+          downPaymentPercentage = inputValue;
+          downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
+        } else if (this.downPaymentType === 'peso') {
+          downPaymentAmount = inputValue;
+          downPaymentPercentage = (inputValue / totalAmount) * 100;
+        }
+
+        // Store percentage in CouchDB as requested
+        this.newProject.downPayment = downPaymentPercentage.toFixed(2); // Save as string percentage (e.g., "50.00")
+
+        // Save both calculated values
+        this.newProject.downPaymentAmount = downPaymentAmount;
         this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
+
+
   
         this.projectsService.createProject(this.newProject).subscribe({
           next: (projectResponse) => {
@@ -937,18 +976,47 @@ sortProjects() {
   
 
 
+  // getTotalBalance(): number {
+  //   let downPaymentAmount = (this.newProject.downPayment / 100) * this.newProject.totalAmount; // Convert percentage to actual amount
+  //   return this.newProject.totalAmount - downPaymentAmount;
+  // }
+
   getTotalBalance(): number {
-    let downPaymentAmount = (this.newProject.downPayment / 100) * this.newProject.totalAmount; // Convert percentage to actual amount
+    let downPaymentAmount = 0;
+  
+    if (this.downPaymentType === 'percent') {
+      downPaymentAmount = (this.newProject.downPayment / 100) * this.newProject.totalAmount;
+    } else if (this.downPaymentType === 'peso') {
+      downPaymentAmount = this.newProject.downPayment;
+    }
+  
     return this.newProject.totalAmount - downPaymentAmount;
   }
+  
+  // getRemainingTotalBalance(): number {
+  // const downPaymentAmount = (this.newProject.downPayment / 100) * this.newProject.totalAmount;
+
+  // // Sum all added phase billings
+  // const billedAmount = this.newPhases.reduce((sum, phase) => sum + Number(phase.amountToBill || 0), 0);
+
+  // return this.newProject.totalAmount - downPaymentAmount - billedAmount;
+  // }
+
   getRemainingTotalBalance(): number {
-  const downPaymentAmount = (this.newProject.downPayment / 100) * this.newProject.totalAmount;
+    let downPaymentAmount = 0;
+  
+    if (this.downPaymentType === 'percent') {
+      downPaymentAmount = (this.newProject.downPayment / 100) * this.newProject.totalAmount;
+    } else if (this.downPaymentType === 'peso') {
+      downPaymentAmount = this.newProject.downPayment;
+    }
+  
+    const billedAmount = this.newPhases.reduce((sum, phase) => sum + Number(phase.amountToBill || 0), 0);
+  
+    return this.newProject.totalAmount - downPaymentAmount - billedAmount;
+  }
+  
 
-  // Sum all added phase billings
-  const billedAmount = this.newPhases.reduce((sum, phase) => sum + Number(phase.amountToBill || 0), 0);
-
-  return this.newProject.totalAmount - downPaymentAmount - billedAmount;
-}
   getUnallocatedPercentage(): number {
     return Math.max(0, Math.floor(100 - this.totalPhasePercentage));
   }
@@ -972,6 +1040,8 @@ sortProjects() {
       this.newProject.downPayment = 0;
     }
   }
+
+
 
 
 
@@ -1455,6 +1525,16 @@ sortProjects() {
     this.toastr.success('Invoice generated successfully!', 'Success');
   }
 
+
+
+  // downPaymentType: string = 'percent'; // default selection
+  downPaymentType: 'percent' | 'peso' = 'percent'; // default
+  
+
+
+
+  
+
   //initial downpayment creation form
   limitInputLength(event: any, maxLength: number) {
     const input = event.target.value;
@@ -1789,6 +1869,89 @@ limitPreviousInput(event: any, milestone: any) {
   event.target.value = numericValue;
   milestone.previous = numericValue;
 }
+
+
+
+
+
+
+
+
+
+displayedDownPayment: number = 0; // what the user types
+
+
+
+onDownPaymentInput(event: any): void {
+  let inputValue = event.target.value;
+
+  if (this.downPaymentType === 'percent') {
+    // Limit to 3 digits
+    inputValue = inputValue.slice(0, 3);
+
+    let percent = Number(inputValue);
+
+    if (percent > 100) {
+      percent = 100;
+    } else if (percent < 0 || isNaN(percent)) {
+      percent = 0;
+    }
+
+    this.newProject.downPayment = percent;
+    event.target.value = percent; // ✅ Reflect change in the input box
+
+  } else {
+    // Peso mode: up to total project amount
+    let pesoAmount = Number(inputValue);
+
+    if (pesoAmount > this.newProject.totalAmount) {
+      pesoAmount = this.newProject.totalAmount;
+    } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
+      pesoAmount = 0;
+    }
+
+    this.newProject.downPayment = pesoAmount;
+    event.target.value = pesoAmount; // ✅ Reflect change in the input box
+  }
+}
+
+// onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
+//   this.downPaymentType = newType;
+//   this.newProject.downPayment = 0;
+// }
+
+onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
+  this.downPaymentType = newType;
+
+  if (newType === 'percent') {
+    this.displayedDownPayment = this.newProject.downPayment || 0;
+  } else {
+    const totalAmount = this.newProject.totalAmount || 0;
+    this.displayedDownPayment = Math.round((totalAmount * (this.newProject.downPayment || 0)) / 100);
+  }
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+  
+
 
   
 }
