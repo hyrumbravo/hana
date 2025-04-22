@@ -180,20 +180,14 @@
                           
                           
         
-                          
-        
                           <td>
                             <button *ngIf="!phases.isEditing && phases.progress !== 100" (click)="markPhaseAsComplete(phases, item)">
                               <i class="fa-solid fa-circle-check"></i> Mark as complete
                             </button>
                             
-                            
-                            
-
                             <button  *ngIf="!phases.isEditing" (click)="editPhase(phases)">
                               <i class="fas fa-edit"></i> Edit
                             </button>
-                            
                             
                             <!-- <button *ngIf="phases.isEditing" (click)="savesPhase(phases)">Save</button> -->
                             <button class="phase-action-btn save-btn" *ngIf="phases.isEditing" (click)="savesPhase(phases, item)">

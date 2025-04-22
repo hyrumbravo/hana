@@ -331,7 +331,7 @@ export const defaultUser =  [
     {
         ref_id: "dtr",
         name: 'Progress Billing',
-        iconClasses: 'fas fa-clock', 
+        iconClasses: 'fas fa-tools', 
         children: [
             {
                 ref_id: "projects",

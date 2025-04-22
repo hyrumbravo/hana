@@ -114,35 +114,92 @@ export class ProjectsService {
 
 
 
+  // updatePhase(phase: any): Observable<any> {
+  //   const totalMilestones = phase.milestones.length;
+  //   const progressPerMilestone = 100 / totalMilestones; // This is the percentage each milestone represents
+    
+  //   // Distribute the phase progress to the milestones
+  //   let progressRemaining = phase.progress; // This is the overall phase progress
+    
+  //   phase.milestones = phase.milestones.map((milestone, index) => {
+  //     let milestoneProgress = 0;
+  
+  //     if (progressRemaining > 0) {
+  //       // Calculate the percentage for each milestone
+  //       if (progressRemaining >= progressPerMilestone) {
+  //         milestoneProgress = 100; // This milestone gets full progress
+  //         progressRemaining -= progressPerMilestone; // Subtract the progress taken by this milestone
+  //       } else {
+  //         milestoneProgress = (progressRemaining / progressPerMilestone) * 100; // Partial progress for this milestone
+  //         progressRemaining = 0; // No more remaining progress
+  //       }
+  //     }
+  
+  //     return {
+  //       ...milestone,
+  //       previous: milestoneProgress, // Set the milestone progress based on phase progress
+  //     };
+  //   });
+  
+  //   return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
+  // }
+
+
+
+
+  
+
+
+
+
+  
+
+
   updatePhase(phase: any): Observable<any> {
     const totalMilestones = phase.milestones.length;
-    const progressPerMilestone = 100 / totalMilestones; // This is the percentage each milestone represents
+    const progressPerMilestone = 100 / totalMilestones;
+    let progressRemaining = phase.progress;
+
     
-    // Distribute the phase progress to the milestones
-    let progressRemaining = phase.progress; // This is the overall phase progress
-    
+  
     phase.milestones = phase.milestones.map((milestone, index) => {
       let milestoneProgress = 0;
   
       if (progressRemaining > 0) {
-        // Calculate the percentage for each milestone
         if (progressRemaining >= progressPerMilestone) {
-          milestoneProgress = 100; // This milestone gets full progress
-          progressRemaining -= progressPerMilestone; // Subtract the progress taken by this milestone
+          milestoneProgress = 100;
+          progressRemaining -= progressPerMilestone;
         } else {
-          milestoneProgress = (progressRemaining / progressPerMilestone) * 100; // Partial progress for this milestone
-          progressRemaining = 0; // No more remaining progress
+          milestoneProgress = (progressRemaining / progressPerMilestone) * 100;
+          progressRemaining = 0;
         }
+      }
+  
+      // Determine progress status
+      let progressStatus = "Not Started";
+      if (milestoneProgress === 100) {
+        progressStatus = "Completed";
+      } else if (milestoneProgress > 0 && milestoneProgress < 100) {
+        progressStatus = "In Progress";
       }
   
       return {
         ...milestone,
-        previous: milestoneProgress, // Set the milestone progress based on phase progress
+        previous: milestoneProgress,
+        previousOld: milestoneProgress === 0 ? 0 : milestone.previousOld || 0,
+        presentValue: milestoneProgress === 0 ? 0 : milestone.presentValue || 0,
+        presentMilestoneDue: milestoneProgress === 0 ? 0 : milestone.presentMilestoneDue || 0,
+        amountDue: milestoneProgress === 0 ? 0 : milestone.amountDue || 0,
+        progress: progressStatus,
       };
     });
   
     return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
   }
+
+
+
+  
   
 
   

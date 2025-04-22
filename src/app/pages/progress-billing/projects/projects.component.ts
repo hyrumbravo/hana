@@ -1116,70 +1116,66 @@ sortProjects() {
 
 
 
-  savesPhase(phases: any, project: any) {
-    if (!phases._id) {
-      console.error("Phase ID is missing!");
-      return;
-    }
-  
-    // Calculate the total percentage of all phases, excluding the one being edited
-    const otherPhasesTotal = project.phases
-      .filter((p: any) => p._id !== phases._id) // Exclude the current phase
-      .reduce((sum: number, p: any) => sum + p.percentage, 0);
-  
-    const newTotal = otherPhasesTotal + phases.percentage;
-  
-    if (newTotal > 100) {
-      this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
-      return;
-    }
-  
-    // Fetch the latest _rev before updating the phase
-    this.projectsService.getPhaseById(phases._id).subscribe(
-      (latestPhase: any) => {
-        if (latestPhase._rev) {
-          phases._rev = latestPhase._rev; // Update to the latest _rev
-  
-          // Remove the originalData property to avoid circular references before sending to the backend
-          delete phases.originalData;
-  
-          // Update the phase
-          this.projectsService.updatePhase(phases).subscribe(
-            (response: any) => {
-              console.log("Phase updated successfully:", response);
-              this.toastr.success("Phase updated successfully!");
-              
-  
-              // After phase update, recalculate project progress
-              this.projectsService.updateProjectProgress(project.projectId).subscribe(
-                (projectUpdateResponse) => {
-                  console.log("Project progress updated successfully:", projectUpdateResponse);
-                  // this.toastr.success("Project progress updated!");
-                  phases.isEditing = false; // Exit edit mode after saving
-                },
-                (error) => {
-                  console.error("Error updating project progress:", error);
-                }
-              );
-            },
-            (error) => {
-              console.error("Error updating phase:", error);
-            }
-          );
-        } else {
-          console.error("Failed to fetch latest revision (_rev).");
-        }
-      },
-      (error) => {
-        console.error("Error fetching latest _rev:", error);
+    savesPhase(phases: any, project: any) {
+      if (!phases._id) {
+        console.error("Phase ID is missing!");
+        return;
       }
-    );
-  }
+    
+      // Calculate the total percentage of all phases, excluding the one being edited
+      const otherPhasesTotal = project.phases
+        .filter((p: any) => p._id !== phases._id) // Exclude the current phase
+        .reduce((sum: number, p: any) => sum + p.percentage, 0);
+    
+      const newTotal = otherPhasesTotal + phases.percentage;
+    
+      if (newTotal > 100) {
+        this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
+        return;
+      }
+    
+      // Fetch the latest _rev before updating the phase
+      this.projectsService.getPhaseById(phases._id).subscribe(
+        (latestPhase: any) => {
+          if (latestPhase._rev) {
+            phases._rev = latestPhase._rev; // Update to the latest _rev
+    
+            // Remove the originalData property to avoid circular references before sending to the backend
+            delete phases.originalData;
+    
+            // Update the phase
+            this.projectsService.updatePhase(phases).subscribe(
+              (response: any) => {
+                console.log("Phase updated successfully:", response);
+                this.toastr.success("Phase updated successfully!");
+                
+    
+                // After phase update, recalculate project progress
+                this.projectsService.updateProjectProgress(project.projectId).subscribe(
+                  (projectUpdateResponse) => {
+                    console.log("Project progress updated successfully:", projectUpdateResponse);
+                    // this.toastr.success("Project progress updated!");
+                    phases.isEditing = false; // Exit edit mode after saving
+                  },
+                  (error) => {
+                    console.error("Error updating project progress:", error);
+                  }
+                );
+              },
+              (error) => {
+                console.error("Error updating phase:", error);
+              }
+            );
+          } else {
+            console.error("Failed to fetch latest revision (_rev).");
+          }
+        },
+        (error) => {
+          console.error("Error fetching latest _rev:", error);
+        }
+      );
+    }
   
-
-
-  
-
 
 
 
@@ -1314,196 +1310,74 @@ sortProjects() {
   }
 
 
-  // saveAndGenerateInvoice(phases: any) {
-  //   let isValid = true;
-  
-  //   phases.milestones.forEach((milestone: any) => {
-  //     if (milestone.present > 0) {
-  //       const newPrevious = milestone.previous + milestone.present;
-  //       const remainingPercent = 100 - milestone.previous;
-  
-  //       if (newPrevious > 100) {
-  //         this.toastr.warning(
-  //           `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
-  //           'Warning'
-  //         );
-  //         isValid = false;
-  //         return;
-  //       }
-  
-  //       // ✅ Store old values before updating
-  //       milestone.previousOld = milestone.previous;
-  //       milestone.presentValue = milestone.present;
-  
-  //       // ✅ Save the current amountDue to presentMilestoneDue
-  //       milestone.presentMilestoneDue = milestone.amountDue;
-  
-  //       // ✅ Reset amountDue
-  //       milestone.amountDue = 0;
-  
-  //       // ✅ Update values
-  //       milestone.previous = newPrevious;
-  //       milestone.present = 0;
-  
-  //       // ✅ Prepare only required fields to update (prevent entire object overwrite)
-  //       const updatedMilestone = {
-  //         name: milestone.name,
-  //         previous: milestone.previous,
-  //         previousOld: milestone.previousOld,
-  //         present: milestone.present,
-  //         presentValue: milestone.presentValue,
-  //         amountDue: milestone.amountDue,
-  //         presentMilestoneDue: milestone.presentMilestoneDue,
-  //         progress: milestone.progress
-  //       };
-  
-  //       // ✅ Save to CouchDB using minimal payload
-  //       this.projectsService.updateMilestone(phases._id, updatedMilestone).subscribe({
-  //         next: (res) => {
-  //           console.log('Milestone updated successfully', res);
-  //         },
-  //         error: (err) => {
-  //           console.error('Error updating milestone:', err);
-  //         }
-  //       });
-  
-  //       // ✅ Optional: Recalculate after update (if needed)
-  //       this.calculateAmountDue(milestone);
-  //     }
-  //   });
-  
-  //   if (!isValid) {
-  //     return;
-  //   }
-  
-  //   // ✅ Recalculate phase progress
-  //   this.updatePhaseProgressFromMilestones(phases);
-  
-  //   // ✅ Generate invoice with updated milestones
-  //   this.generateInvoice(phases.milestones);
-  // }
-
-
-
-
-
   saveAndGenerateInvoice(phases: any) {
-  let isValid = true;
-  const updatedMilestones: any[] = [];
-
-  phases.milestones.forEach((milestone: any) => {
-    if (milestone.present > 0) {
-      const newPrevious = milestone.previous + milestone.present;
-      const remainingPercent = 100 - milestone.previous;
-
-      if (newPrevious > 100) {
-        this.toastr.warning(
-          `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
-          'Warning'
-        );
-        isValid = false;
-        return;
-      }
-
-      milestone.previousOld = milestone.previous;
-      milestone.presentValue = milestone.present;
-      milestone.presentMilestoneDue = milestone.amountDue;
-      milestone.amountDue = 0;
-      milestone.previous = newPrevious;
-      milestone.present = 0;
-
-      updatedMilestones.push({
-        name: milestone.name,
-        previous: milestone.previous,
-        previousOld: milestone.previousOld,
-        present: milestone.present,
-        presentValue: milestone.presentValue,
-        amountDue: milestone.amountDue,
-        presentMilestoneDue: milestone.presentMilestoneDue,
-        progress: milestone.progress
-      });
-
-      this.calculateAmountDue(milestone);
-    }
-  });
-
-  if (!isValid || updatedMilestones.length === 0) return;
-
-  this.projectsService.getPhaseById(phases._id).subscribe({
-    next: (phaseFromDb: any) => {
-      const updatedPhase = { ...phaseFromDb };
-      updatedPhase.milestones = phaseFromDb.milestones.map((milestone: any) => {
-        const updated = updatedMilestones.find(m => m.name === milestone.name);
-        return updated ? { ...milestone, ...updated } : milestone;
-      });
-
-      const totalMilestones = updatedPhase.milestones.length;
-      let totalProgress = 0;
-
-      updatedPhase.milestones.forEach((m: any) => {
-        const milestoneProgressPercentage = m.previous;
-        totalProgress += (milestoneProgressPercentage / 100) * (100 / totalMilestones);
-      });
-
-      updatedPhase.progress = totalProgress;
-
-      // ✅ Immediately update project progress locally
-      // this.updateProjectProgress({ phases: [updatedPhase], projectId: phases.projectId });
-
-      // // Update the progress in the filteredProjects array
-      // const updatedProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
-      // if (updatedProject) {
-      //   updatedProject.progress = updatedPhase.progress;
-      //   this.cdRef.detectChanges(); // Trigger change detection manually
-      // }
-      // ✅ Find the full project object including all its phases
-      const fullProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
-      if (fullProject) {
-        // Replace the updated phase in the full project phases array
-        fullProject.phases = fullProject.phases.map(phase =>
-          phase._id === updatedPhase._id ? updatedPhase : phase
-        );
-
-        // ✅ Recalculate full project progress based on all phases
-        this.updateProjectProgress(fullProject);
-
-        this.cdRef.detectChanges(); // Trigger change detection manually
-      }
-
-
-      this.projectsService.updateFullPhase(updatedPhase).subscribe({
-        next: (res) => {
-          console.log('Phase with milestones updated successfully', res);
-
-          // ✅ Then update project progress in DB
-          this.projectsService.updateProjectProgress(phases.projectId).subscribe(
-            (projectUpdateResponse) => {
-              console.log("Project progress updated successfully:", projectUpdateResponse);
-            },
-            (error) => {
-              console.error("Error updating project progress:", error);
-            }
+    let isValid = true;
+  
+    phases.milestones.forEach((milestone: any) => {
+      if (milestone.present > 0) {
+        const newPrevious = milestone.previous + milestone.present;
+        const remainingPercent = 100 - milestone.previous;
+  
+        if (newPrevious > 100) {
+          this.toastr.warning(
+            `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
+            'Warning'
           );
-
-          this.updatePhaseProgressFromMilestones(phases);
-          this.generateInvoice(updatedPhase.milestones);
-        },
-        error: (err) => {
-          console.error('Error updating phase:', err);
+          isValid = false;
+          return;
         }
-      });
-    },
-    error: (err) => {
-      console.error('Error fetching phase from DB:', err);
+  
+        // ✅ Store old values before updating
+        milestone.previousOld = milestone.previous;
+        milestone.presentValue = milestone.present;
+  
+        // ✅ Save the current amountDue to presentMilestoneDue
+        milestone.presentMilestoneDue = milestone.amountDue;
+  
+        // ✅ Reset amountDue
+        milestone.amountDue = 0;
+  
+        // ✅ Update values
+        milestone.previous = newPrevious;
+        milestone.present = 0;
+  
+        // ✅ Prepare only required fields to update (prevent entire object overwrite)
+        const updatedMilestone = {
+          name: milestone.name,
+          previous: milestone.previous,
+          previousOld: milestone.previousOld,
+          present: milestone.present,
+          presentValue: milestone.presentValue,
+          amountDue: milestone.amountDue,
+          presentMilestoneDue: milestone.presentMilestoneDue,
+          progress: milestone.progress
+        };
+  
+        // ✅ Save to CouchDB using minimal payload
+        this.projectsService.updateMilestone(phases._id, updatedMilestone).subscribe({
+          next: (res) => {
+            console.log('Milestone updated successfully', res);
+          },
+          error: (err) => {
+            console.error('Error updating milestone:', err);
+          }
+        });
+  
+        // ✅ Optional: Recalculate after update (if needed)
+        this.calculateAmountDue(milestone);
+      }
+    });
+  
+    if (!isValid) {
+      return;
     }
-  });
-}
-
-
   
+    // ✅ Recalculate phase progress
+    this.updatePhaseProgressFromMilestones(phases);
   
-  
-  
+    // ✅ Generate invoice with updated milestones
+    this.generateInvoice(phases.milestones);
+  }
 
 
   updatePhaseProgressFromMilestones(phase: any) {
@@ -1694,34 +1568,96 @@ sortProjects() {
 
 
 
+
   // markMilestoneAsComplete(phase: any, milestone: any, project: any) {
   //   if (!phase._id) {
   //     console.error("Phase ID is missing!");
   //     return;
   //   }
   
-  //   // Set milestone to complete
-  //   milestone.previous = 100;
-  //   milestone.present = 0; // optional: clear input
+  //   // ✅ Reset milestone data
+  //   milestone.present = 0;        // Clear the input
+  //   milestone.amountDue = 0;      // Clear the amount due
+  //   milestone.previous = 100;     // Mark as completed
   //   milestone.progress = "Completed";
   
-  //   this.saveMilestone(phase, milestone, project); // reuse your existing logic
+  //   this.saveMilestone(phase, milestone, project); // Reuse existing logic
   // }
 
+
+
+
+
+  // markMilestoneAsComplete(phase: any, milestone: any, project: any) {
+  //   if (!phase._id) {
+  //     console.error("Phase ID is missing!");
+  //     return;
+  //   }
+  
+  //   // 🔢 Step 1: Compute the remaining percentage
+  //   const remainingPercent = 100 - milestone.previous;
+  
+  //   // ✅ If already completed, do nothing
+  //   if (remainingPercent <= 0) {
+  //     this.toastr.info(`Milestone "${milestone.name}" is already 100% complete.`, 'Info');
+  //     return;
+  //   }
+  
+  //   // 💰 Step 2: Compute presentMilestoneDue based on remaining percent
+  //   const presentMilestoneDue = (milestone.amount * remainingPercent) / 100;
+  
+  //   //  Step 3: Update milestone fields before saving
+  //   milestone.presentValue = remainingPercent;
+  //   milestone.presentMilestoneDue = presentMilestoneDue;
+  //   milestone.amountDue = 0;
+  //   milestone.present = 0;
+  //   milestone.previousOld = milestone.previous;
+  //   milestone.previous = 100;
+  //   milestone.progress = "Completed";
+  
+  //   //  Optionally log the update
+  //   console.log(`Marking "${milestone.name}" as complete with +${remainingPercent}% (₱${presentMilestoneDue})`);
+  
+  //   //  Step 4: Save changes using existing logic
+  //   this.saveMilestone(phase, milestone, project);
+  // }
+  
+
+
   markMilestoneAsComplete(phase: any, milestone: any, project: any) {
-    if (!phase._id) {
-      console.error("Phase ID is missing!");
-      return;
-    }
-  
-    // ✅ Reset milestone data
-    milestone.present = 0;        // Clear the input
-    milestone.amountDue = 0;      // Clear the amount due
-    milestone.previous = 100;     // Mark as completed
-    milestone.progress = "Completed";
-  
-    this.saveMilestone(phase, milestone, project); // Reuse existing logic
+  if (!phase._id) {
+    console.error("Phase ID is missing!");
+    return;
   }
+
+  // ✅ Already completed
+  if (milestone.previous >= 100) {
+    this.toastr.info(`Milestone "${milestone.name}" is already 100% complete.`, 'Info');
+    return;
+  }
+
+  // 🔢 Step 1: Compute remaining percentage
+  const remainingPercent = 100 - milestone.previous;
+
+  // 💰 Step 2: Compute presentMilestoneDue for remaining progress
+  const presentMilestoneDue = (milestone.amount * remainingPercent) / 100;
+
+  // 🔧 Step 3: Update milestone fields
+  milestone.previousOld = milestone.previous;
+  milestone.previous = 100;
+  milestone.presentValue = remainingPercent;
+  milestone.presentMilestoneDue = presentMilestoneDue;
+  milestone.amountDue = 0;
+  milestone.present = 0;
+  milestone.progress = "Completed";
+  milestone.isEditing = true; // Optional: for UI editing trigger
+
+  // 📝 Step 4: Log and Save
+  console.log(`Marking "${milestone.name}" as complete with +${remainingPercent}% (₱${presentMilestoneDue})`);
+  this.saveMilestone(phase, milestone, project);
+}
+
+  
   
 
 
