@@ -74,9 +74,13 @@
               <td colspan="12" class="text-center" style="font-style: italic; background-color: #f0f0f0;" >No projects available</td>
             </tr>
             <!-- <ng-container *ngFor="let item of projects; let i = index"> -->
-            <ng-container *ngFor="let item of filteredProjects; let i = index">
+            <ng-container *ngFor="let item of filteredProjects; let i = index" class="project-row" >
               
-              <tr style="background-color: white;" [class.expanded-row]="item.expanded"[id]="'project-' + i">
+              <tr 
+                style="background-color: white;"
+                [class.expanded-row]="item.expanded"
+                [attr.id]="'project-' + i"
+                [ngClass]="{ 'highlight': highlightedProjectNames.includes(item.projectName)}">
                 <td>{{ i + 1 }}</td> <!-- Row number -->
                 <td>{{ item.projectName }}</td>
                 <td>{{ item.clientName }}</td>
@@ -85,8 +89,6 @@
                 <td>₱{{ item.totalAmount | number }}</td>
                 <td>₱{{ calculateDownPayment(item.totalAmount, item.downPayment) | number }} ({{ item.downPayment }}%)</td>
                 <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td>
-                 <!-- <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment, item.phases) | number }}</td> -->
-
                 <td>{{ item.progress | number }}%</td>
                 <td>
                   <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(item)">
@@ -95,7 +97,7 @@
                   
 
                   <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(item)">
-                    <i class="far fa-trash-alt"></i>
+                    <i class="fas fa-trash"></i>
                   </button>
                   
                   

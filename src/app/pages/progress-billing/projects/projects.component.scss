@@ -262,6 +262,18 @@ input.no-validation-border.ng-invalid.ng-touched {
   background-color: #a71d2a;
 }
 
+.highlight {
+  background-color: lightblue !important; 
+  transition: background-color 0.2s ease-in-out;
+}
 
+::ng-deep .highlight {
+  background-color: lightblue !important;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.project-row {
+  background-color: white; // or whatever your default is
+}
 
 

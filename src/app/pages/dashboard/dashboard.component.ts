@@ -353,6 +353,7 @@ import { CreditEarningService } from '@services/leave/credit-earning.service';
 import { Modal } from 'bootstrap';
 import { ProjectsService } from '@services/projects/projects.service';
 import { Router } from '@angular/router';
+import { NgZone } from '@angular/core';
 
 @Component({
     selector: 'app-dashboard',
@@ -412,9 +413,8 @@ export class DashboardComponent implements OnInit {
   selectedProjectId!: string; // Store the Project ID
   @ViewChild('projectModal') projectModal!: ElementRef;
   modalInstance!: Modal;
-  @ViewChild('pendingModal', { static: false }) pendingModal!: ElementRef;
-    pendingmodalInstance!: any;
-
+  @ViewChild('notifModal', { static: false }) notifModal!: ElementRef;
+    notifmodalInstance!: any;
 
   employees: any = []
   announcements: any = [];
@@ -424,8 +424,7 @@ export class DashboardComponent implements OnInit {
   projects:any = [];
   pendingProjects: any[] = [];
 
-  constructor(private ceService: CreditEarningService, private profileService: ProfileService,private recruitmentService: RecruitmentService, private toastr: ToastrService, private leaveService: LeaveService, private service: BakcEndService, private projectsService: ProjectsService, private router: Router) {
-
+  constructor(private ceService: CreditEarningService, private profileService: ProfileService,private recruitmentService: RecruitmentService, private toastr: ToastrService, private leaveService: LeaveService, private service: BakcEndService, private projectsService: ProjectsService, private router: Router, private zone: NgZone) {
   }
 
   ngOnInit() {
@@ -460,8 +459,8 @@ export class DashboardComponent implements OnInit {
     // Initialize Bootstrap modal after view loads
     this.deleteModal = new Modal(this.deleteModalRef.nativeElement);
 
-    if (this.pendingModal) {
-      this.pendingmodalInstance = new Modal(this.pendingModal.nativeElement);
+    if (this.notifModal) {
+      this.notifmodalInstance = new Modal(this.notifModal.nativeElement);
     }
   }
 
@@ -474,11 +473,16 @@ export class DashboardComponent implements OnInit {
             expanded: false, // Ensure expanded is false initially
             phases: [], // Each project has its own phases array
           }));
+
+           this.fetchProjectStats();
           
            // Filter pending projects with a deadline within the next 7 days
            this.pendingProjects = this.projects.filter((project: any) => {
             console.log("Checking project:", project.projectName, "Deadline:", project.deadline); // Debugging
           
+             // Skip projects with no progress value
+            if (project.progress === null || project.progress === undefined || project.progress === '') return false;
+
             if (project.progress >= 100) return false; // Exclude completed projects
 
             if (!project.deadline) return false; // Ensure deadline exists
@@ -491,31 +495,22 @@ export class DashboardComponent implements OnInit {
           
             const today = new Date();
             const timeDiff = deadline.getTime() - today.getTime();
-            const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
-          
-            // console.log("Days left for", project.projectName, ":", daysLeft); // Debugging
-          
+            const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));          
             return daysLeft <= 7 && daysLeft >= 0            
-
-            // if (daysLeft <= 7 && daysLeft >= 0) {
-            //   // 🔹 Show Toastr notification for each pending project
-            //   this.toastr.info(
-            //     `${project.projectName} has ${daysLeft} day(s) left until completion!`,
-            //     'Project Deadline',
-            //     { timeOut: 3000 }
-            //   );              
-            //   return true;
-            // }
-            // return false;
+          })
+          .sort((a, b) => {
+            const dateA = new Date(a.deadline.replace(/-/g, '/')).getTime();
+            const dateB = new Date(b.deadline.replace(/-/g, '/')).getTime();
+            return dateA - dateB; // Closest deadline first
           });
 
           // Show modal only if pending projects exist
-          if (this.pendingProjects.length > 0 && this.pendingModal) {
+          if (this.pendingProjects.length > 0 && this.notifModal) {
             setTimeout(() => {
-              if (this.pendingModal) {
-                this.pendingmodalInstance = new Modal(this.pendingModal.nativeElement);
+              if (this.notifModal) {
+                this.notifmodalInstance = new Modal(this.notifModal.nativeElement);
                 console.log("Pending Projects:", this.pendingProjects);
-                this.pendingmodalInstance.show();
+                this.notifmodalInstance.show();
               }
             }, 0);
           }
@@ -529,9 +524,37 @@ export class DashboardComponent implements OnInit {
     });
   }
 
+  totalProjects: number = 0;
+  completedProjects: number = 0;
+  pendingCount: number = 0;
+  overdueProjects: number = 0;
+
+  fetchProjectStats(): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // normalize to midnight
+  
+    this.totalProjects = this.projects.length;
+  
+    this.completedProjects = this.projects.filter(p => p.progress === 100).length;
+  
+    // Pending: not complete, due today or in the future
+    this.pendingCount = this.projects.filter(p => {
+      const deadline = new Date(p.deadline);
+      deadline.setHours(0, 0, 0, 0);
+      return p.progress < 100 && deadline.getTime() >= today.getTime();
+    }).length;
+  
+    this.overdueProjects = this.projects.filter(p => {
+      const deadline = new Date(p.deadline);
+      deadline.setHours(0, 0, 0, 0);
+      return p.progress < 100 && deadline.getTime() < today.getTime();
+    }).length;
+  }
+
+
   closePendingModal() {
-    if (this.pendingmodalInstance) {
-      this.pendingmodalInstance.hide();
+    if (this.notifmodalInstance) {
+      this.notifmodalInstance.hide();
     }
   
     // Ensure Bootstrap removes the modal backdrop
@@ -543,62 +566,68 @@ export class DashboardComponent implements OnInit {
     document.body.classList.remove('modal-open');
   }
   
-  // viewPendingProject(projectName: string) {
-  //   if (this.projects.length === 0) {
-  //     this.toastr.error('Project data is still loading. Please try again.', 'Error');
-  //     return;
-  //   }
+  goToProjectsPage() {
+    this.closePendingModal(); // Optional: closes the modal before navigating
+    this.router.navigate(['/projects']);
+  } 
+  
+  goToCompletedProjects(): void {
+    const completedProjectNames = this.projects
+      .filter(p => p.progress === 100)
+      .map(p => p.projectName);
+  
+    sessionStorage.setItem('highlightCompletedProjects', JSON.stringify(completedProjectNames));
+    sessionStorage.setItem('showHighlightInfoOnce', 'true'); // ✅ Add this line
+  
+    this.closePendingModal();
+    this.router.navigate(['/projects']);
+  }
 
-  //   // Find the index of the project in the projects table
-  //   const projectIndex = this.projects.findIndex(proj => 
-  //     proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
-  //   );
+  goToPendingProjects(): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // normalize today's date to midnight
   
-  //   if (this.projects.length === 0) {
-  //     this.toastr.error('Project data is still loading. Please try again.', 'Error');
-  //     return;
-  //   }
+    const pendingProjectNames = this.projects
+      .filter(p => {
+        const deadline = new Date(p.deadline);
+        deadline.setHours(0, 0, 0, 0); // normalize deadline to midnight
   
-  //   if (projectIndex !== -1) {
-  //     // Expand the project if needed
-  //     this.projects[projectIndex].expanded = true;
+        const isDueToday = deadline.getTime() === today.getTime();
+        const isNotOverdue = deadline.getTime() >= today.getTime();
+        const isIncomplete = p.progress < 100;
   
-  //     // Close the pending modal before scrolling
-  //     this.closePendingModal();
+        // Highlight if it's due today and incomplete
+        // OR not overdue and incomplete
+        return isIncomplete && (isDueToday || isNotOverdue);
+      })
+      .map(p => p.projectName);
   
-  //     const today = new Date();
-  //     // Use the project retrieved by index
-  //     const project = this.projects[projectIndex];  // Fix: Declare 'project' using the index
-  //     const deadline = new Date(project.deadline.replace(/-/g, '/'));
-  //     const timeDiff = deadline.getTime() - today.getTime();
-  //     const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
+    sessionStorage.setItem('highlightPendingProjects', JSON.stringify(pendingProjectNames));
+    sessionStorage.setItem('showHighlightInfoOnce', 'true');
   
-  //     // Set a flag in sessionStorage before redirecting
-  //     sessionStorage.setItem('redirectedFromPending', 'true');
-  
-  //     // Store the project name and days left in sessionStorage
-  //     sessionStorage.setItem('pendingProject', JSON.stringify({ projectName, daysLeft }));
-  
-  //     this.router.navigate(['/projects'], { queryParams: { projectName: projectName } });
-  
-  //     // Use a timeout to allow Angular to update the DOM before scrolling
-  //     setTimeout(() => {
-  //       const projectRow = document.getElementById('project-' + projectIndex);
-  //       if (projectRow) {
-  //         projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  
-  //         // 🔹 Highlight the project row for better visibility
-  //         projectRow.classList.add('highlight');
-  //         setTimeout(() => projectRow.classList.remove('highlight'), 4000); // Remove highlight after 2 sec
-  //       } else {
-  //         this.toastr.error('Could not locate the project in the table.', 'Error');
-  //       }
-  //     }, 500); // Slightly longer delay ensures modal is closed before scrolling
-  //   } else {
-  //     this.toastr.error('Project not found', 'Error');
-  //   }
-  // }
+    this.closePendingModal();
+    this.router.navigate(['/projects']);
+  }
 
+  goToOverdueProjects(): void {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Strip time to compare only the date
+  
+    const overdueProjectNames = this.projects
+      .filter(p => {
+        const deadline = new Date(p.deadline);
+        deadline.setHours(0, 0, 0, 0); // Strip time from deadline
+        return deadline < today && p.progress < 100;
+      })
+      .map(p => p.projectName);
+  
+    sessionStorage.setItem('highlightOverdueProjects', JSON.stringify(overdueProjectNames));
+    sessionStorage.setItem('showHighlightInfoOnce', 'true');
+  
+    this.closePendingModal();
+    this.router.navigate(['/projects']);
+  }
+  
   viewPendingProject(projectName: string) {
     if (this.projects.length === 0) {
       this.toastr.error('Project data is still loading. Please try again.', 'Error');
@@ -619,6 +648,7 @@ export class DashboardComponent implements OnInit {
   
       // Close the pending modal before scrolling
       this.closePendingModal();
+      
   
       const today = new Date();
       // Use the project retrieved by index
@@ -652,7 +682,6 @@ export class DashboardComponent implements OnInit {
       this.toastr.error('Project not found', 'Error');
     }
   }
-  
 
   getCurrentUser() {
     return new Promise((resolve, reject) => {

@@ -86,15 +86,11 @@ export class ProjectsComponent implements OnInit {
   loading = false; // Flag for showing a loading spinner
   
   
+  highlightedProjectNames: string[] = [];
+  showHighlightInfoOnce: boolean = false;
+  highlightCount: number = 0;
+  
   constructor(private toastr: ToastrService, private projectsService: ProjectsService, private router: Router, private route: ActivatedRoute, private cdRef: ChangeDetectorRef) {}
-
-
-
-  // get filteredProjects() {
-  //   return this.projects.filter(project =>
-  //     project.projectName.toLowerCase().includes(this.searchTerm.toLowerCase())
-  //   );
-  // }
 
   get filteredProjects() {
     return this.projects.filter(project =>
@@ -102,6 +98,7 @@ export class ProjectsComponent implements OnInit {
       project.clientName.toLowerCase().includes(this.searchTerm.toLowerCase())
     );
   }
+
   
   
   // ngOnInit(): void {
@@ -137,24 +134,58 @@ export class ProjectsComponent implements OnInit {
     this.route.queryParams.subscribe(params => {
       const projectName = params['projectName'];
       const storedProject = sessionStorage.getItem('pendingProject');
+      const storedPending = sessionStorage.getItem('highlightPendingProjects');
+      const storedHighlight = sessionStorage.getItem('highlightCompletedProjects');
+      const showOnce = sessionStorage.getItem('showHighlightInfoOnce') === 'true';
+      const storedOverdue = sessionStorage.getItem('highlightOverdueProjects');
   
-      if (storedProject) {
-        const { projectName: storedName, daysLeft } = JSON.parse(storedProject);
-  
-        if (projectName === storedName) {
-          this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 4500 });
-          sessionStorage.removeItem('pendingProject'); // Show only once
-        }
-      }
-  
-      if (projectName && sessionStorage.getItem('highlightedProject') !== projectName) {
-        this.loadProjects(() => {
+      this.loadProjects(() => {
+        if (projectName) {
           this.highlightProject(projectName);
-          this.clearQueryParams();
-        });
-      } else {
-        this.loadProjects();
-      }
+        } else if (this.highlightedProjectNames.length > 0) {
+          this.highlightMultipleProjects(this.highlightedProjectNames);
+        this.clearQueryParams();
+        }
+  
+        if (storedProject) {
+          const { projectName: storedName, daysLeft } = JSON.parse(storedProject);
+          if (projectName === storedName) {
+            this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 1800 });
+          }
+          sessionStorage.removeItem('pendingProject');
+        }
+  
+        if (storedHighlight && showOnce) {
+          this.highlightedProjectNames = JSON.parse(storedHighlight);
+          this.showHighlightInfoOnce = true;
+        }
+
+        if (showOnce) {
+          if (storedHighlight) {
+            this.highlightedProjectNames = JSON.parse(storedHighlight);
+            sessionStorage.removeItem('highlightCompletedProjects');
+          } else if (storedPending) {
+            this.highlightedProjectNames = JSON.parse(storedPending);
+            sessionStorage.removeItem('highlightPendingProjects');
+          } else if (storedOverdue) {
+            this.highlightedProjectNames = JSON.parse(storedOverdue);
+            sessionStorage.removeItem('highlightOverdueProjects');
+          }
+        
+          if (this.highlightedProjectNames.length > 0) {
+            this.showHighlightInfoOnce = true;
+        
+            this.highlightCount = this.projects.filter(p =>
+              this.highlightedProjectNames.includes(p.projectName)
+            ).length;
+        
+            this.highlightMultipleProjects(this.highlightedProjectNames);
+          }
+        
+          sessionStorage.removeItem('showHighlightInfoOnce');
+        }
+        
+      });
     });
   }
   
@@ -243,6 +274,22 @@ export class ProjectsComponent implements OnInit {
                 if (callback) {
                     callback(); // Run the callback after projects have loaded
                 }
+
+                // Call this before clearing sessionStorage
+                if (this.showHighlightInfoOnce && this.highlightedProjectNames.length > 0) {
+                  this.highlightCount = this.projects.filter(p =>
+                    this.highlightedProjectNames.includes(p.projectName)
+                  ).length;
+
+                  // 👇 Scroll and highlight here
+                  this.highlightMultipleProjects(this.highlightedProjectNames);
+                }
+
+                // Clear after highlighting
+                if (this.showHighlightInfoOnce) {
+                  sessionStorage.removeItem('highlightCompletedProjects');
+                  sessionStorage.removeItem('showHighlightInfoOnce');
+                }
             }
         },
         error: (error) => {
@@ -251,6 +298,7 @@ export class ProjectsComponent implements OnInit {
         },
     });
   }
+
 
   // toggleSort() {
   //   this.isDescending = !this.isDescending;
@@ -321,8 +369,7 @@ sortProjects() {
           projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
           projectRow.classList.add('highlight');
   
-          // Remove highlight after 4 seconds
-          setTimeout(() => projectRow.classList.remove('highlight'), 4000);
+          setTimeout(() => projectRow.classList.remove('highlight'), 1500);
   
           this.isHighlighted = true; // Mark as highlighted
           sessionStorage.setItem('highlightedProject', projectName); // Save highlight state in sessionStorage
@@ -332,11 +379,72 @@ sortProjects() {
       this.toastr.error('Project not found in the list.', 'Error');
     }
   }
-  
 
+  private highlightRowTemporarily(element: HTMLElement, duration: number = 4000): void {
+    console.log('Applying highlight to:', element.id); // 👈 Debug
+    element.classList.add('highlight');
+    void element.offsetWidth;
+    setTimeout(() => element.classList.remove('highlight'), duration);
+  }
+  
+  highlightMultipleProjects(projectNames: string[]): void {
+    let found = false;
+    let firstScrolled = false; // 👉 ensure we only scroll to the first one
+  
+    sessionStorage.removeItem('highlightedProject');
+  
+    setTimeout(() => {
+      projectNames.forEach(name => {
+        const index = this.projects.findIndex(p =>
+          p.projectName.trim().toLowerCase() === name.trim().toLowerCase()
+        );
+  
+        if (index !== -1) {
+          found = true;
+          const el = document.getElementById(`project-${index}`);
+          const project = this.projects[index];
+  
+          if (el) {
+            // 👉 Only scroll to the first matched project
+            if (!firstScrolled) {
+              el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              el.focus({ preventScroll: true }); // optional
+            }
+  
+            // 🔥 Add highlight class temporarily
+            this.highlightRowTemporarily(el);
+  
+            // Add to list (optional for dynamic classes in HTML)
+            if (!this.highlightedProjectNames.includes(project.projectName)) {
+              this.highlightedProjectNames.push(project.projectName);
+            }
+  
+            this.cdRef.detectChanges();
+  
+            // Cleanup after 4 seconds
+            setTimeout(() => {
+              const idx = this.highlightedProjectNames.indexOf(project.projectName);
+              if (idx !== -1) {
+                this.highlightedProjectNames.splice(idx, 1);
+                this.cdRef.detectChanges();
+              }
+            }, 4000);
+          }
+        }
+      });
+  
+      if (!found && sessionStorage.getItem('showHighlightInfoOnce') === 'true') {
+        this.toastr.info('No matching projects found.', 'Message', { timeOut: 4000 });
+      }
+  
+      sessionStorage.removeItem('showHighlightInfoOnce');
+    }, 500);
+  }
+  
   ngOnDestroy() {
     sessionStorage.removeItem('highlightedProject'); // Clear highlight state when user leaves the page
   }
+
   
   // openDeleteModal(project: any) {
   //   this.selectedProjectId = project.projectId; // Correctly assign ID from the clicked item

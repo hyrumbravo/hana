@@ -358,19 +358,69 @@
         </div>
       </div>
 
-      <div class="modal fade" #pendingModal tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
-        <div class="modal-dialog modal-lg"> 
+      <div class="modal fade" #notifModal tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
           <div class="modal-content">
             <div class="modal-body">
       
               <!-- Pending Projects List-->
               <div class="mt-3">
-                <h6 class="fw-bold" style="font-size: 32px; ">Reminder: Project Due Date is Almost Here!</h6> 
+                <h6 class="fw-bold" style="font-size: 32px; margin-bottom: 10px; ">Project Overview</h6> 
                 <button type="button" class="btn-close" (click)="closePendingModal()" aria-label="Close">X</button>
-                <hr class="my-4" style="height: 3px; background-color: black; border: none;"> <!-- Divider for separation -->
-                <!-- Scrollable table container -->
-                <div style="max-height: 470px; overflow-y: auto;"> <!-- Adjust max-height if needed -->
-                  <table class="table table-bordered">
+                <hr class="my-3" style="height: 3px; background-color: black; border: none;"> <!-- Divider for separation -->
+                
+                <div class="row">
+                  <div class="col-lg-3 col-6">
+                    <div class="small-box bg-info" style="cursor: pointer;" (click)="goToProjectsPage()">
+                      <div class="inner">
+                        <h3>{{ totalProjects }}</h3>
+                        <p><b>Total</b><br> Projects</p>
+                      </div>
+                      <div class="icon">
+                        <i class="fas fa-folder-open"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-3 col-6">
+                    <div class="small-box bg-success" (click)="goToCompletedProjects()" style="cursor: pointer;">
+                      <div class="inner">
+                        <h3>{{ completedProjects }}</h3>
+                        <p><b>Completed</b><br> Projects</p>
+                      </div>
+                      <div class="icon">
+                        <i class="fas fa-check-circle"></i>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="col-lg-3 col-6">
+                    <div class="small-box bg-warning pending-box" style="cursor: pointer;" (click)="goToPendingProjects()">
+                      <div class="inner">
+                        <h3>{{ pendingCount }}</h3>
+                        <p><b>Pending</b> <br> Projects</p>
+                      </div>
+                      <div class="icon">
+                        <i class="fas fa-hourglass-half"></i>
+                      </div>
+                    </div>                    
+                  </div>
+                  <div class="col-lg-3 col-6">
+                    <div class="small-box bg-danger" style="cursor: pointer;" (click)="goToOverdueProjects()">
+                      <div class="inner">
+                        <h3>{{ overdueProjects }}</h3>
+                        <p><b>Overdue</b><br> Projects</p>
+                      </div>
+                      <div class="icon">
+                        <i class="fas fa-exclamation-triangle"></i>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <!-- Scrollable table container with max 7 rows -->
+                <h3 class="fw-bold" style="font-size: 22px; margin-bottom: 5px; ">
+                  <i class="fas fa-bell text-warning" style="font-size: 24px;"></i>
+                  Reminder: Project Due Date is Almost Here</h3> 
+                <div class="scrollable-table-container">
+                  <table class="table table-bordered mb-0">
                     <thead class="sticky-top bg-white">
                       <tr>
                         <th>Project Name</th>
@@ -400,6 +450,7 @@
           </div>
         </div>
       </div>
+
       <div class="row equal-height">
         <div class="col-lg-12">
           <div class="card">
