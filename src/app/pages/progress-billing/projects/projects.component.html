@@ -70,8 +70,24 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngIf="projects.length === 0">
+            <!-- Show loading spinner only while loading -->
+            <tr *ngIf="isLoadingProjects">
+              <td colspan="12" class="text-center">
+                <span class="spinner-border text-primary" role="status" style="width: 2rem; height: 2rem;"></span>
+                <br />
+                <small>Loading projects...</small>
+              </td>
+            </tr>
+
+            <!-- <tr *ngIf="projects.length === 0">
               <td colspan="12" class="text-center" style="font-style: italic; background-color: #f0f0f0;" >No projects available</td>
+            </tr> -->
+
+            <!-- Show 'No projects available' ONLY if loading is done and the list is empty -->
+            <tr *ngIf="!isLoadingProjects && projects.length === 0">
+              <td colspan="12" class="text-center" style="font-style: italic; background-color: #f0f0f0;">
+                No projects available
+              </td>
             </tr>
             <!-- <ng-container *ngFor="let item of projects; let i = index"> -->
             <ng-container *ngFor="let item of filteredProjects; let i = index" class="project-row" >
@@ -167,6 +183,18 @@
                             ₱{{ calculatePhaseAmount(item.totalAmount, item.downPayment, phases.percentage) | number }}
                           </td>
                         
+                          <!-- <td>
+                            <input
+                              *ngIf="phases.isEditing"
+                              type="number"
+                              [(ngModel)]="phases.progress"
+                              min="0"
+                              max="100"
+                              (input)="limitProgressInput($event, phases)"
+                              (change)="updateProjectProgress(item)"
+                            />
+                            <span *ngIf="!phases.isEditing">{{ phases.progress }}bug%</span>
+                          </td> -->
                           <td>
                             <input
                               *ngIf="phases.isEditing"
@@ -177,8 +205,10 @@
                               (input)="limitProgressInput($event, phases)"
                               (change)="updateProjectProgress(item)"
                             />
-                            <span *ngIf="!phases.isEditing">{{ phases.progress }}%</span>
+                            <span *ngIf="!phases.isEditing">{{ formatProgress(phases.progress) }}%</span>
+
                           </td>
+                          
                           
                           
         
@@ -237,10 +267,6 @@
                                     <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.amount" type="text" appPesoFormat />
                                     <span *ngIf="!milestone.isEditing">₱{{ milestone.amount | number }}</span>
                                   </td>
-                                  <!-- <td>
-                                    <input *ngIf="milestone.isEditing" [(ngModel)]="milestone.previous" type="number" />
-                                    <span *ngIf="!milestone.isEditing">{{ milestone.previous }}%</span>
-                                  </td> -->
                                   <td>
                                     <input 
                                       *ngIf="milestone.isEditing" 
@@ -251,11 +277,19 @@
                                       (input)="limitPreviousInput($event, milestone)" 
                                     />
                                     <span *ngIf="!milestone.isEditing">{{ milestone.previous }}%</span>
+                                    <!-- <span *ngIf="!milestone.isEditing">{{ milestone.previous | number:'1.0-0' }}%</span> -->
+
                                   </td>
-                                  
-                                  
                                   <!-- <td>
-                                    <input type="number" [(ngModel)]="milestone.present" (ngModelChange)="calculateAmountDue(milestone)"  min="0" max="100"  style="width: 60px;" [disabled]="milestone.previous === 100"  />%
+                                    <input 
+                                      *ngIf="milestone.isEditing" 
+                                      type="number" 
+                                      [(ngModel)]="milestone.previous" 
+                                      min="0" 
+                                      max="100" 
+                                      (input)="limitPreviousInput($event, milestone)" 
+                                    />
+                                    <span *ngIf="!milestone.isEditing">{{ formatPercentage(milestone.previous) }}%</span>
                                   </td> -->
                                   <td>
                                     <input
@@ -279,15 +313,12 @@
                                     <ng-container *ngIf="milestone.previous > 0 && milestone.previous < 100">In Progress</ng-container>
                                   </td>
                                   <td>
-
-                                    <!-- <button *ngIf="!milestone.isEditing" >
-                                      <i class="fa-solid fa-circle-check"></i> Mark as Complete
-                                    </button> -->
                                     <button *ngIf="!milestone.isEditing && milestone.previous < 100"
                                       (click)="markMilestoneAsComplete(phases, milestone, item)">
                                       <i class="fa-solid fa-circle-check"></i> Mark as Complete
                                     </button>
 
+                                    
                                     
                                     <button *ngIf="!milestone.isEditing" (click)="editMilestone(phases, milestone)">
                                       <i class="fas fa-edit fa-sm"></i> Edit 

@@ -101,30 +101,6 @@ export class ProjectsComponent implements OnInit {
 
   
   
-  // ngOnInit(): void {
-  //   this.route.queryParams.subscribe(params => {
-  //       const projectName = params['projectName'];
-  //       const storedProject = sessionStorage.getItem('pendingProject');
-
-  //       if (storedProject) {
-  //           const { projectName: storedName, daysLeft } = JSON.parse(storedProject);
-
-  //           if (projectName === storedName) {
-  //               this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 4500 });
-  //               sessionStorage.removeItem('pendingProject'); // Ensure it only appears once
-  //           }
-  //       }
-
-  //       if (projectName && sessionStorage.getItem('highlightedProject') !== projectName) {
-  //           this.loadProjects(() => {
-  //               this.highlightProject(projectName);
-  //               this.clearQueryParams();
-  //           });
-  //       } else {
-  //           this.loadProjects();
-  //       }
-  //   });
-  // }
 
   ngOnInit(): void {
     // Load sort order from localStorage (default to descending)
@@ -140,6 +116,7 @@ export class ProjectsComponent implements OnInit {
       const storedOverdue = sessionStorage.getItem('highlightOverdueProjects');
   
       this.loadProjects(() => {
+        
         if (projectName) {
           this.highlightProject(projectName);
         } else if (this.highlightedProjectNames.length > 0) {
@@ -257,53 +234,96 @@ export class ProjectsComponent implements OnInit {
   //       },
   //   });
   // }
+
+
+
+
+
+  // loadProjects(callback?: () => void): void {
+  //   this.projectsService.getProjects().subscribe({
+  //       next: (response) => {
+  //           if (response.rows) {
+  //               // Map the projects and sort them by projectId
+  //               this.projects = response.rows.map((row: any) => ({
+  //                   ...row.doc,
+  //                   expanded: false, // Ensure expanded is false initially
+  //                   phases: [], // Each project has its own phases array
+  //               }));
+
+  //               // Sort projects based on the current sort order (ascending/descending)
+  //               this.sortProjects();
+
+  //               if (callback) {
+  //                   callback(); // Run the callback after projects have loaded
+  //               }
+
+  //               // Call this before clearing sessionStorage
+  //               if (this.showHighlightInfoOnce && this.highlightedProjectNames.length > 0) {
+  //                 this.highlightCount = this.projects.filter(p =>
+  //                   this.highlightedProjectNames.includes(p.projectName)
+  //                 ).length;
+
+  //                 // 👇 Scroll and highlight here
+  //                 this.highlightMultipleProjects(this.highlightedProjectNames);
+  //               }
+
+  //               // Clear after highlighting
+  //               if (this.showHighlightInfoOnce) {
+  //                 sessionStorage.removeItem('highlightCompletedProjects');
+  //                 sessionStorage.removeItem('showHighlightInfoOnce');
+  //               }
+  //           }
+  //       },
+  //       error: (error) => {
+  //           this.toastr.error('Failed to load projects', 'Error');
+  //           console.error('Error fetching projects:', error);
+  //       },
+  //   });
+  // }
+
+
+  isLoadingProjects = true;
+
   loadProjects(callback?: () => void): void {
+    this.isLoadingProjects = true; // Start loading
+  
     this.projectsService.getProjects().subscribe({
-        next: (response) => {
-            if (response.rows) {
-                // Map the projects and sort them by projectId
-                this.projects = response.rows.map((row: any) => ({
-                    ...row.doc,
-                    expanded: false, // Ensure expanded is false initially
-                    phases: [], // Each project has its own phases array
-                }));
-
-                // Sort projects based on the current sort order (ascending/descending)
-                this.sortProjects();
-
-                if (callback) {
-                    callback(); // Run the callback after projects have loaded
-                }
-
-                // Call this before clearing sessionStorage
-                if (this.showHighlightInfoOnce && this.highlightedProjectNames.length > 0) {
-                  this.highlightCount = this.projects.filter(p =>
-                    this.highlightedProjectNames.includes(p.projectName)
-                  ).length;
-
-                  // 👇 Scroll and highlight here
-                  this.highlightMultipleProjects(this.highlightedProjectNames);
-                }
-
-                // Clear after highlighting
-                if (this.showHighlightInfoOnce) {
-                  sessionStorage.removeItem('highlightCompletedProjects');
-                  sessionStorage.removeItem('showHighlightInfoOnce');
-                }
-            }
-        },
-        error: (error) => {
-            this.toastr.error('Failed to load projects', 'Error');
-            console.error('Error fetching projects:', error);
-        },
+      next: (response) => {
+        if (response.rows) {
+          this.projects = response.rows.map((row: any) => ({
+            ...row.doc,
+            expanded: false,
+            phases: [],
+          }));
+  
+          this.sortProjects();
+  
+          if (callback) callback();
+  
+          if (this.showHighlightInfoOnce && this.highlightedProjectNames.length > 0) {
+            this.highlightCount = this.projects.filter(p =>
+              this.highlightedProjectNames.includes(p.projectName)
+            ).length;
+  
+            this.highlightMultipleProjects(this.highlightedProjectNames);
+          }
+  
+          if (this.showHighlightInfoOnce) {
+            sessionStorage.removeItem('highlightCompletedProjects');
+            sessionStorage.removeItem('showHighlightInfoOnce');
+          }
+        }
+  
+        this.isLoadingProjects = false; // ✅ Stop loading after data is set
+      },
+      error: (error) => {
+        this.toastr.error('Failed to load projects', 'Error');
+        console.error('Error fetching projects:', error);
+        this.isLoadingProjects = false; // ✅ Stop loading on error too
+      },
     });
   }
-
-
-  // toggleSort() {
-  //   this.isDescending = !this.isDescending;
-  //   this.sortProjects();
-  // }
+  
 
   toggleSort() {
     this.isDescending = !this.isDescending;
@@ -1973,6 +1993,24 @@ onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
     const totalAmount = this.newProject.totalAmount || 0;
     this.displayedDownPayment = Math.round((totalAmount * (this.newProject.downPayment || 0)) / 100);
   }
+}
+
+formatProgress(value: number): string {
+  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+}
+
+formatPercentage(value: number): string {
+  const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
+  return Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+}
+
+roundPercentage(value: number): number {
+  return Math.round((value + Number.EPSILON) * 100) / 100;
+}
+
+normalizePercentage(value: number): number {
+  const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
+  return Math.abs(rounded - 100) < 0.01 ? 100 : rounded;
 }
 
 

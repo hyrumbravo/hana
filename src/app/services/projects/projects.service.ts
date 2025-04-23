@@ -155,6 +155,53 @@ export class ProjectsService {
   
 
 
+  // updatePhase(phase: any): Observable<any> {
+  //   const totalMilestones = phase.milestones.length;
+  //   const progressPerMilestone = 100 / totalMilestones;
+  //   let progressRemaining = phase.progress;
+
+    
+  
+  //   phase.milestones = phase.milestones.map((milestone, index) => {
+  //     let milestoneProgress = 0;
+  
+  //     if (progressRemaining > 0) {
+  //       if (progressRemaining >= progressPerMilestone) {
+  //         milestoneProgress = 100;
+  //         progressRemaining -= progressPerMilestone;
+  //       } else {
+  //         milestoneProgress = (progressRemaining / progressPerMilestone) * 100;
+  //         progressRemaining = 0;
+  //       }
+  //     }
+  
+  //     // Determine progress status
+  //     let progressStatus = "Not Started";
+  //     if (milestoneProgress === 100) {
+  //       progressStatus = "Completed";
+  //     } else if (milestoneProgress > 0 && milestoneProgress < 100) {
+  //       progressStatus = "In Progress";
+  //     }
+  
+  //     return {
+  //       ...milestone,
+  //       previous: milestoneProgress,
+  //       previousOld: milestoneProgress === 0 ? 0 : milestone.previousOld || 0,
+  //       presentValue: milestoneProgress === 0 ? 0 : milestone.presentValue || 0,
+  //       presentMilestoneDue: milestoneProgress === 0 ? 0 : milestone.presentMilestoneDue || 0,
+  //       amountDue: milestoneProgress === 0 ? 0 : milestone.amountDue || 0,
+  //       progress: progressStatus,
+  //     };
+  //   });
+  
+  //   return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
+  // }
+
+
+
+  
+
+
   updatePhase(phase: any): Observable<any> {
     const totalMilestones = phase.milestones.length;
     const progressPerMilestone = 100 / totalMilestones;
@@ -185,7 +232,8 @@ export class ProjectsService {
   
       return {
         ...milestone,
-        previous: milestoneProgress,
+        previous: Math.round(milestoneProgress),
+
         previousOld: milestoneProgress === 0 ? 0 : milestone.previousOld || 0,
         presentValue: milestoneProgress === 0 ? 0 : milestone.presentValue || 0,
         presentMilestoneDue: milestoneProgress === 0 ? 0 : milestone.presentMilestoneDue || 0,
@@ -196,6 +244,8 @@ export class ProjectsService {
   
     return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
   }
+
+
 
 
 
