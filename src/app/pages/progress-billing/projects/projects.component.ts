@@ -14,16 +14,13 @@ import { ChangeDetectorRef } from '@angular/core';
 
 
 
-
-
-
-
 @Component({
   selector: 'app-projects',
   templateUrl: './projects.component.html',
   styleUrls: ['./projects.component.scss']
 })
 export class ProjectsComponent implements OnInit {
+  
   
 
   @ViewChild('projectNameRef') projectNameRef!: ElementRef;
@@ -52,6 +49,11 @@ export class ProjectsComponent implements OnInit {
   
   @ViewChild('projectModal') projectModal!: ElementRef;
   modalInstance!: Modal;
+
+  @ViewChild('AddPhaseModal') AddPhaseModal!: ElementRef;
+  phaseModalInstance!: Modal;
+
+  
 
 
   @ViewChild('pendingModal', { static: false }) pendingModal!: ElementRef;
@@ -205,83 +207,6 @@ export class ProjectsComponent implements OnInit {
 
 
 
-  isDescending: boolean = true;
-
-  
-
-  // loadProjects(callback?: () => void): void {
-  //   this.projectsService.getProjects().subscribe({
-  //       next: (response) => {
-  //           if (response.rows) {
-  //               // Map the projects and sort them by projectId in descending order
-  //               this.projects = response.rows.map((row: any) => ({
-  //                   ...row.doc,
-  //                   expanded: false, // Ensure expanded is false initially
-  //                   phases: [], // Each project has its own phases array
-  //               }));
-
-  //               // Sort projects in descending order based on projectId
-  //               this.projects.sort((a, b) => b.projectId - a.projectId);
-
-  //               if (callback) {
-  //                   callback(); // Run the callback after projects have loaded
-  //               }
-  //           }
-  //       },
-  //       error: (error) => {
-  //           this.toastr.error('Failed to load projects', 'Error');
-  //           console.error('Error fetching projects:', error);
-  //       },
-  //   });
-  // }
-
-
-
-
-
-  // loadProjects(callback?: () => void): void {
-  //   this.projectsService.getProjects().subscribe({
-  //       next: (response) => {
-  //           if (response.rows) {
-  //               // Map the projects and sort them by projectId
-  //               this.projects = response.rows.map((row: any) => ({
-  //                   ...row.doc,
-  //                   expanded: false, // Ensure expanded is false initially
-  //                   phases: [], // Each project has its own phases array
-  //               }));
-
-  //               // Sort projects based on the current sort order (ascending/descending)
-  //               this.sortProjects();
-
-  //               if (callback) {
-  //                   callback(); // Run the callback after projects have loaded
-  //               }
-
-  //               // Call this before clearing sessionStorage
-  //               if (this.showHighlightInfoOnce && this.highlightedProjectNames.length > 0) {
-  //                 this.highlightCount = this.projects.filter(p =>
-  //                   this.highlightedProjectNames.includes(p.projectName)
-  //                 ).length;
-
-  //                 // 👇 Scroll and highlight here
-  //                 this.highlightMultipleProjects(this.highlightedProjectNames);
-  //               }
-
-  //               // Clear after highlighting
-  //               if (this.showHighlightInfoOnce) {
-  //                 sessionStorage.removeItem('highlightCompletedProjects');
-  //                 sessionStorage.removeItem('showHighlightInfoOnce');
-  //               }
-  //           }
-  //       },
-  //       error: (error) => {
-  //           this.toastr.error('Failed to load projects', 'Error');
-  //           console.error('Error fetching projects:', error);
-  //       },
-  //   });
-  // }
-
-
   isLoadingProjects = true;
 
   loadProjects(callback?: () => void): void {
@@ -324,6 +249,9 @@ export class ProjectsComponent implements OnInit {
     });
   }
   
+
+
+  isDescending: boolean = true;
 
   toggleSort() {
     this.isDescending = !this.isDescending;
@@ -549,6 +477,18 @@ sortProjects() {
 }
 
 
+openPhaseModal(): void {
+  this.phaseModalInstance = new Modal(this.AddPhaseModal.nativeElement, {
+    backdrop: 'static',  // Prevents closing the modal when clicking outside
+    keyboard: false      // Prevents closing the modal when pressing the Escape key
+  });
+  this.phaseModalInstance.show();
+}
+
+
+
+
+
   toggleExpand(project: any) {
     project.expanded = !project.expanded;
   
@@ -593,19 +533,9 @@ sortProjects() {
     return totalAmount - downPaymentAmount;
   }
 
-  // calculateTotalBalance(totalAmount: number, downPayment: number, phases: any[]): number {
-  //   const downPaymentAmount = (downPayment / 100) * totalAmount;
   
-  //   const completedPhaseAmount = phases
-  //     ?.filter(phase => phase.progress === 100)
-  //     .reduce((sum, phase) => {
-  //       const phaseAmount = (phase.percentage / 100) * (totalAmount - downPaymentAmount);
-  //       return sum + phaseAmount;
-  //     }, 0);
   
-  //   return (totalAmount - downPaymentAmount - completedPhaseAmount);
-  // }
-  
+
   
 
   //phase creation
@@ -1037,6 +967,10 @@ sortProjects() {
 
 
 
+  closeAddPhaseModal() {
+    this.phaseModalInstance.hide();
+
+  }
 
   addMilestone(phase: any) {
     if (!phase.newMilestone.name || !phase.newMilestone.amount) {
@@ -1785,6 +1719,9 @@ sortProjects() {
   this.saveMilestone(phase, milestone, project);
 }
 
+
+
+
   
   
 
@@ -1855,184 +1792,169 @@ sortProjects() {
 
 
 
-markPhaseAsComplete(phase: any, project: any): void {
-  if (!phase._id) {
-    console.error("Phase ID is missing!");
-    return;
-  }
+  markPhaseAsComplete(phase: any, project: any): void {
+    if (!phase._id) {
+      console.error("Phase ID is missing!");
+      return;
+    }
 
-  this.projectsService.getPhaseById(phase._id).subscribe(
-    (latestPhase: any) => {
-      if (latestPhase._rev) {
-        phase._rev = latestPhase._rev;
+    this.projectsService.getPhaseById(phase._id).subscribe(
+      (latestPhase: any) => {
+        if (latestPhase._rev) {
+          phase._rev = latestPhase._rev;
 
-        // ✅ Reset milestone.present and amountDue to 0 before marking complete
-        phase.milestones = phase.milestones.map((milestone: any) => ({
-          ...milestone,
-          present: 0,
-          amountDue: 0,
-          previous: 100,
-          progress: "Completed"
-        }));
+          // ✅ Reset milestone.present and amountDue to 0 before marking complete
+          phase.milestones = phase.milestones.map((milestone: any) => ({
+            ...milestone,
+            present: 0,
+            amountDue: 0,
+            previous: 100,
+            progress: "Completed"
+          }));
 
-        // ✅ Set phase progress to 100%
-        phase.progress = 100;
-        phase.completed = true;
+          // ✅ Set phase progress to 100%
+          phase.progress = 100;
+          phase.completed = true;
 
-        this.updateProjectProgress(project);
+          this.updateProjectProgress(project);
 
-        this.projectsService.updatePhase(phase).subscribe(
-          (response: any) => {
-            console.log("Phase marked as complete:", response);
+          this.projectsService.updatePhase(phase).subscribe(
+            (response: any) => {
+              console.log("Phase marked as complete:", response);
 
-            this.projectsService.updateProjectProgress(project.projectId).subscribe(
-              (projectUpdateResponse) => {
-                console.log("Project progress updated:", projectUpdateResponse);
-              },
-              (error) => {
-                console.error("Error updating project progress:", error);
-              }
-            );
-          },
-          (error) => {
-            console.error("Error updating phase:", error);
-          }
-        );
-      } else {
-        console.error("Could not fetch latest _rev.");
+              this.projectsService.updateProjectProgress(project.projectId).subscribe(
+                (projectUpdateResponse) => {
+                  console.log("Project progress updated:", projectUpdateResponse);
+                },
+                (error) => {
+                  console.error("Error updating project progress:", error);
+                }
+              );
+            },
+            (error) => {
+              console.error("Error updating phase:", error);
+            }
+          );
+        } else {
+          console.error("Could not fetch latest _rev.");
+        }
+      },
+      (error) => {
+        console.error("Error fetching phase _rev:", error);
       }
-    },
-    (error) => {
-      console.error("Error fetching phase _rev:", error);
-    }
-  );
-}
-
-limitPreviousInput(event: any, milestone: any) {
-  let inputValue = event.target.value;
-
-  // Default to 0 if input is empty or null
-  if (inputValue === '' || inputValue === null) {
-    inputValue = '0';
+    );
   }
 
-  // Limit to 3 characters
-  if (inputValue.length > 3) {
-    inputValue = inputValue.slice(0, 3);
-  }
+  limitPreviousInput(event: any, milestone: any) {
+    let inputValue = event.target.value;
 
-  // Convert to number and clamp between 0–100
-  let numericValue = +inputValue;
-  if (numericValue > 100) {
-    numericValue = 100;
-  } else if (numericValue < 0) {
-    numericValue = 0;
-  }
-
-  // Update both the input field and the model
-  event.target.value = numericValue;
-  milestone.previous = numericValue;
-}
-
-
-
-
-
-
-
-
-
-displayedDownPayment: number = 0; // what the user types
-
-
-
-onDownPaymentInput(event: any): void {
-  let inputValue = event.target.value;
-
-  if (this.downPaymentType === 'percent') {
-    // Limit to 3 digits
-    inputValue = inputValue.slice(0, 3);
-
-    let percent = Number(inputValue);
-
-    if (percent > 100) {
-      percent = 100;
-    } else if (percent < 0 || isNaN(percent)) {
-      percent = 0;
+    // Default to 0 if input is empty or null
+    if (inputValue === '' || inputValue === null) {
+      inputValue = '0';
     }
 
-    this.newProject.downPayment = percent;
-    event.target.value = percent; // ✅ Reflect change in the input box
-
-  } else {
-    // Peso mode: up to total project amount
-    let pesoAmount = Number(inputValue);
-
-    if (pesoAmount > this.newProject.totalAmount) {
-      pesoAmount = this.newProject.totalAmount;
-    } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
-      pesoAmount = 0;
+    // Limit to 3 characters
+    if (inputValue.length > 3) {
+      inputValue = inputValue.slice(0, 3);
     }
 
-    this.newProject.downPayment = pesoAmount;
-    event.target.value = pesoAmount; // ✅ Reflect change in the input box
+    // Convert to number and clamp between 0–100
+    let numericValue = +inputValue;
+    if (numericValue > 100) {
+      numericValue = 100;
+    } else if (numericValue < 0) {
+      numericValue = 0;
+    }
+
+    // Update both the input field and the model
+    event.target.value = numericValue;
+    milestone.previous = numericValue;
   }
-}
+
+
+
+
+
+
+
+
+
+  displayedDownPayment: number = 0; // what the user types
+
+
+
+  onDownPaymentInput(event: any): void {
+    let inputValue = event.target.value;
+
+    if (this.downPaymentType === 'percent') {
+      // Limit to 3 digits
+      inputValue = inputValue.slice(0, 3);
+
+      let percent = Number(inputValue);
+
+      if (percent > 100) {
+        percent = 100;
+      } else if (percent < 0 || isNaN(percent)) {
+        percent = 0;
+      }
+
+      this.newProject.downPayment = percent;
+      event.target.value = percent; // ✅ Reflect change in the input box
+
+    } else {
+      // Peso mode: up to total project amount
+      let pesoAmount = Number(inputValue);
+
+      if (pesoAmount > this.newProject.totalAmount) {
+        pesoAmount = this.newProject.totalAmount;
+      } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
+        pesoAmount = 0;
+      }
+
+      this.newProject.downPayment = pesoAmount;
+      event.target.value = pesoAmount; // ✅ Reflect change in the input box
+    }
+  }
 
 // onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
 //   this.downPaymentType = newType;
 //   this.newProject.downPayment = 0;
 // }
 
-onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
-  this.downPaymentType = newType;
+  onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
+    this.downPaymentType = newType;
+    this.newProject.downPayment = 0;
 
-  if (newType === 'percent') {
-    this.displayedDownPayment = this.newProject.downPayment || 0;
-  } else {
-    const totalAmount = this.newProject.totalAmount || 0;
-    this.displayedDownPayment = Math.round((totalAmount * (this.newProject.downPayment || 0)) / 100);
+    if (newType === 'percent') {
+      this.displayedDownPayment = this.newProject.downPayment || 0;
+    } else {
+      const totalAmount = this.newProject.totalAmount || 0;
+      this.displayedDownPayment = Math.round((totalAmount * (this.newProject.downPayment || 0)) / 100);
+    }
   }
-}
 
-formatProgress(value: number): string {
-  return Number.isInteger(value) ? value.toString() : value.toFixed(2);
-}
+  formatProgress(value: number): string {
+    return Number.isInteger(value) ? value.toString() : value.toFixed(2);
+  }
 
-formatPercentage(value: number): string {
-  const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
-  return Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
-}
+  formatPercentage(value: number): string {
+    const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
+    return Number.isInteger(rounded) ? rounded.toString() : rounded.toFixed(2);
+  }
 
-roundPercentage(value: number): number {
-  return Math.round((value + Number.EPSILON) * 100) / 100;
-}
+  roundPercentage(value: number): number {
+    return Math.round((value + Number.EPSILON) * 100) / 100;
+  }
 
-normalizePercentage(value: number): number {
-  const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
-  return Math.abs(rounded - 100) < 0.01 ? 100 : rounded;
-}
-
+  normalizePercentage(value: number): number {
+    const rounded = Math.round((value + Number.EPSILON) * 100) / 100;
+    return Math.abs(rounded - 100) < 0.01 ? 100 : rounded;
+  }
 
 
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-  
-
-
-  
 
 
   

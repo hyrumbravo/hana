@@ -79,10 +79,6 @@
               </td>
             </tr>
 
-            <!-- <tr *ngIf="projects.length === 0">
-              <td colspan="12" class="text-center" style="font-style: italic; background-color: #f0f0f0;" >No projects available</td>
-            </tr> -->
-
             <!-- Show 'No projects available' ONLY if loading is done and the list is empty -->
             <tr *ngIf="!isLoadingProjects && projects.length === 0">
               <td colspan="12" class="text-center" style="font-style: italic; background-color: #f0f0f0;">
@@ -105,7 +101,11 @@
                 <td>₱{{ item.totalAmount | number }}</td>
                 <td>₱{{ calculateDownPayment(item.totalAmount, item.downPayment) | number }} ({{ item.downPayment }}%)</td>
                 <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td>
-                <td>{{ item.progress | number }}%</td>
+                
+                
+                <!-- <td>{{ item.progress | number }}%</td> -->
+                <td>{{ item.progress || 0 }}%</td>
+
                 <td>
                   <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(item)">
                     <i class="fas" [ngClass]="item.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
@@ -129,6 +129,11 @@
   
               <tr *ngIf="item.expanded" [class.expanded-row]="item.expanded">
                 <td style="background-color: #d6d4d4;" colspan="12">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <button (click)="openPhaseModal()" class="btn btn-sm btn-success">
+                      <i class="fas fa-plus"></i> Add Phase
+                    </button>
+                  </div>
                   <table width="100%" class="phases-table" >
                     <thead>
                       <tr>
@@ -209,9 +214,6 @@
 
                           </td>
                           
-                          
-                          
-        
                           <td>
                             <button *ngIf="!phases.isEditing && phases.progress !== 100" (click)="markPhaseAsComplete(phases, item)">
                               <i class="fa-solid fa-circle-check"></i> Mark as complete
@@ -464,7 +466,7 @@
                 INITIAL DOWN PAYMENT 
                 <span class="text-danger">*</span>
               
-                <!-- Inline Radio Buttons -->
+
                 <span class="ms-3 d-inline-flex align-items-center gap-2" style="margin-left: 15px;">
                   <div class="form-check form-check-inline">
                     <input
@@ -493,7 +495,7 @@
                   </div>
                 </span>
               
-                <!-- Validation Message -->
+
                 <span class="text-danger d-block mt-1" *ngIf="downPaymentModel.errors?.['required'] && downPaymentModel.touched">
                   This field is required
                 </span>
@@ -512,8 +514,6 @@
                 (input)="onDownPaymentInput($event)"
                 #downPaymentModel="ngModel"
               />
-              
-
             </div>
           </div>
         </form>
@@ -683,13 +683,91 @@
             <i class="fas fa-spinner fa-spin"></i> Saving...
           </span>
         </button>
-        
       </div>
-      
-
     </div>
   </div>
 </div> 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<div class="modal fade" #AddPhaseModal tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-body">
+        <h6 class="fw-bold" style="font-size: 32px;">Add Project Phase</h6>
+        <h6 class="fw-bold text-danger" style="font-size: 20px;">
+          Total Balance: ₱
+        </h6>
+        <h6 class="fw-bold text-danger" style="font-size: 20px;">
+          Unallocated Percentage: % (₱)
+        </h6>
+        <button type="button" class="btn-close" (click)="closeAddPhaseModal()" style="position: absolute; right: 15px; top: 10px;">
+          <i class="fas fa-times"></i>
+        </button>
+
+        <form>
+          <div class="mb-2">
+            <label class="form-label fw-bold">PHASE NAME</label>
+            <input type="text" class="form-control" name="phaseName">
+          </div>
+
+          <div class="row">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">START DATE</label>
+              <input type="date" class="form-control" name="phaseStartDate">
+            </div>
+            <div class="col-md-6">
+              <label class="form-label fw-bold">COMPLETION DATE</label>
+              <input type="date" class="form-control" name="phaseCompletionDate">
+            </div>
+          </div>
+
+          <div class="row mt-2">
+            <div class="col-md-6">
+              <label class="form-label fw-bold">PHASE (%)</label>
+              <input type="number" class="form-control" name="phasePercentage">
+            </div>
+
+            <div class="col-md-6">
+              <label class="form-label fw-bold">AMOUNT TO BILL</label>
+              <input type="text" class="form-control" readonly style="text-align: center;">
+            </div>
+          </div>
+        </form>
+
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="phase-action-btn cancel-btn" (click)="closeAddPhaseModal()">Cancel</button>
+        <button type="button" class="phase-action-btn save-btn" disabled>
+          <span><i class="fas fa-save"></i> Save</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
 
 
 

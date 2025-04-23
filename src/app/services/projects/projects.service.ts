@@ -114,39 +114,6 @@ export class ProjectsService {
 
 
 
-  // updatePhase(phase: any): Observable<any> {
-  //   const totalMilestones = phase.milestones.length;
-  //   const progressPerMilestone = 100 / totalMilestones; // This is the percentage each milestone represents
-    
-  //   // Distribute the phase progress to the milestones
-  //   let progressRemaining = phase.progress; // This is the overall phase progress
-    
-  //   phase.milestones = phase.milestones.map((milestone, index) => {
-  //     let milestoneProgress = 0;
-  
-  //     if (progressRemaining > 0) {
-  //       // Calculate the percentage for each milestone
-  //       if (progressRemaining >= progressPerMilestone) {
-  //         milestoneProgress = 100; // This milestone gets full progress
-  //         progressRemaining -= progressPerMilestone; // Subtract the progress taken by this milestone
-  //       } else {
-  //         milestoneProgress = (progressRemaining / progressPerMilestone) * 100; // Partial progress for this milestone
-  //         progressRemaining = 0; // No more remaining progress
-  //       }
-  //     }
-  
-  //     return {
-  //       ...milestone,
-  //       previous: milestoneProgress, // Set the milestone progress based on phase progress
-  //     };
-  //   });
-  
-  //   return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
-  // }
-
-
-
-
   
 
 
