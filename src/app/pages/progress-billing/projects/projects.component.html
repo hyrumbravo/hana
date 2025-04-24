@@ -34,9 +34,9 @@
             [(ngModel)]="searchTerm"
             style="max-width: 250px;"
           />
-          <button class="btn btn-outline-secondary" (click)="toggleSort()">
+          <!-- <button class="btn btn-outline-secondary" (click)="toggleSort()">
             <i class="fas fa-exchange-alt" style="transform: rotate(90deg);"></i>
-          </button>
+          </button> -->
         
         
           
@@ -58,10 +58,52 @@
           <thead>
             <tr style="background-color: #454d55; color: rgb(243, 241, 241); height: 56px; ">
               <th>#</th>
-              <th>Project Name</th>
-              <th>Client Name</th>
-              <th>Start Date</th>
-              <th>Completion Date</th>
+              <th (click)="sortByColumn('projectName')" style="cursor: pointer;">
+                Project Name
+                <i class="fas"
+                   *ngIf="sortColumn === 'projectName'"
+                   [ngClass]="{
+                      'fa-sort': sortDirection === '',
+                      'fa-sort-alpha-down': sortDirection === 'asc',
+                      'fa-sort-alpha-up': sortDirection === 'desc'
+                   }"></i>
+              </th>
+
+              <th (click)="sortByColumn('clientName')" style="cursor: pointer;">
+                Client Name
+                <i class="fas"
+                   *ngIf="sortColumn === 'clientName'"
+                   [ngClass]="{
+                      'fa-sort': sortDirection === '',
+                      'fa-sort-alpha-down': sortDirection === 'asc',
+                      'fa-sort-alpha-up': sortDirection === 'desc'
+                   }"></i>
+              </th>
+
+              <!-- <th>Start Date</th> -->
+              <th (click)="sortByColumn('startDate')" style="cursor: pointer;">
+                Start Date
+                <i class="fas"
+                   *ngIf="sortColumn === 'startDate'"
+                   [ngClass]="{
+                      'fa-sort': sortDirection === '',
+                      'fa-sort-numeric-down': sortDirection === 'asc',
+                      'fa-sort-numeric-up': sortDirection === 'desc'
+                   }"></i>
+              </th>
+              
+              <!-- <th>Completion Date</th> -->
+              <th (click)="sortByColumn('deadline')" style="cursor: pointer;">
+                Completion Date
+                <i class="fas"
+                   *ngIf="sortColumn === 'deadline'"
+                   [ngClass]="{
+                      'fa-sort': sortDirection === '',
+                      'fa-sort-numeric-down': sortDirection === 'asc',
+                      'fa-sort-numeric-up': sortDirection === 'desc'
+                   }"></i>
+              </th>
+              
               <th>Total Amount</th>
               <th>Initial Downpayment</th>
               <th>Total Balance</th>
@@ -522,7 +564,7 @@
 
         <!-- project phases -->
         <h6 class="fw-bold" style="font-size: 32px; ">Add Project Phase</h6>
-        <h6 class="fw-bold text-danger" style="font-size: 20px;">
+        <h6 class="total-balance">
           Total Balance: ₱{{ getTotalBalance() | number }}
         </h6>
         <h6 class="fw-bold text-danger" style="font-size: 20px;">
@@ -710,9 +752,13 @@
     <div class="modal-content">
       <div class="modal-body">
         <h6 class="fw-bold" style="font-size: 32px;">Add Project Phase</h6>
-        <h6 class="fw-bold text-danger" style="font-size: 20px;">
+        <!-- <h6 class="fw-bold text-danger" style="font-size: 20px;">
+          Total Balance: ₱
+        </h6> -->
+        <h6 class="total-balance">
           Total Balance: ₱
         </h6>
+        
         <h6 class="fw-bold text-danger" style="font-size: 20px;">
           Unallocated Percentage: % (₱)
         </h6>

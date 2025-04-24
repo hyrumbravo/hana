@@ -11,17 +11,12 @@ import { Router } from '@angular/router';
 import { NgModel,  } from '@angular/forms';
 import { ChangeDetectorRef } from '@angular/core';
 
-
-
-
 @Component({
   selector: 'app-projects',
   templateUrl: './projects.component.html',
   styleUrls: ['./projects.component.scss']
 })
 export class ProjectsComponent implements OnInit {
-  
-  
 
   @ViewChild('projectNameRef') projectNameRef!: ElementRef;
   @ViewChild('projectDescriptionRef') projectDescriptionRef!: ElementRef;
@@ -39,22 +34,16 @@ export class ProjectsComponent implements OnInit {
   @ViewChild('totalAmountModel') totalAmountModel: NgModel;
   @ViewChild('downPaymentModel') downPaymentModel: NgModel;
 
-
   @ViewChild('deleteModal') deleteModalRef!: ElementRef;
   deleteModal!: any;
   selectedProjectIndex!: number;
   selectedProjectId!: string; // Store the Project ID
 
-
-  
   @ViewChild('projectModal') projectModal!: ElementRef;
   modalInstance!: Modal;
 
   @ViewChild('AddPhaseModal') AddPhaseModal!: ElementRef;
   phaseModalInstance!: Modal;
-
-  
-
 
   @ViewChild('pendingModal', { static: false }) pendingModal!: ElementRef;
   pendingmodalInstance!: any;
@@ -101,73 +90,88 @@ export class ProjectsComponent implements OnInit {
     );
   }
 
-  
-  
-
   ngOnInit(): void {
-    // Load sort order from localStorage (default to descending)
+    // Retrieve saved order preference (descending or ascending)
     const savedOrder = localStorage.getItem('projectSortOrder');
     this.isDescending = savedOrder !== 'asc';
   
+    // Listen for query parameters changes (if any project name is passed in the URL)
     this.route.queryParams.subscribe(params => {
       const projectName = params['projectName'];
       const storedProject = sessionStorage.getItem('pendingProject');
       const storedPending = sessionStorage.getItem('highlightPendingProjects');
       const storedHighlight = sessionStorage.getItem('highlightCompletedProjects');
-      const showOnce = sessionStorage.getItem('showHighlightInfoOnce') === 'true';
       const storedOverdue = sessionStorage.getItem('highlightOverdueProjects');
+      const showOnce = sessionStorage.getItem('showHighlightInfoOnce') === 'true';
   
+      // Load projects and apply highlighting logic
       this.loadProjects(() => {
-        
+        // Highlight project by query param if provided
         if (projectName) {
           this.highlightProject(projectName);
         } else if (this.highlightedProjectNames.length > 0) {
           this.highlightMultipleProjects(this.highlightedProjectNames);
-        this.clearQueryParams();
+          this.clearQueryParams();
         }
   
+        // Show notification for pending project
         if (storedProject) {
           const { projectName: storedName, daysLeft } = JSON.parse(storedProject);
+        
           if (projectName === storedName) {
-            this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 1800 });
+            if (daysLeft === 0) {
+              this.toastr.warning(`Today is the due date for ${storedName}!`, 'Project Deadline', { timeOut: 2500 });
+            } else {
+              this.toastr.info(`${storedName} has ${daysLeft} day(s) left until completion!`, 'Project Deadline', { timeOut: 1800 });
+            }
           }
+        
           sessionStorage.removeItem('pendingProject');
-        }
+        }        
   
-        if (storedHighlight && showOnce) {
-          this.highlightedProjectNames = JSON.parse(storedHighlight);
-          this.showHighlightInfoOnce = true;
-        }
-
+        // Only show highlights once
         if (showOnce) {
-          if (storedHighlight) {
-            this.highlightedProjectNames = JSON.parse(storedHighlight);
-            sessionStorage.removeItem('highlightCompletedProjects');
+          // Prioritize overdue projects, then pending, and completed if no overdue/pending
+          if (storedOverdue) {
+            this.highlightedProjectNames = JSON.parse(storedOverdue);
+            sessionStorage.removeItem('highlightOverdueProjects');
           } else if (storedPending) {
             this.highlightedProjectNames = JSON.parse(storedPending);
             sessionStorage.removeItem('highlightPendingProjects');
-          } else if (storedOverdue) {
-            this.highlightedProjectNames = JSON.parse(storedOverdue);
-            sessionStorage.removeItem('highlightOverdueProjects');
+          } else if (storedHighlight) {
+            this.highlightedProjectNames = JSON.parse(storedHighlight);
+            sessionStorage.removeItem('highlightCompletedProjects');
           }
-        
+  
+          // If there are highlighted projects, show info and apply highlighting
           if (this.highlightedProjectNames.length > 0) {
             this.showHighlightInfoOnce = true;
-        
             this.highlightCount = this.projects.filter(p =>
               this.highlightedProjectNames.includes(p.projectName)
             ).length;
-        
+  
+            // Apply highlights to the projects
             this.highlightMultipleProjects(this.highlightedProjectNames);
           }
-        
+  
+          // Prevent highlighting info from showing again
           sessionStorage.removeItem('showHighlightInfoOnce');
         }
-        
       });
     });
   }
   
+  applyHighlights(): void {
+    if (this.highlightedProjectNames.length > 0) {
+      this.projects.forEach((project) => {
+        if (this.highlightedProjectNames.includes(project.projectName)) {
+          // Add a class or property to highlight the project
+          project.highlighted = true;
+        }
+      });
+    }
+  }
+    
 
   modalElement: HTMLElement;
   ngAfterViewInit() {
@@ -182,29 +186,6 @@ export class ProjectsComponent implements OnInit {
         queryParamsHandling: 'merge', // Remove projectName while keeping other params
     });
 } 
-
-  // loadProjects(callback?: () => void): void {
-  //   this.projectsService.getProjects().subscribe({
-  //       next: (response) => {
-  //           if (response.rows) {
-  //               this.projects = response.rows.map((row: any) => ({
-  //                   ...row.doc,
-  //                   expanded: false, // Ensure expanded is false initially
-  //                   phases: [], // Each project has its own phases array
-  //               }));
-
-  //               if (callback) {
-  //                   callback(); // Run the callback after projects have loaded
-  //               }
-  //           }
-  //       },
-  //       error: (error) => {
-  //           this.toastr.error('Failed to load projects', 'Error');
-  //           console.error('Error fetching projects:', error);
-  //       },
-  //   });
-  // }
-
 
 
   isLoadingProjects = true;
@@ -253,51 +234,150 @@ export class ProjectsComponent implements OnInit {
 
   isDescending: boolean = true;
 
-  toggleSort() {
-    this.isDescending = !this.isDescending;
-    localStorage.setItem('projectSortOrder', this.isDescending ? 'desc' : 'asc');
-    this.sortProjects();
-  }
+  // sortColumn: '' | 'projectName' | 'clientName' = '';
+  sortColumn: '' | 'projectName' | 'clientName' | 'startDate' | 'deadline' = '';
+
+
+  sortDirection: '' | 'asc' | 'desc' = '';
   
 
-sortProjects() {
-  if (this.isDescending) {
-      this.projects.sort((a, b) => b.projectId - a.projectId); // Descending order
-  } else {
-      this.projects.sort((a, b) => a.projectId - b.projectId); // Ascending order
+  // sortByProjectName(): void {
+  //   if (this.sortDirection === '') {
+  //     this.sortDirection = 'asc';
+  //   } else if (this.sortDirection === 'asc') {
+  //     this.sortDirection = 'desc';
+  //   } else {
+  //     this.sortDirection = '';
+  //   }
+
+  //   this.applySorting();
+  // }
+
+  // sortByColumn(column: 'projectName' | 'clientName'): void {
+  //   if (this.sortColumn === column) {
+  //     // Toggle sort direction
+  //     this.sortDirection = this.sortDirection === 'asc' ? 'desc' : (this.sortDirection === 'desc' ? '' : 'asc');
+  //   } else {
+  //     // Set new column and default to ascending
+  //     this.sortColumn = column;
+  //     this.sortDirection = 'asc';
+  //   }
+  
+  //   this.applySorting();
+  // }
+
+
+  // sortByColumn(column: 'projectName' | 'clientName' | 'startDate'): void {
+  //   if (this.sortColumn === column) {
+  //     this.sortDirection = this.sortDirection === 'asc' ? 'desc' : (this.sortDirection === 'desc' ? '' : 'asc');
+  //   } else {
+  //     this.sortColumn = column;
+  //     this.sortDirection = 'asc';
+  //   }
+  
+  //   this.applySorting();
+  // }
+
+  sortByColumn(column: 'projectName' | 'clientName' | 'startDate' | 'deadline'): void {
+    if (this.sortColumn === column) {
+      this.sortDirection = this.sortDirection === 'asc' ? 'desc' : (this.sortDirection === 'desc' ? '' : 'asc');
+    } else {
+      this.sortColumn = column;
+      this.sortDirection = 'asc';
+    }
+  
+    this.applySorting();
   }
-}
+  
+  
+  
+
+
+  // toggleSort() {
+  //   this.isDescending = !this.isDescending;
+  //   localStorage.setItem('projectSortOrder', this.isDescending ? 'desc' : 'asc');
+  //   this.sortProjects();
+  // }
+
+  toggleSort(): void {
+    // Toggle between asc → desc → null (unsorted)
+    if (this.sortDirection === null) {
+      this.sortDirection = 'asc';
+    } else if (this.sortDirection === 'asc') {
+      this.sortDirection = 'desc';
+    } else {
+      this.sortDirection = null;
+    }
+  
+    this.applySorting();
+  }
+
+  //without loading page but unsorting is not working
+  // applySorting(): void {
+  //   let sortedProjects = [...this.projects];
+  
+  //   if (this.sortDirection === 'asc') {
+  //     sortedProjects.sort((a, b) => {
+  //       if (this.sortColumn === 'startDate' || this.sortColumn === 'deadline') {
+  //         return new Date(a[this.sortColumn]).getTime() - new Date(b[this.sortColumn]).getTime();
+  //       }
+  //       return a[this.sortColumn].localeCompare(b[this.sortColumn]);
+  //     });
+  //   } else if (this.sortDirection === 'desc') {
+  //     sortedProjects.sort((a, b) => {
+  //       if (this.sortColumn === 'startDate' || this.sortColumn === 'deadline') {
+  //         return new Date(b[this.sortColumn]).getTime() - new Date(a[this.sortColumn]).getTime();
+  //       }
+  //       return b[this.sortColumn].localeCompare(a[this.sortColumn]);
+  //     });
+  //   }
+  
+  //   this.projects = sortedProjects;
+  // }
+
+  applySorting(): void {
+    if (this.sortDirection === '') {
+      this.loadProjects(); // Or set this.projects = [...this.originalProjects];
+      return;
+    }
+  
+    let sortedProjects = [...this.projects];
+  
+    sortedProjects.sort((a, b) => {
+      const col = this.sortColumn;
+  
+      if (col === 'startDate' || col === 'deadline') {
+        const dateA = new Date(a[col]).getTime();
+        const dateB = new Date(b[col]).getTime();
+        return this.sortDirection === 'asc' ? dateA - dateB : dateB - dateA;
+      }
+  
+      const compare = a[col].localeCompare(b[col]);
+      return this.sortDirection === 'asc' ? compare : -compare;
+    });
+  
+    this.projects = sortedProjects;
+  }
+  
+  
+  
+  
+
+  sortProjects() {
+    if (this.isDescending) {
+        this.projects.sort((a, b) => b.projectId - a.projectId); // Descending order
+    } else {
+        this.projects.sort((a, b) => a.projectId - b.projectId); // Ascending order
+    }
+  }
+
+
+  
+
 
 
 
   isHighlighted: boolean = false; // Add this property to track highlighting
-
-
-  // highlightProject(projectName: string) {
-  //   if (this.isHighlighted || sessionStorage.getItem('highlightedProject') === projectName) return; // Prevent multiple highlights
-
-  //   const projectIndex = this.projects.findIndex(proj => 
-  //       proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
-  //   );
-
-  //   if (projectIndex !== -1) {
-  //       setTimeout(() => {
-  //           const projectRow = document.getElementById('project-' + projectIndex);
-  //           if (projectRow) {
-  //               projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  //               projectRow.classList.add('highlight');
-
-  //               // Remove highlight after 4 seconds
-  //               setTimeout(() => projectRow.classList.remove('highlight'), 4000);
-
-  //               this.isHighlighted = true; // Mark as highlighted
-  //               sessionStorage.setItem('highlightedProject', projectName); // Save highlight state in sessionStorage
-  //           }
-  //       }, 500);
-  //   } else {
-  //       this.toastr.error('Project not found in the list.', 'Error');
-  //   }
-  // }
 
 
   highlightProject(projectName: string) {
@@ -337,14 +417,21 @@ sortProjects() {
   
   highlightMultipleProjects(projectNames: string[]): void {
     let found = false;
-    let firstScrolled = false; // 👉 ensure we only scroll to the first one
+    let firstScrolled = false;
   
     sessionStorage.removeItem('highlightedProject');
+    this.highlightedProjectNames = []; // ✅ Clear before new highlights
+  
+    this.projects.forEach(p => {
+      p.isHighlighted = projectNames.includes(p.projectName);
+    });
+  
+    const normalizeName = (name: string) => name.trim().toLowerCase();
   
     setTimeout(() => {
       projectNames.forEach(name => {
         const index = this.projects.findIndex(p =>
-          p.projectName.trim().toLowerCase() === name.trim().toLowerCase()
+          normalizeName(p.projectName) === normalizeName(name)
         );
   
         if (index !== -1) {
@@ -353,23 +440,19 @@ sortProjects() {
           const project = this.projects[index];
   
           if (el) {
-            // 👉 Only scroll to the first matched project
             if (!firstScrolled) {
               el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-              el.focus({ preventScroll: true }); // optional
+              el.focus({ preventScroll: true });
+              firstScrolled = true; // ✅ important fix
             }
   
-            // 🔥 Add highlight class temporarily
             this.highlightRowTemporarily(el);
   
-            // Add to list (optional for dynamic classes in HTML)
             if (!this.highlightedProjectNames.includes(project.projectName)) {
               this.highlightedProjectNames.push(project.projectName);
             }
   
-            this.cdRef.detectChanges();
-  
-            // Cleanup after 4 seconds
+            // Temporarily remove highlight after 4 seconds
             setTimeout(() => {
               const idx = this.highlightedProjectNames.indexOf(project.projectName);
               if (idx !== -1) {
@@ -385,9 +468,10 @@ sortProjects() {
         this.toastr.info('No matching projects found.', 'Message', { timeOut: 4000 });
       }
   
+      this.cdRef.detectChanges(); // Final refresh
       sessionStorage.removeItem('showHighlightInfoOnce');
     }, 500);
-  }
+  }  
   
   ngOnDestroy() {
     sessionStorage.removeItem('highlightedProject'); // Clear highlight state when user leaves the page

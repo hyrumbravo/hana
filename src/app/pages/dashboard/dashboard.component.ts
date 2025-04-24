@@ -464,6 +464,12 @@ export class DashboardComponent implements OnInit {
     }
   }
 
+  normalizeDate(dateStr: string): Date {
+    const date = new Date(dateStr.replace(/-/g, '/'));
+    date.setHours(0, 0, 0, 0);
+    return date;
+  }  
+
   loadProjects(): void {
     this.projectsService.getProjects().subscribe({
       next: (response) => {
@@ -487,13 +493,15 @@ export class DashboardComponent implements OnInit {
 
             if (!project.deadline) return false; // Ensure deadline exists
           
-            const deadline = new Date(project.deadline.replace(/-/g, '/'));
+            const deadline = this.normalizeDate(project.deadline);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
             if (isNaN(deadline.getTime())) {
               console.error("Invalid date for project:", project.projectName, "Raw Value:", project.deadline);
               return false; // Skip invalid dates
             }
           
-            const today = new Date();
             const timeDiff = deadline.getTime() - today.getTime();
             const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));          
             return daysLeft <= 7 && daysLeft >= 0            
@@ -531,26 +539,33 @@ export class DashboardComponent implements OnInit {
 
   fetchProjectStats(): void {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // normalize to midnight
+    today.setHours(0, 0, 0, 0); // Normalize today's date to midnight
   
     this.totalProjects = this.projects.length;
+    this.completedProjects = 0;
+    this.pendingCount = 0;
+    this.overdueProjects = 0;
   
-    this.completedProjects = this.projects.filter(p => p.progress === 100).length;
+    this.projects.forEach(project => {
+      const progress = project.progress || 0;
   
-    // Pending: not complete, due today or in the future
-    this.pendingCount = this.projects.filter(p => {
-      const deadline = new Date(p.deadline);
-      deadline.setHours(0, 0, 0, 0);
-      return p.progress < 100 && deadline.getTime() >= today.getTime();
-    }).length;
+      // Skip if no valid deadline
+      if (!project.deadline || isNaN(Date.parse(project.deadline))) {
+        return;
+      }
   
-    this.overdueProjects = this.projects.filter(p => {
-      const deadline = new Date(p.deadline);
-      deadline.setHours(0, 0, 0, 0);
-      return p.progress < 100 && deadline.getTime() < today.getTime();
-    }).length;
-  }
-
+      const deadline = this.normalizeDate(project.deadline);
+        
+      if (progress >= 100) {
+        this.completedProjects++;
+      } else if (deadline < today) {
+        this.overdueProjects++; // Overdue condition: project progress < 100 and deadline in the past
+      } else {
+        this.pendingCount++; // Pending projects (not completed and not overdue)
+      }
+    });
+  }  
+  
 
   closePendingModal() {
     if (this.notifmodalInstance) {
@@ -611,16 +626,19 @@ export class DashboardComponent implements OnInit {
 
   goToOverdueProjects(): void {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Strip time to compare only the date
+    today.setHours(0, 0, 0, 0); // Normalize today's date to midnight
   
     const overdueProjectNames = this.projects
       .filter(p => {
-        const deadline = new Date(p.deadline);
-        deadline.setHours(0, 0, 0, 0); // Strip time from deadline
-        return deadline < today && p.progress < 100;
-      })
-      .map(p => p.projectName);
+      const deadline = this.normalizeDate(p.deadline);
+        deadline.setHours(0, 0, 0, 0); // Normalize deadline to midnight
   
+        // Overdue condition: project is not complete and today is AFTER the deadline
+        return p.progress < 100 && today > deadline;
+      })
+      .map(p => p.projectName); // Extract only the project names
+  
+    // Store overdue project names for highlighting
     sessionStorage.setItem('highlightOverdueProjects', JSON.stringify(overdueProjectNames));
     sessionStorage.setItem('showHighlightInfoOnce', 'true');
   
@@ -628,60 +646,60 @@ export class DashboardComponent implements OnInit {
     this.router.navigate(['/projects']);
   }
   
+  
   viewPendingProject(projectName: string) {
     if (this.projects.length === 0) {
       this.toastr.error('Project data is still loading. Please try again.', 'Error');
       return;
     }
   
-    // Ensure the projects are sorted before proceeding
-    this.projects.sort((a, b) => b.projectId - a.projectId); 
+    this.projects.sort((a, b) => b.projectId - a.projectId);
   
-    // Find the index of the project in the projects table
-    const projectIndex = this.projects.findIndex(proj => 
+    const projectIndex = this.projects.findIndex(proj =>
       proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
     );
   
     if (projectIndex !== -1) {
-      // Expand the project if needed
       this.projects[projectIndex].expanded = true;
-  
-      // Close the pending modal before scrolling
       this.closePendingModal();
-      
   
       const today = new Date();
-      // Use the project retrieved by index
-      const project = this.projects[projectIndex];  // Fix: Declare 'project' using the index
+      const project = this.projects[projectIndex];
       const deadline = new Date(project.deadline.replace(/-/g, '/'));
       const timeDiff = deadline.getTime() - today.getTime();
       const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
   
-      // Set a flag in sessionStorage before redirecting
       sessionStorage.setItem('redirectedFromPending', 'true');
-  
-      // Store the project name and days left in sessionStorage
       sessionStorage.setItem('pendingProject', JSON.stringify({ projectName, daysLeft }));
   
-      this.router.navigate(['/projects'], { queryParams: { projectName: projectName } });
+      this.router.navigate(['/projects'], { queryParams: { projectName } });
   
-      // Use a timeout to allow Angular to update the DOM before scrolling
-      setTimeout(() => {
+      // 🔁 Retry scroll and highlight logic up to 5 times if row not yet in DOM
+      let attempts = 0;
+      const maxAttempts = 5;
+      const retryInterval = 400; // ms
+  
+      const tryHighlight = () => {
         const projectRow = document.getElementById('project-' + projectIndex);
         if (projectRow) {
           projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  
-          // 🔹 Highlight the project row for better visibility
           projectRow.classList.add('highlight');
-          setTimeout(() => projectRow.classList.remove('highlight'), 4000); // Remove highlight after 2 sec
+          setTimeout(() => projectRow.classList.remove('highlight'), 4000);
+        } else if (attempts < maxAttempts) {
+          attempts++;
+          setTimeout(tryHighlight, retryInterval);
         } else {
           this.toastr.error('Could not locate the project in the table.', 'Error');
         }
-      }, 500); // Slightly longer delay ensures modal is closed before scrolling
+      };
+  
+      // Start the first attempt after a short delay
+      setTimeout(tryHighlight, 500);
     } else {
       this.toastr.error('Project not found', 'Error');
     }
   }
+  
 
   getCurrentUser() {
     return new Promise((resolve, reject) => {
