@@ -91,6 +91,7 @@ export class ProjectsComponent implements OnInit {
   }
 
   ngOnInit(): void {
+    
     // Retrieve saved order preference (descending or ascending)
     const savedOrder = localStorage.getItem('projectSortOrder');
     this.isDescending = savedOrder !== 'asc';
@@ -516,17 +517,48 @@ export class ProjectsComponent implements OnInit {
   //   });
   // }
 
+
+  isDeleting: boolean = false;
+
+  // deleteProject() {
+  //   if (!this.selectedProjectId) return;
+  
+  //   this.projectsService.deleteProjectByProjectId(this.selectedProjectId).subscribe(() => {
+  //     this.toastr.success('Project deleted successfully!', 'Success');
+  //     this.projectsService.deletePhasesByProjectId(this.selectedProjectId).subscribe(() => {
+  //       this.loadProjects();
+  //       this.closeDeleteModal();
+  //     });
+  //   });
+  // }
+
   deleteProject() {
     if (!this.selectedProjectId) return;
   
-    this.projectsService.deleteProjectByProjectId(this.selectedProjectId).subscribe(() => {
-      this.toastr.success('Project deleted successfully!', 'Success');
-      this.projectsService.deletePhasesByProjectId(this.selectedProjectId).subscribe(() => {
-        this.loadProjects();
-        this.closeDeleteModal();
-      });
+    this.isDeleting = true;
+  
+    this.projectsService.deleteProjectByProjectId(this.selectedProjectId).subscribe({
+      next: () => {
+        this.toastr.success('Project deleted successfully!', 'Success');
+        this.projectsService.deletePhasesByProjectId(this.selectedProjectId).subscribe({
+          next: () => {
+            this.loadProjects();
+            this.closeDeleteModal();
+            this.isDeleting = false; // Reset after both deletes
+          },
+          error: () => {
+            this.toastr.error('Failed to delete project phases', 'Error');
+            this.isDeleting = false;
+          }
+        });
+      },
+      error: () => {
+        this.toastr.error('Failed to delete project', 'Error');
+        this.isDeleting = false;
+      }
     });
   }
+  
   
 
   closeDeleteModal() {
@@ -940,26 +972,69 @@ openPhaseModal(): void {
 
 
 
-  addPhase() {
-    if (!this.newPhase.phaseName || !this.newPhase.startDate || !this.newPhase.deadline || !this.newPhase.percentage || !this.newPhase.amountToBill) {
-      this.toastr.info('Please fill out all phase details before adding.');
-      return;
-    }
+  // addPhase() {
+  //   if (!this.newPhase.phaseName || !this.newPhase.startDate || !this.newPhase.deadline || !this.newPhase.percentage || !this.newPhase.amountToBill) {
+  //     this.toastr.info('Please fill out all phase details before adding.');
+  //     return;
+  //   }
 
-    let newTotalPercentage = this.totalPhasePercentage + this.newPhase.percentage;
+  //   let newTotalPercentage = this.totalPhasePercentage + this.newPhase.percentage;
 
-    if (newTotalPercentage > 100) {
-      this.toastr.error(`Cannot add this phase. Total percentage will exceed 100%.`, 'Error');
-      return; // Stop execution
-    }
+  //   if (newTotalPercentage > 100) {
+  //     this.toastr.error(`Cannot add this phase. Total percentage will exceed 100%.`, 'Error');
+  //     return; // Stop execution
+  //   }
 
-    // Generate phaseId (4-digit number)
+  //   // Generate phaseId (4-digit number)
+  //   let maxId = this.newPhases.length > 0 
+  //     ? Math.max(...this.newPhases.map(p => Number(p.phaseId))) 
+  //     : 0;
+  //   const newPhaseId = (maxId + 1).toString().padStart(4, '0');
+
+  //   // Add new phase with an empty milestones array and a newMilestone object
+  //   this.newPhases.push({ 
+  //     phaseId: newPhaseId,
+  //     phaseName: this.newPhase.phaseName,
+  //     startDate: this.newPhase.startDate,
+  //     deadline: this.newPhase.deadline,
+  //     percentage: this.newPhase.percentage,
+  //     amountToBill: this.newPhase.amountToBill,
+  //     progress: 0,
+  //     milestones: [],
+  //     newMilestone: { name: '', amount: null }, // Stores new milestone input
+  //     showMilestoneForm: true
+  //   });
+  //   this.totalPhasePercentage = newTotalPercentage; // Update total percentage
+    
+  //   // Reset form
+  //   this.newPhase = { phaseName: '', startDate: '', deadline: '', percentage: '', amountToBill: '' };
+  // }
+
+
+  isAddingPhase: boolean = false;
+
+addPhase() {
+  if (!this.newPhase.phaseName || !this.newPhase.startDate || !this.newPhase.deadline || !this.newPhase.percentage || !this.newPhase.amountToBill) {
+    this.toastr.info('Please fill out all phase details before adding.');
+    return;
+  }
+
+  let newTotalPercentage = this.totalPhasePercentage + this.newPhase.percentage;
+
+  if (newTotalPercentage > 100) {
+    this.toastr.error(`Cannot add this phase. Total percentage will exceed 100%.`, 'Error');
+    return;
+  }
+
+  this.isAddingPhase = true; // Start loading
+
+  setTimeout(() => { // Simulate async behavior, remove if not needed
     let maxId = this.newPhases.length > 0 
       ? Math.max(...this.newPhases.map(p => Number(p.phaseId))) 
       : 0;
+
     const newPhaseId = (maxId + 1).toString().padStart(4, '0');
 
-    // Add new phase with an empty milestones array and a newMilestone object
     this.newPhases.push({ 
       phaseId: newPhaseId,
       phaseName: this.newPhase.phaseName,
@@ -969,23 +1044,48 @@ openPhaseModal(): void {
       amountToBill: this.newPhase.amountToBill,
       progress: 0,
       milestones: [],
-      newMilestone: { name: '', amount: null }, // Stores new milestone input
+      newMilestone: { name: '', amount: null },
       showMilestoneForm: true
     });
-    this.totalPhasePercentage = newTotalPercentage; // Update total percentage
-    
+
+    this.totalPhasePercentage = newTotalPercentage;
+
     // Reset form
     this.newPhase = { phaseName: '', startDate: '', deadline: '', percentage: '', amountToBill: '' };
-  }
+
+    this.isAddingPhase = false; // Stop loading
+  }, 500); // Adjust/remove timeout based on real-world async needs
+}
+
+
+deletingPhaseId: string | null = null;
+
+
+  // deletePhase(phaseId: string) {
+  //   // Filter out the phase with the matching phaseId
+  //   this.newPhases = this.newPhases.filter(phase => phase.phaseId !== phaseId);
+  
+  //   // Recalculate total percentage after deletion
+  //   this.totalPhasePercentage = this.newPhases.reduce((sum, phase) => sum + phase.percentage, 0);
+  //   this.toastr.success('Phase deleted successfully.');
+  // }
 
   deletePhase(phaseId: string) {
-    // Filter out the phase with the matching phaseId
-    this.newPhases = this.newPhases.filter(phase => phase.phaseId !== phaseId);
+    this.deletingPhaseId = phaseId;
   
-    // Recalculate total percentage after deletion
-    this.totalPhasePercentage = this.newPhases.reduce((sum, phase) => sum + phase.percentage, 0);
-    this.toastr.success('Phase deleted successfully.');
+    // Optional: simulate async operation
+    setTimeout(() => {
+      // Filter out the phase with the matching phaseId
+      this.newPhases = this.newPhases.filter(phase => phase.phaseId !== phaseId);
+  
+      // Recalculate total percentage after deletion
+      this.totalPhasePercentage = this.newPhases.reduce((sum, phase) => sum + phase.percentage, 0);
+  
+      this.toastr.success('Phase deleted successfully.');
+      this.deletingPhaseId = null; // Reset loading state
+    }, 300); // Adjust or remove delay as needed
   }
+  
   
 
   // toggleMilestoneForm(phase: any): void {
@@ -1013,7 +1113,12 @@ openPhaseModal(): void {
   }
   
 
+
+
+  isLoading: boolean = false;  // Add this line
+
   cancelForm() {
+    this.isLoading = true;
 
     const clearErrorStyles = (ref: ElementRef) => {
       if (ref.nativeElement && ref.nativeElement.classList) {
@@ -1047,7 +1152,10 @@ openPhaseModal(): void {
     this.resetPhaseForm();
     this.newPhases = [];    
     this.totalPhasePercentage = 0; // Reset total percentage
+
+    this.isLoading = false;
   }
+
 
 
 
@@ -1056,15 +1164,52 @@ openPhaseModal(): void {
 
   }
 
+  // addMilestone(phase: any) {
+  //   if (!phase.newMilestone.name || !phase.newMilestone.amount) {
+  //     this.toastr.warning('Please enter both Milestone Name and Amount.');
+  //     return;
+  //   }
+
+  //   const milestoneAmount = phase.newMilestone.amount || 0;
+  //   const totalMilestoneAmount = this.getTotalMilestoneAmount(phase) + milestoneAmount;
+
+  //   if (totalMilestoneAmount > phase.amountToBill) {
+  //     this.toastr.warning(
+  //       `Milestone total exceeds the allowed ₱${phase.amountToBill.toLocaleString()}. Remaining: ₱${(phase.amountToBill - this.getTotalMilestoneAmount(phase)).toLocaleString()}`,
+  //       'Warning'
+  //     );
+  //     return;
+  //   }
+
+  //   // Add milestone
+  //   phase.milestones.push({ 
+  //     name: phase.newMilestone.name, 
+  //     amount: phase.newMilestone.amount ,
+  //     previousOld:0,
+  //     previous: 0,
+  //     present: 0,
+  //     presentValue: 0,
+  //     amountDue: 0,
+  //     presentMilestoneDue:0,
+  //     progress: "On Progress"
+  //   });
+
+    
+
+  //   // Reset milestone form
+  //   phase.newMilestone = { name: '', amount: null };
+  // }
+
+
   addMilestone(phase: any) {
     if (!phase.newMilestone.name || !phase.newMilestone.amount) {
       this.toastr.warning('Please enter both Milestone Name and Amount.');
       return;
     }
-
+  
     const milestoneAmount = phase.newMilestone.amount || 0;
     const totalMilestoneAmount = this.getTotalMilestoneAmount(phase) + milestoneAmount;
-
+  
     if (totalMilestoneAmount > phase.amountToBill) {
       this.toastr.warning(
         `Milestone total exceeds the allowed ₱${phase.amountToBill.toLocaleString()}. Remaining: ₱${(phase.amountToBill - this.getTotalMilestoneAmount(phase)).toLocaleString()}`,
@@ -1072,25 +1217,32 @@ openPhaseModal(): void {
       );
       return;
     }
-
-    // Add milestone
-    phase.milestones.push({ 
-      name: phase.newMilestone.name, 
-      amount: phase.newMilestone.amount ,
-      previousOld:0,
-      previous: 0,
-      present: 0,
-      presentValue: 0,
-      amountDue: 0,
-      presentMilestoneDue:0,
-      progress: "On Progress"
-    });
-
-    
-
-    // Reset milestone form
-    phase.newMilestone = { name: '', amount: null };
+  
+    // Start loading
+    phase.isAddingMilestone = true;
+  
+    setTimeout(() => { // Simulate async or delay if needed
+      // Add milestone
+      phase.milestones.push({ 
+        name: phase.newMilestone.name, 
+        amount: phase.newMilestone.amount,
+        previousOld: 0,
+        previous: 0,
+        present: 0,
+        presentValue: 0,
+        amountDue: 0,
+        presentMilestoneDue: 0,
+        progress: "On Progress"
+      });
+  
+      // Reset milestone form
+      phase.newMilestone = { name: '', amount: null };
+  
+      // Stop loading
+      phase.isAddingMilestone = false;
+    }, 300); // Remove this if adding is truly instant
   }
+  
 
   getRemainingAmount(phase: any): number {
     // Sum the amounts of all milestones added for this phase
@@ -1192,11 +1344,26 @@ openPhaseModal(): void {
 
 
 
-  deleteMilestone(phase: any, milestoneIndex: number) {
-    phase.milestones.splice(milestoneIndex, 1);
-    this.toastr.success('Milestone deleted successfully.');
-  }
+  // deleteMilestone(phase: any, milestoneIndex: number) {
+  //   phase.milestones.splice(milestoneIndex, 1);
+  //   this.toastr.success('Milestone deleted successfully.');
+  // }
 
+
+  deleteMilestone(phase: any, milestoneIndex: number) {
+    // Start loading for this milestone
+    phase.deletingMilestoneIndex = milestoneIndex;
+  
+    // Simulate async delay (optional: for UX)
+    setTimeout(() => {
+      phase.milestones.splice(milestoneIndex, 1);
+      this.toastr.success('Milestone deleted successfully.');
+  
+      // Reset loading
+      phase.deletingMilestoneIndex = null;
+    }, 300); // Adjust or remove timeout if instant
+  }
+  
 
 
 
@@ -1262,65 +1429,134 @@ openPhaseModal(): void {
 
 
 
+    // savesPhase(phases: any, project: any) {
+    //   if (!phases._id) {
+    //     console.error("Phase ID is missing!");
+    //     return;
+    //   }
+    
+    //   // Calculate the total percentage of all phases, excluding the one being edited
+    //   const otherPhasesTotal = project.phases
+    //     .filter((p: any) => p._id !== phases._id) // Exclude the current phase
+    //     .reduce((sum: number, p: any) => sum + p.percentage, 0);
+    
+    //   const newTotal = otherPhasesTotal + phases.percentage;
+    
+    //   if (newTotal > 100) {
+    //     this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
+    //     return;
+    //   }
+    
+    //   // Fetch the latest _rev before updating the phase
+    //   this.projectsService.getPhaseById(phases._id).subscribe(
+    //     (latestPhase: any) => {
+    //       if (latestPhase._rev) {
+    //         phases._rev = latestPhase._rev; // Update to the latest _rev
+    
+    //         // Remove the originalData property to avoid circular references before sending to the backend
+    //         delete phases.originalData;
+    
+    //         // Update the phase
+    //         this.projectsService.updatePhase(phases).subscribe(
+    //           (response: any) => {
+    //             console.log("Phase updated successfully:", response);
+    //             this.toastr.success("Phase updated successfully!");
+                
+    
+    //             // After phase update, recalculate project progress
+    //             this.projectsService.updateProjectProgress(project.projectId).subscribe(
+    //               (projectUpdateResponse) => {
+    //                 console.log("Project progress updated successfully:", projectUpdateResponse);
+    //                 // this.toastr.success("Project progress updated!");
+    //                 phases.isEditing = false; // Exit edit mode after saving
+    //               },
+    //               (error) => {
+    //                 console.error("Error updating project progress:", error);
+    //               }
+    //             );
+    //           },
+    //           (error) => {
+    //             console.error("Error updating phase:", error);
+    //           }
+    //         );
+    //       } else {
+    //         console.error("Failed to fetch latest revision (_rev).");
+    //       }
+    //     },
+    //     (error) => {
+    //       console.error("Error fetching latest _rev:", error);
+    //     }
+    //   );
+    // }
+
+
     savesPhase(phases: any, project: any) {
       if (!phases._id) {
         console.error("Phase ID is missing!");
         return;
       }
     
-      // Calculate the total percentage of all phases, excluding the one being edited
+      phases.isSaving = true; // Start loading
+    
       const otherPhasesTotal = project.phases
-        .filter((p: any) => p._id !== phases._id) // Exclude the current phase
+        .filter((p: any) => p._id !== phases._id)
         .reduce((sum: number, p: any) => sum + p.percentage, 0);
     
       const newTotal = otherPhasesTotal + phases.percentage;
     
+      // if (newTotal > 100) {
+      //   this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
+      //   phases.isSaving = false;
+      //   return;
+      // }
       if (newTotal > 100) {
-        this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
+        const remaining = 100 - otherPhasesTotal;
+        this.toastr.error(`You can only assign up to ${remaining}% to this phase.`);
+        phases.isSaving = false;
         return;
       }
+      
     
-      // Fetch the latest _rev before updating the phase
-      this.projectsService.getPhaseById(phases._id).subscribe(
-        (latestPhase: any) => {
+      this.projectsService.getPhaseById(phases._id).subscribe({
+        next: (latestPhase: any) => {
           if (latestPhase._rev) {
-            phases._rev = latestPhase._rev; // Update to the latest _rev
-    
-            // Remove the originalData property to avoid circular references before sending to the backend
+            phases._rev = latestPhase._rev;
             delete phases.originalData;
     
-            // Update the phase
-            this.projectsService.updatePhase(phases).subscribe(
-              (response: any) => {
+            this.projectsService.updatePhase(phases).subscribe({
+              next: (response: any) => {
                 console.log("Phase updated successfully:", response);
                 this.toastr.success("Phase updated successfully!");
-                
     
-                // After phase update, recalculate project progress
-                this.projectsService.updateProjectProgress(project.projectId).subscribe(
-                  (projectUpdateResponse) => {
+                this.projectsService.updateProjectProgress(project.projectId).subscribe({
+                  next: (projectUpdateResponse) => {
                     console.log("Project progress updated successfully:", projectUpdateResponse);
-                    // this.toastr.success("Project progress updated!");
-                    phases.isEditing = false; // Exit edit mode after saving
+                    phases.isEditing = false;
+                    phases.isSaving = false;
                   },
-                  (error) => {
-                    console.error("Error updating project progress:", error);
+                  error: (err) => {
+                    console.error("Error updating project progress:", err);
+                    phases.isSaving = false;
                   }
-                );
+                });
               },
-              (error) => {
-                console.error("Error updating phase:", error);
+              error: (err) => {
+                console.error("Error updating phase:", err);
+                phases.isSaving = false;
               }
-            );
+            });
           } else {
             console.error("Failed to fetch latest revision (_rev).");
+            phases.isSaving = false;
           }
         },
-        (error) => {
-          console.error("Error fetching latest _rev:", error);
+        error: (err) => {
+          console.error("Error fetching latest _rev:", err);
+          phases.isSaving = false;
         }
-      );
+      });
     }
+    
   
 
 
@@ -1346,81 +1582,155 @@ openPhaseModal(): void {
   }
 
 
+  // saveMilestone(phase: any, milestone: any, project: any) {
+  //   if (!phase._id) {
+  //     console.error("Phase ID is missing!");
+  //     return;
+  //   }
+  
+  //   // Fetch the latest _rev before updating
+  //   this.projectsService.getPhaseById(phase._id).subscribe(
+  //     (latestPhase: any) => {
+  //       if (latestPhase._rev) {
+  //         phase._rev = latestPhase._rev; // Ensure the latest _rev is used
+  
+  //         // Calculate milestone limits
+  //         const maxMilestoneAmount = this.calculatePhaseAmount(project.totalAmount, project.downPayment, phase.percentage);
+  //         const currentTotalMilestones = phase.milestones.reduce((sum: number, m: any) => sum + (m.amount || 0), 0);
+  //         const remainingAmount = maxMilestoneAmount - (currentTotalMilestones - milestone.amount);
+  
+  //         if (currentTotalMilestones > maxMilestoneAmount) {
+  //           this.toastr.error(`Cannot save milestone. You can only allocate ₱${remainingAmount.toLocaleString()} more.`, 'Error');
+  //           return;
+  //         }
+  
+  //         // Update milestone progress
+  //         milestone.progress = milestone.previous === 100 ? "Completed" : "In Progress";
+  
+  //         // ✅ Recalculate phase progress dynamically
+  //         const totalMilestones = phase.milestones.length;
+  //         let totalProgress = 0;
+  
+  //         phase.milestones.forEach((m: any) => {
+  //           const milestoneProgressPercentage = m.previous;
+  //           totalProgress += (milestoneProgressPercentage / 100) * (100 / totalMilestones);
+  //         });
+  
+  //         phase.progress = totalProgress; // ✅ Update phase progress
+  
+  //         // ✅ Immediately update project progress locally
+  //         this.updateProjectProgress(project);
+  
+  //         // Update the milestones array
+  //         const updatedMilestones = phase.milestones.map((m: any) =>
+  //           m === milestone ? { ...milestone, isEditing: false } : m
+  //         );
+  
+  //         const updatedPhase = { ...phase, milestones: updatedMilestones };
+  
+  //         // Save the updated phase and milestone
+  //         this.projectsService.updatePhase(updatedPhase).subscribe(
+  //           (response: any) => {
+  //             console.log("Milestone updated successfully:", response);
+  //             milestone.isEditing = false; // Exit edit mode
+  
+  //             // ✅ After saving the phase, update the project progress in the backend
+  //             this.projectsService.updateProjectProgress(project.projectId).subscribe(
+  //               (projectUpdateResponse) => {
+  //                 console.log("Project progress updated successfully:", projectUpdateResponse);
+  //               },
+  //               (error) => {
+  //                 console.error("Error updating project progress:", error);
+  //               }
+  //             );
+  //           },
+  //           (error) => {
+  //             console.error("Error updating milestone:", error);
+  //           }
+  //         );
+  //       } else {
+  //         console.error("Failed to fetch latest revision (_rev).");
+  //       }
+  //     },
+  //     (error) => {
+  //       console.error("Error fetching latest _rev:", error);
+  //     }
+  //   );
+  // }
+
   saveMilestone(phase: any, milestone: any, project: any) {
     if (!phase._id) {
       console.error("Phase ID is missing!");
       return;
     }
   
-    // Fetch the latest _rev before updating
-    this.projectsService.getPhaseById(phase._id).subscribe(
-      (latestPhase: any) => {
-        if (latestPhase._rev) {
-          phase._rev = latestPhase._rev; // Ensure the latest _rev is used
+    milestone.isSaving = true; // Start loading
   
-          // Calculate milestone limits
+    this.projectsService.getPhaseById(phase._id).subscribe({
+      next: (latestPhase: any) => {
+        if (latestPhase._rev) {
+          phase._rev = latestPhase._rev;
+  
           const maxMilestoneAmount = this.calculatePhaseAmount(project.totalAmount, project.downPayment, phase.percentage);
           const currentTotalMilestones = phase.milestones.reduce((sum: number, m: any) => sum + (m.amount || 0), 0);
           const remainingAmount = maxMilestoneAmount - (currentTotalMilestones - milestone.amount);
   
           if (currentTotalMilestones > maxMilestoneAmount) {
             this.toastr.error(`Cannot save milestone. You can only allocate ₱${remainingAmount.toLocaleString()} more.`, 'Error');
+            milestone.isSaving = false;
             return;
           }
   
-          // Update milestone progress
           milestone.progress = milestone.previous === 100 ? "Completed" : "In Progress";
   
-          // ✅ Recalculate phase progress dynamically
           const totalMilestones = phase.milestones.length;
           let totalProgress = 0;
   
           phase.milestones.forEach((m: any) => {
-            const milestoneProgressPercentage = m.previous;
-            totalProgress += (milestoneProgressPercentage / 100) * (100 / totalMilestones);
+            totalProgress += (m.previous / 100) * (100 / totalMilestones);
           });
   
-          phase.progress = totalProgress; // ✅ Update phase progress
-  
-          // ✅ Immediately update project progress locally
+          phase.progress = totalProgress;
           this.updateProjectProgress(project);
   
-          // Update the milestones array
           const updatedMilestones = phase.milestones.map((m: any) =>
             m === milestone ? { ...milestone, isEditing: false } : m
           );
   
           const updatedPhase = { ...phase, milestones: updatedMilestones };
   
-          // Save the updated phase and milestone
-          this.projectsService.updatePhase(updatedPhase).subscribe(
-            (response: any) => {
+          this.projectsService.updatePhase(updatedPhase).subscribe({
+            next: (response: any) => {
               console.log("Milestone updated successfully:", response);
-              milestone.isEditing = false; // Exit edit mode
+              milestone.isEditing = false;
+              milestone.isSaving = false;
   
-              // ✅ After saving the phase, update the project progress in the backend
-              this.projectsService.updateProjectProgress(project.projectId).subscribe(
-                (projectUpdateResponse) => {
-                  console.log("Project progress updated successfully:", projectUpdateResponse);
+              this.projectsService.updateProjectProgress(project.projectId).subscribe({
+                next: (res) => {
+                  console.log("Project progress updated successfully:", res);
                 },
-                (error) => {
-                  console.error("Error updating project progress:", error);
+                error: (err) => {
+                  console.error("Error updating project progress:", err);
                 }
-              );
+              });
             },
-            (error) => {
-              console.error("Error updating milestone:", error);
+            error: (err) => {
+              console.error("Error updating milestone:", err);
+              milestone.isSaving = false;
             }
-          );
+          });
         } else {
           console.error("Failed to fetch latest revision (_rev).");
+          milestone.isSaving = false;
         }
       },
-      (error) => {
-        console.error("Error fetching latest _rev:", error);
+      error: (err) => {
+        console.error("Error fetching latest _rev:", err);
+        milestone.isSaving = false;
       }
-    );
+    });
   }
+  
 
 
 
@@ -1456,8 +1766,83 @@ openPhaseModal(): void {
   }
 
 
+  // saveAndGenerateInvoice(phases: any) {
+  //   let isValid = true;
+  
+  //   phases.milestones.forEach((milestone: any) => {
+  //     if (milestone.present > 0) {
+  //       const newPrevious = milestone.previous + milestone.present;
+  //       const remainingPercent = 100 - milestone.previous;
+  
+  //       if (newPrevious > 100) {
+  //         this.toastr.warning(
+  //           `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
+  //           'Warning'
+  //         );
+  //         isValid = false;
+  //         return;
+  //       }
+  
+  //       // ✅ Store old values before updating
+  //       milestone.previousOld = milestone.previous;
+  //       milestone.presentValue = milestone.present;
+  
+  //       // ✅ Save the current amountDue to presentMilestoneDue
+  //       milestone.presentMilestoneDue = milestone.amountDue;
+  
+  //       // ✅ Reset amountDue
+  //       milestone.amountDue = 0;
+  
+  //       // ✅ Update values
+  //       milestone.previous = newPrevious;
+  //       milestone.present = 0;
+  
+  //       // ✅ Prepare only required fields to update (prevent entire object overwrite)
+  //       const updatedMilestone = {
+  //         name: milestone.name,
+  //         previous: milestone.previous,
+  //         previousOld: milestone.previousOld,
+  //         present: milestone.present,
+  //         presentValue: milestone.presentValue,
+  //         amountDue: milestone.amountDue,
+  //         presentMilestoneDue: milestone.presentMilestoneDue,
+  //         progress: milestone.progress
+  //       };
+  
+  //       // ✅ Save to CouchDB using minimal payload
+  //       this.projectsService.updateMilestone(phases._id, updatedMilestone).subscribe({
+  //         next: (res) => {
+  //           console.log('Milestone updated successfully', res);
+  //         },
+  //         error: (err) => {
+  //           console.error('Error updating milestone:', err);
+  //         }
+  //       });
+  
+  //       // ✅ Optional: Recalculate after update (if needed)
+  //       this.calculateAmountDue(milestone);
+  //     }
+  //   });
+  
+  //   if (!isValid) {
+  //     return;
+  //   }
+  
+  //   // ✅ Recalculate phase progress
+  //   this.updatePhaseProgressFromMilestones(phases);
+  
+  //   // ✅ Generate invoice with updated milestones
+  //   this.generateInvoice(phases.milestones);
+  // }
+
+
+
+  isSavingInvoice = false;
+
   saveAndGenerateInvoice(phases: any) {
+    this.isSavingInvoice = true; // Start loading
     let isValid = true;
+    const updateRequests: any[] = [];
   
     phases.milestones.forEach((milestone: any) => {
       if (milestone.present > 0) {
@@ -1473,21 +1858,13 @@ openPhaseModal(): void {
           return;
         }
   
-        // ✅ Store old values before updating
         milestone.previousOld = milestone.previous;
         milestone.presentValue = milestone.present;
-  
-        // ✅ Save the current amountDue to presentMilestoneDue
         milestone.presentMilestoneDue = milestone.amountDue;
-  
-        // ✅ Reset amountDue
         milestone.amountDue = 0;
-  
-        // ✅ Update values
         milestone.previous = newPrevious;
         milestone.present = 0;
   
-        // ✅ Prepare only required fields to update (prevent entire object overwrite)
         const updatedMilestone = {
           name: milestone.name,
           previous: milestone.previous,
@@ -1499,31 +1876,27 @@ openPhaseModal(): void {
           progress: milestone.progress
         };
   
-        // ✅ Save to CouchDB using minimal payload
-        this.projectsService.updateMilestone(phases._id, updatedMilestone).subscribe({
-          next: (res) => {
-            console.log('Milestone updated successfully', res);
-          },
-          error: (err) => {
-            console.error('Error updating milestone:', err);
-          }
-        });
+        const req = this.projectsService.updateMilestone(phases._id, updatedMilestone).toPromise()
+          .then(res => console.log('Milestone updated:', res))
+          .catch(err => console.error('Error updating milestone:', err));
   
-        // ✅ Optional: Recalculate after update (if needed)
+        updateRequests.push(req);
         this.calculateAmountDue(milestone);
       }
     });
   
     if (!isValid) {
+      this.isSavingInvoice = false;
       return;
     }
   
-    // ✅ Recalculate phase progress
-    this.updatePhaseProgressFromMilestones(phases);
-  
-    // ✅ Generate invoice with updated milestones
-    this.generateInvoice(phases.milestones);
+    Promise.all(updateRequests).then(() => {
+      this.updatePhaseProgressFromMilestones(phases);
+      this.generateInvoice(phases.milestones);
+      this.isSavingInvoice = false; // End loading
+    });
   }
+  
 
 
   updatePhaseProgressFromMilestones(phase: any) {
@@ -1965,57 +2338,98 @@ openPhaseModal(): void {
 
   displayedDownPayment: number = 0; // what the user types
 
+  // onDownPaymentInput(event: any): void {
+  //   let inputValue = event.target.value;
 
+  //   if (this.downPaymentType === 'percent') {
+  //     // Limit to 3 digits
+  //     inputValue = inputValue.slice(0, 3);
+
+  //     let percent = Number(inputValue);
+
+  //     if (percent > 100) {
+  //       percent = 100;
+  //     } else if (percent < 0 || isNaN(percent)) {
+  //       percent = 0;
+  //     }
+
+  //     this.newProject.downPayment = percent;
+  //     event.target.value = percent; // ✅ Reflect change in the input box
+
+  //   } else {
+  //     // Peso mode: up to total project amount
+  //     let pesoAmount = Number(inputValue);
+
+  //     if (pesoAmount > this.newProject.totalAmount) {
+  //       pesoAmount = this.newProject.totalAmount;
+  //     } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
+  //       pesoAmount = 0;
+  //     }
+
+  //     this.newProject.downPayment = pesoAmount;
+  //     event.target.value = pesoAmount; // ✅ Reflect change in the input box
+  //   }
+  // }
 
   onDownPaymentInput(event: any): void {
     let inputValue = event.target.value;
-
+  
+    if (inputValue === '') {
+      this.newProject.downPayment = ''; // Keep it blank if user deletes the value
+      return;
+    }
+  
     if (this.downPaymentType === 'percent') {
-      // Limit to 3 digits
       inputValue = inputValue.slice(0, 3);
-
       let percent = Number(inputValue);
-
+  
       if (percent > 100) {
         percent = 100;
       } else if (percent < 0 || isNaN(percent)) {
         percent = 0;
       }
-
+  
       this.newProject.downPayment = percent;
-      event.target.value = percent; // ✅ Reflect change in the input box
-
+      event.target.value = percent;
+  
     } else {
-      // Peso mode: up to total project amount
       let pesoAmount = Number(inputValue);
-
+  
       if (pesoAmount > this.newProject.totalAmount) {
         pesoAmount = this.newProject.totalAmount;
       } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
         pesoAmount = 0;
       }
-
+  
       this.newProject.downPayment = pesoAmount;
-      event.target.value = pesoAmount; // ✅ Reflect change in the input box
+      event.target.value = pesoAmount;
     }
   }
+  
 
 // onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
 //   this.downPaymentType = newType;
 //   this.newProject.downPayment = 0;
 // }
 
+  // onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
+  //   this.downPaymentType = newType;
+  //   this.newProject.downPayment = 0;
+
+  //   if (newType === 'percent') {
+  //     this.displayedDownPayment = this.newProject.downPayment || 0;
+  //   } else {
+  //     const totalAmount = this.newProject.totalAmount || 0;
+  //     this.displayedDownPayment = Math.round((totalAmount * (this.newProject.downPayment || 0)) / 100);
+  //   }
+  // }
+
   onDownPaymentTypeChange(newType: 'percent' | 'peso'): void {
     this.downPaymentType = newType;
-    this.newProject.downPayment = 0;
-
-    if (newType === 'percent') {
-      this.displayedDownPayment = this.newProject.downPayment || 0;
-    } else {
-      const totalAmount = this.newProject.totalAmount || 0;
-      this.displayedDownPayment = Math.round((totalAmount * (this.newProject.downPayment || 0)) / 100);
-    }
+    this.newProject.downPayment = ''; // Clear the field by default
+    this.displayedDownPayment = 0; // Reset the displayed value if needed
   }
+  
 
   formatProgress(value: number): string {
     return Number.isInteger(value) ? value.toString() : value.toFixed(2);
@@ -2037,9 +2451,6 @@ openPhaseModal(): void {
 
 
 
-
-
-
-
+  
   
 }

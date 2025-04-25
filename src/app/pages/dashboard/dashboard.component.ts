@@ -689,7 +689,7 @@ export class DashboardComponent implements OnInit {
           attempts++;
           setTimeout(tryHighlight, retryInterval);
         } else {
-          this.toastr.error('Could not locate the project in the table.', 'Error');
+          // this.toastr.error('Could not locate the project in the table.', 'Error');
         }
       };
   
