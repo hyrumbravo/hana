@@ -484,7 +484,7 @@ export class DashboardComponent implements OnInit {
           
            // Filter pending projects with a deadline within the next 7 days
            this.pendingProjects = this.projects.filter((project: any) => {
-            console.log("Checking project:", project.projectName, "Deadline:", project.deadline); // Debugging
+            console.log("Checking project:", project.projectId, "Deadline:", project.deadline); // Debugging
           
              // Skip projects with no progress value
             if (project.progress === null || project.progress === undefined || project.progress === '') return false;
@@ -493,15 +493,13 @@ export class DashboardComponent implements OnInit {
 
             if (!project.deadline) return false; // Ensure deadline exists
           
-            const deadline = this.normalizeDate(project.deadline);
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-
+            const deadline = new Date(project.deadline.replace(/-/g, '/'));
             if (isNaN(deadline.getTime())) {
-              console.error("Invalid date for project:", project.projectName, "Raw Value:", project.deadline);
+              console.error("Invalid date for project:", project.projectId, "Raw Value:", project.deadline);
               return false; // Skip invalid dates
             }
           
+            const today = new Date();
             const timeDiff = deadline.getTime() - today.getTime();
             const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));          
             return daysLeft <= 7 && daysLeft >= 0            
@@ -531,6 +529,10 @@ export class DashboardComponent implements OnInit {
       },
     });
   }
+
+  trackByProjectId(index: number, item: any): string {
+    return item._id;
+  }  
 
   totalProjects: number = 0;
   completedProjects: number = 0;
@@ -587,59 +589,49 @@ export class DashboardComponent implements OnInit {
   } 
   
   goToCompletedProjects(): void {
-    const completedProjectNames = this.projects
+    const completedProjectIds = this.projects
       .filter(p => p.progress === 100)
-      .map(p => p.projectName);
+      .map(p => p.projectId || p._id)
   
-    sessionStorage.setItem('highlightCompletedProjects', JSON.stringify(completedProjectNames));
-    sessionStorage.setItem('showHighlightInfoOnce', 'true'); // ✅ Add this line
+    sessionStorage.setItem('highlightCompletedProjects', JSON.stringify(completedProjectIds));
+    sessionStorage.setItem('showHighlightInfoOnce', 'true');
   
     this.closePendingModal();
     this.router.navigate(['/projects']);
   }
-
+  
   goToPendingProjects(): void {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // normalize today's date to midnight
+    today.setHours(0, 0, 0, 0);
   
-    const pendingProjectNames = this.projects
+    const pendingProjectIds = this.projects
       .filter(p => {
         const deadline = new Date(p.deadline);
-        deadline.setHours(0, 0, 0, 0); // normalize deadline to midnight
-  
-        const isDueToday = deadline.getTime() === today.getTime();
-        const isNotOverdue = deadline.getTime() >= today.getTime();
-        const isIncomplete = p.progress < 100;
-  
-        // Highlight if it's due today and incomplete
-        // OR not overdue and incomplete
-        return isIncomplete && (isDueToday || isNotOverdue);
+        deadline.setHours(0, 0, 0, 0);
+        return p.progress < 100 && deadline >= today;
       })
-      .map(p => p.projectName);
+      .map(p => p.projectId || p._id)
   
-    sessionStorage.setItem('highlightPendingProjects', JSON.stringify(pendingProjectNames));
+    sessionStorage.setItem('highlightPendingProjects', JSON.stringify(pendingProjectIds));
     sessionStorage.setItem('showHighlightInfoOnce', 'true');
   
     this.closePendingModal();
     this.router.navigate(['/projects']);
   }
-
+  
   goToOverdueProjects(): void {
     const today = new Date();
-    today.setHours(0, 0, 0, 0); // Normalize today's date to midnight
+    today.setHours(0, 0, 0, 0);
   
-    const overdueProjectNames = this.projects
+    const overdueProjectIds = this.projects
       .filter(p => {
-      const deadline = this.normalizeDate(p.deadline);
-        deadline.setHours(0, 0, 0, 0); // Normalize deadline to midnight
-  
-        // Overdue condition: project is not complete and today is AFTER the deadline
-        return p.progress < 100 && today > deadline;
+        const deadline = new Date(p.deadline);
+        deadline.setHours(0, 0, 0, 0);
+        return deadline < today && p.progress < 100;
       })
-      .map(p => p.projectName); // Extract only the project names
+      .map(p => p.projectId || p._id)
   
-    // Store overdue project names for highlighting
-    sessionStorage.setItem('highlightOverdueProjects', JSON.stringify(overdueProjectNames));
+    sessionStorage.setItem('highlightOverdueProjects', JSON.stringify(overdueProjectIds));
     sessionStorage.setItem('showHighlightInfoOnce', 'true');
   
     this.closePendingModal();
@@ -647,59 +639,48 @@ export class DashboardComponent implements OnInit {
   }
   
   
-  viewPendingProject(projectName: string) {
+  viewPendingProject(projectId: string) {
     if (this.projects.length === 0) {
       this.toastr.error('Project data is still loading. Please try again.', 'Error');
       return;
     }
   
-    this.projects.sort((a, b) => b.projectId - a.projectId);
-  
     const projectIndex = this.projects.findIndex(proj =>
-      proj.projectName.trim().toLowerCase() === projectName.trim().toLowerCase()
+      proj.projectId?.toString() === projectId.toString() || proj._id?.toString() === projectId.toString()
     );
   
     if (projectIndex !== -1) {
-      this.projects[projectIndex].expanded = true;
+      const project = this.projects[projectIndex];
+  
+      project.expanded = true;
+  
       this.closePendingModal();
   
       const today = new Date();
-      const project = this.projects[projectIndex];
       const deadline = new Date(project.deadline.replace(/-/g, '/'));
       const timeDiff = deadline.getTime() - today.getTime();
       const daysLeft = Math.ceil(timeDiff / (1000 * 60 * 60 * 24));
   
       sessionStorage.setItem('redirectedFromPending', 'true');
-      sessionStorage.setItem('pendingProject', JSON.stringify({ projectName, daysLeft }));
+      sessionStorage.setItem('pendingProject', JSON.stringify({
+        projectId: project.projectId, // <- use projectId not _id
+        daysLeft
+      }));  
+      this.router.navigate(['/projects'], { queryParams: { projectId: project.projectId } });
   
-      this.router.navigate(['/projects'], { queryParams: { projectName } });
-  
-      // 🔁 Retry scroll and highlight logic up to 5 times if row not yet in DOM
-      let attempts = 0;
-      const maxAttempts = 5;
-      const retryInterval = 400; // ms
-  
-      const tryHighlight = () => {
+      setTimeout(() => {
         const projectRow = document.getElementById('project-' + projectIndex);
         if (projectRow) {
           projectRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
           projectRow.classList.add('highlight');
           setTimeout(() => projectRow.classList.remove('highlight'), 4000);
-        } else if (attempts < maxAttempts) {
-          attempts++;
-          setTimeout(tryHighlight, retryInterval);
-        } else {
-          // this.toastr.error('Could not locate the project in the table.', 'Error');
         }
-      };
-  
-      // Start the first attempt after a short delay
-      setTimeout(tryHighlight, 500);
+      }, 500);
     } else {
       this.toastr.error('Project not found', 'Error');
     }
-  }
-  
+  }  
+
 
   getCurrentUser() {
     return new Promise((resolve, reject) => {

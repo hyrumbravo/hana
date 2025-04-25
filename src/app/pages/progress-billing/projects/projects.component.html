@@ -128,39 +128,31 @@
               </td>
             </tr>
             <!-- <ng-container *ngFor="let item of projects; let i = index"> -->
-            <ng-container *ngFor="let item of filteredProjects; let i = index" class="project-row" >
+              <ng-container *ngFor="let item of filteredProjects; let i = index" class="project-row" >
               
-              <tr 
-                style="background-color: white;"
-                [class.expanded-row]="item.expanded"
-                [attr.id]="'project-' + i"
-                [ngClass]="{ 'highlight': highlightedProjectNames.includes(item.projectName)}">
-                <td>{{ i + 1 }}</td> <!-- Row number -->
-                <td>{{ item.projectName }}</td>
-                <td>{{ item.clientName }}</td>
-                <td>{{ item.startDate }}</td>
-                <td>{{ item.deadline }}</td>
-                <td>₱{{ item.totalAmount | number }}</td>
-                <td>₱{{ calculateDownPayment(item.totalAmount, item.downPayment) | number }} ({{ item.downPayment }}%)</td>
-                <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td>
-                
-                
-                <!-- <td>{{ item.progress | number }}%</td> -->
-                <td>{{ item.progress || 0 }}%</td>
-
-                <td>
-                  <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(item)">
-                    <i class="fas" [ngClass]="item.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
-                  </button>
-                  
-
-                  <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(item)">
-                    <i class="fas fa-trash"></i>
-                  </button>
-                  
-                  
-                </td>
-              </tr>
+                <tr [id]="'project-' + item.projectId"
+                  style="background-color: white;"
+                  [class.expanded-row]="item.expanded"
+                  [ngClass]="{ 'highlight': highlightedProjectIds.includes(item.projectId) }">
+                  <td>{{ i + 1 }}</td> <!-- Row number -->
+                  <td>{{ item.projectName }}</td>
+                  <td>{{ item.clientName }}</td>
+                  <td>{{ item.startDate }}</td>
+                  <td>{{ item.deadline }}</td>
+                  <td>₱{{ item.totalAmount | number }}</td>
+                  <td>₱{{ calculateDownPayment(item.totalAmount, item.downPayment) | number }} ({{ item.downPayment }}%)</td>
+                  <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td>
+                  <td>{{ item.progress | number }}%</td>
+                  <td>
+                    <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(item)">
+                      <i class="fas" [ngClass]="item.expanded ? 'fa-chevron-down' : 'fa-chevron-right'"></i>
+                    </button>
+                    <button class="delete-btn delete-confirm-btn" (click)="openDeleteModal(item)">
+                      <i class="fas fa-trash"></i>
+                    </button>
+  
+                  </td>
+                </tr>
 
               <tr *ngIf="item.expanded" [class.expanded-row]="item.expanded">
                 <td colspan="12" class="details">

@@ -267,6 +267,10 @@ input.no-validation-border.ng-invalid.ng-touched {
   transition: background-color 0.2s ease-in-out;
 }
 
+.highlighted {
+  background-color: transparent; // Clear after
+}
+
 ::ng-deep .highlight {
   background-color: lightblue !important;
   transition: background-color 0.2s ease-in-out;

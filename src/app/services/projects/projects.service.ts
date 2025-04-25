@@ -272,21 +272,65 @@ export class ProjectsService {
     );
   }
   
+  // updateMilestone(phaseId: string, updatedMilestone: any): Observable<any> {
+  //   const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
+  
+  //   return this.http.get(phaseUrl, { headers: this.headers }).pipe(
+  //     switchMap((phase: any) => {
+  //       const milestoneIndex = phase.milestones.findIndex(
+  //         (m: any) => m.name === updatedMilestone.name // Match by unique milestone name
+  //       );
+  
+  //       if (milestoneIndex !== -1) {
+  //         // Clone the phase object
+  //         const updatedPhase = { ...phase };
+  //         updatedPhase.milestones = [...phase.milestones];
+  
+  //         // Only update the specific fields instead of replacing the whole milestone object
+  //         const originalMilestone = updatedPhase.milestones[milestoneIndex];
+  //         updatedPhase.milestones[milestoneIndex] = {
+  //           ...originalMilestone,
+  //           previous: updatedMilestone.previous,
+  //           present: updatedMilestone.present,
+  //           presentValue: updatedMilestone.presentValue,
+  //           previousOld: updatedMilestone.previousOld,
+  //           amountDue: updatedMilestone.amountDue,
+  //           presentMilestoneDue: updatedMilestone.presentMilestoneDue,
+  //           progress: updatedMilestone.progress || originalMilestone.progress
+  //         };
+  
+  //         // Save the updated phase back to CouchDB
+  //         return this.http.put(
+  //           `${this.phaseBaseUrl}/${updatedPhase._id}?rev=${updatedPhase._rev}`,
+  //           updatedPhase,
+  //           { headers: this.headers }
+  //         );
+  //       }
+  
+  //       return of(null); // Milestone not found
+  //     })
+  //   );
+  // }
+  
+
+
+
+
+
+
   updateMilestone(phaseId: string, updatedMilestone: any): Observable<any> {
     const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
   
     return this.http.get(phaseUrl, { headers: this.headers }).pipe(
       switchMap((phase: any) => {
         const milestoneIndex = phase.milestones.findIndex(
-          (m: any) => m.name === updatedMilestone.name // Match by unique milestone name
+          (m: any) => m.name === updatedMilestone.name
         );
   
         if (milestoneIndex !== -1) {
-          // Clone the phase object
           const updatedPhase = { ...phase };
           updatedPhase.milestones = [...phase.milestones];
   
-          // Only update the specific fields instead of replacing the whole milestone object
           const originalMilestone = updatedPhase.milestones[milestoneIndex];
           updatedPhase.milestones[milestoneIndex] = {
             ...originalMilestone,
@@ -299,7 +343,14 @@ export class ProjectsService {
             progress: updatedMilestone.progress || originalMilestone.progress
           };
   
-          // Save the updated phase back to CouchDB
+          // ✅ Calculate and update the phase progress here
+          const totalPrevious = updatedPhase.milestones.reduce(
+            (acc: number, m: any) => acc + (m.previous || 0),
+            0
+          );
+          const averageProgress = totalPrevious / updatedPhase.milestones.length;
+          updatedPhase.progress = Math.min(Math.round(averageProgress), 100);
+  
           return this.http.put(
             `${this.phaseBaseUrl}/${updatedPhase._id}?rev=${updatedPhase._rev}`,
             updatedPhase,
@@ -312,11 +363,6 @@ export class ProjectsService {
     );
   }
   
-
-
-
-
-
 
 
 }
