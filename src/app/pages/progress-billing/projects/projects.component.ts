@@ -1770,8 +1770,9 @@ deletingPhaseId: string | null = null;
 
   isSavingInvoice = false;
 
+
   // saveAndGenerateInvoice(phases: any) {
-  //   this.isSavingInvoice = true; // Start loading
+  //   this.isSavingInvoice = true;
   //   let isValid = true;
   //   const updateRequests: any[] = [];
   
@@ -1823,11 +1824,25 @@ deletingPhaseId: string | null = null;
   
   //   Promise.all(updateRequests).then(() => {
   //     this.updatePhaseProgressFromMilestones(phases);
-  //     this.generateInvoice(phases.milestones);
-  //     this.isSavingInvoice = false; // End loading
+  
+  //     // 👇 Make sure `phases.projectId` contains the actual projectId
+  //     const projectId = phases.projectId;
+  
+  //     // 🧾 Call to update the project progress after updating milestones and phase progress
+  //     this.projectsService.updateProjectProgress(projectId).subscribe({
+  //       next: () => {
+  //         console.log('Project progress updated successfully.');
+  //         this.generateInvoice(phases.milestones);
+  //         this.isSavingInvoice = false;
+  //       },
+  //       error: (err) => {
+  //         console.error('Error updating project progress:', err);
+  //         this.toastr.error('Failed to update project progress.', 'Error');
+  //         this.isSavingInvoice = false;
+  //       }
+  //     });
   //   });
   // }
-
 
   saveAndGenerateInvoice(phases: any) {
     this.isSavingInvoice = true;
@@ -1881,12 +1896,25 @@ deletingPhaseId: string | null = null;
     }
   
     Promise.all(updateRequests).then(() => {
+      // ✅ Update phase progress from milestones
       this.updatePhaseProgressFromMilestones(phases);
   
-      // 👇 Make sure `phases.projectId` contains the actual projectId
+      // ✅ Update frontend filteredProjects progress (your old logic)
+      const fullProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
+      if (fullProject) {
+        fullProject.phases = fullProject.phases.map(phase =>
+          phase._id === phases._id ? phases : phase
+        );
+  
+        // ✅ Now recalculate the entire project's overall progress based on all phases
+        this.updateProjectProgress(fullProject);
+  
+        this.cdRef.detectChanges(); // Trigger change detection manually
+      }
+  
+      // 👇 Then update project progress in DB
       const projectId = phases.projectId;
   
-      // 🧾 Call to update the project progress after updating milestones and phase progress
       this.projectsService.updateProjectProgress(projectId).subscribe({
         next: () => {
           console.log('Project progress updated successfully.');
@@ -1901,6 +1929,122 @@ deletingPhaseId: string | null = null;
       });
     });
   }
+  
+
+
+
+
+  // saveAndGenerateInvoice(phases: any) {
+  //   let isValid = true;
+  //   const updatedMilestones: any[] = [];
+  
+  //   phases.milestones.forEach((milestone: any) => {
+  //     if (milestone.present > 0) {
+  //       const newPrevious = milestone.previous + milestone.present;
+  //       const remainingPercent = 100 - milestone.previous;
+  
+  //       if (newPrevious > 100) {
+  //         this.toastr.warning(
+  //           `Milestone "${milestone.name}" cannot exceed 100%. You can only add ${remainingPercent}% more.`,
+  //           'Warning'
+  //         );
+  //         isValid = false;
+  //         return;
+  //       }
+  
+  //       milestone.previousOld = milestone.previous;
+  //       milestone.presentValue = milestone.present;
+  //       milestone.presentMilestoneDue = milestone.amountDue;
+  //       milestone.amountDue = 0;
+  //       milestone.previous = newPrevious;
+  //       milestone.present = 0;
+  
+  //       updatedMilestones.push({
+  //         name: milestone.name,
+  //         previous: milestone.previous,
+  //         previousOld: milestone.previousOld,
+  //         present: milestone.present,
+  //         presentValue: milestone.presentValue,
+  //         amountDue: milestone.amountDue,
+  //         presentMilestoneDue: milestone.presentMilestoneDue,
+  //         progress: milestone.progress
+  //       });
+  
+  //       this.calculateAmountDue(milestone);
+  //     }
+  //   });
+  
+  //   if (!isValid || updatedMilestones.length === 0) return;
+  
+  //   this.projectsService.getPhaseById(phases._id).subscribe({
+  //     next: (phaseFromDb: any) => {
+  //       const updatedPhase = { ...phaseFromDb };
+  //       updatedPhase.milestones = phaseFromDb.milestones.map((milestone: any) => {
+  //         const updated = updatedMilestones.find(m => m.name === milestone.name);
+  //         return updated ? { ...milestone, ...updated } : milestone;
+  //       });
+  
+  //       const totalMilestones = updatedPhase.milestones.length;
+  //       let totalProgress = 0;
+  
+  //       updatedPhase.milestones.forEach((m: any) => {
+  //         const milestoneProgressPercentage = m.previous;
+  //         totalProgress += (milestoneProgressPercentage / 100) * (100 / totalMilestones);
+  //       });
+  
+  //       updatedPhase.progress = totalProgress;
+  
+  //       // ✅ Immediately update project progress locally
+  //       // this.updateProjectProgress({ phases: [updatedPhase], projectId: phases.projectId });
+  
+  //       // // Update the progress in the filteredProjects array
+  //       // const updatedProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
+  //       // if (updatedProject) {
+  //       //   updatedProject.progress = updatedPhase.progress;
+  //       //   this.cdRef.detectChanges(); // Trigger change detection manually
+  //       // }
+  //       // ✅ Find the full project object including all its phases
+  //       const fullProject = this.filteredProjects.find(p => p.projectId === phases.projectId);
+  //       if (fullProject) {
+  //         // Replace the updated phase in the full project phases array
+  //         fullProject.phases = fullProject.phases.map(phase =>
+  //           phase._id === updatedPhase._id ? updatedPhase : phase
+  //         );
+  
+  //         // ✅ Recalculate full project progress based on all phases
+  //         this.updateProjectProgress(fullProject);
+  
+  //         this.cdRef.detectChanges(); // Trigger change detection manually
+  //       }
+  
+  
+  //       this.projectsService.updateFullPhase(updatedPhase).subscribe({
+  //         next: (res) => {
+  //           console.log('Phase with milestones updated successfully', res);
+  
+  //           // ✅ Then update project progress in DB
+  //           this.projectsService.updateProjectProgress(phases.projectId).subscribe(
+  //             (projectUpdateResponse) => {
+  //               console.log("Project progress updated successfully:", projectUpdateResponse);
+  //             },
+  //             (error) => {
+  //               console.error("Error updating project progress:", error);
+  //             }
+  //           );
+  
+  //           this.updatePhaseProgressFromMilestones(phases);
+  //           this.generateInvoice(updatedPhase.milestones);
+  //         },
+  //         error: (err) => {
+  //           console.error('Error updating phase:', err);
+  //         }
+  //       });
+  //     },
+  //     error: (err) => {
+  //       console.error('Error fetching phase from DB:', err);
+  //     }
+  //   });
+  // }
   
   
 
