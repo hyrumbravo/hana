@@ -108,67 +108,6 @@ export class ProjectsService {
     return this.http.post(this.phaseBaseUrl, phaseData, { headers: this.headers });
   }
 
-
-
-
-
-
-
-  
-
-
-
-
-  
-
-
-  // updatePhase(phase: any): Observable<any> {
-  //   const totalMilestones = phase.milestones.length;
-  //   const progressPerMilestone = 100 / totalMilestones;
-  //   let progressRemaining = phase.progress;
-
-    
-  
-  //   phase.milestones = phase.milestones.map((milestone, index) => {
-  //     let milestoneProgress = 0;
-  
-  //     if (progressRemaining > 0) {
-  //       if (progressRemaining >= progressPerMilestone) {
-  //         milestoneProgress = 100;
-  //         progressRemaining -= progressPerMilestone;
-  //       } else {
-  //         milestoneProgress = (progressRemaining / progressPerMilestone) * 100;
-  //         progressRemaining = 0;
-  //       }
-  //     }
-  
-  //     // Determine progress status
-  //     let progressStatus = "Not Started";
-  //     if (milestoneProgress === 100) {
-  //       progressStatus = "Completed";
-  //     } else if (milestoneProgress > 0 && milestoneProgress < 100) {
-  //       progressStatus = "In Progress";
-  //     }
-  
-  //     return {
-  //       ...milestone,
-  //       previous: milestoneProgress,
-  //       previousOld: milestoneProgress === 0 ? 0 : milestone.previousOld || 0,
-  //       presentValue: milestoneProgress === 0 ? 0 : milestone.presentValue || 0,
-  //       presentMilestoneDue: milestoneProgress === 0 ? 0 : milestone.presentMilestoneDue || 0,
-  //       amountDue: milestoneProgress === 0 ? 0 : milestone.amountDue || 0,
-  //       progress: progressStatus,
-  //     };
-  //   });
-  
-  //   return this.http.put(`${this.phaseBaseUrl}/${phase._id}`, phase, { headers: this.headers });
-  // }
-
-
-
-  
-
-
   updatePhase(phase: any): Observable<any> {
     const totalMilestones = phase.milestones.length;
     const progressPerMilestone = 100 / totalMilestones;
@@ -236,7 +175,7 @@ export class ProjectsService {
     const findUrl = `${this.projectBaseUrl}/_find`;
     const requestBody = {
       selector: { projectId: projectId },
-      fields: ["_id", "_rev", "progress", "projectName", "projectDescription", "clientName", "startDate", "deadline", "totalAmount", "downPayment", "projectId"]
+      fields: ["_id", "_rev", "progress", "projectName", "projectDescription", "clientName", "startDate", "deadline", "totalAmount", "downPayment", "projectId", "downPaymentAmount", "totalBalanceAfterDownPayment"]
     };
   
     return this.http.post(findUrl, requestBody, { headers: this.headers }).pipe(
@@ -272,51 +211,6 @@ export class ProjectsService {
     );
   }
   
-  // updateMilestone(phaseId: string, updatedMilestone: any): Observable<any> {
-  //   const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
-  
-  //   return this.http.get(phaseUrl, { headers: this.headers }).pipe(
-  //     switchMap((phase: any) => {
-  //       const milestoneIndex = phase.milestones.findIndex(
-  //         (m: any) => m.name === updatedMilestone.name // Match by unique milestone name
-  //       );
-  
-  //       if (milestoneIndex !== -1) {
-  //         // Clone the phase object
-  //         const updatedPhase = { ...phase };
-  //         updatedPhase.milestones = [...phase.milestones];
-  
-  //         // Only update the specific fields instead of replacing the whole milestone object
-  //         const originalMilestone = updatedPhase.milestones[milestoneIndex];
-  //         updatedPhase.milestones[milestoneIndex] = {
-  //           ...originalMilestone,
-  //           previous: updatedMilestone.previous,
-  //           present: updatedMilestone.present,
-  //           presentValue: updatedMilestone.presentValue,
-  //           previousOld: updatedMilestone.previousOld,
-  //           amountDue: updatedMilestone.amountDue,
-  //           presentMilestoneDue: updatedMilestone.presentMilestoneDue,
-  //           progress: updatedMilestone.progress || originalMilestone.progress
-  //         };
-  
-  //         // Save the updated phase back to CouchDB
-  //         return this.http.put(
-  //           `${this.phaseBaseUrl}/${updatedPhase._id}?rev=${updatedPhase._rev}`,
-  //           updatedPhase,
-  //           { headers: this.headers }
-  //         );
-  //       }
-  
-  //       return of(null); // Milestone not found
-  //     })
-  //   );
-  // }
-  
-
-
-
-
-
 
   updateMilestone(phaseId: string, updatedMilestone: any): Observable<any> {
     const phaseUrl = `${this.phaseBaseUrl}/${phaseId}`;
@@ -362,7 +256,14 @@ export class ProjectsService {
       })
     );
   }
+
+
+
+
+
+
   
 
-
+  
+  
 }

@@ -141,7 +141,20 @@
                   <td>{{ item.deadline }}</td>
                   <td>₱{{ item.totalAmount | number }}</td>
                   <td>₱{{ calculateDownPayment(item.totalAmount, item.downPayment) | number }} ({{ item.downPayment }}%)</td>
-                  <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td>
+                  <!-- <td>₱{{ calculateTotalBalance(item.totalAmount, item.downPayment) | number }}</td> -->
+                  <td>
+                    ₱{{ calculateTotalBalance(item.totalAmount, item.downPayment, item.phases) | number }}
+                  </td>
+                  <!-- <td>
+                    ₱{{ item.totalBalanceAfterDownPayment | number }}
+                  </td>
+                   -->
+                  
+                  
+
+
+
+                  
                   <td>{{ item.progress | number }}%</td>
                   <td>
                     <button class="delete-btn expand-collapse-btn" (click)="toggleExpand(item)">
@@ -164,7 +177,7 @@
               <tr *ngIf="item.expanded" [class.expanded-row]="item.expanded">
                 <td style="background-color: #d6d4d4;" colspan="12">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <button (click)="openPhaseModal()" class="btn btn-sm btn-success">
+                    <button (click)="openPhaseModal(item.projectId)" class="btn btn-sm btn-success">
                       <i class="fas fa-plus"></i> Add Phase
                     </button>
                   </div>
@@ -217,19 +230,6 @@
                           <td>
                             ₱{{ calculatePhaseAmount(item.totalAmount, item.downPayment, phases.percentage) | number }}
                           </td>
-                        
-                          <!-- <td>
-                            <input
-                              *ngIf="phases.isEditing"
-                              type="number"
-                              [(ngModel)]="phases.progress"
-                              min="0"
-                              max="100"
-                              (input)="limitProgressInput($event, phases)"
-                              (change)="updateProjectProgress(item)"
-                            />
-                            <span *ngIf="!phases.isEditing">{{ phases.progress }}bug%</span>
-                          </td> -->
                           <td>
                             <input
                               *ngIf="phases.isEditing"
@@ -362,7 +362,7 @@
                                     
                                     
                                     <button *ngIf="!milestone.isEditing" (click)="editMilestone(phases, milestone)">
-                                      <i class="fas fa-edit fa-sm"></i> Edit 
+                                      <i class="fas fa-edit fa-sm"></i> Edit
                                     </button>
                                     <!-- <button class="milestone-action-btn milestone-save-btn" *ngIf="milestone.isEditing" (click)="saveMilestone(phases, milestone, item)">
                                       <i class="fas fa-check fa-sm"></i> Save
@@ -406,6 +406,7 @@
                                         <i class="fas fa-spinner fa-spin fa-lg"></i> Saving...
                                       </span>
                                     </button>
+                                    
 
                                   </td>
                                 </tr>
@@ -545,8 +546,6 @@
               <label class="form-label fw-bold">
                 INITIAL DOWN PAYMENT 
                 <span class="text-danger">*</span>
-              
-
                 <span class="ms-3 d-inline-flex align-items-center gap-2" style="margin-left: 15px;">
                   <div class="form-check form-check-inline">
                     <input
@@ -576,13 +575,13 @@
                 </span>
               
 
-                <span class="text-danger d-block mt-1" *ngIf="downPaymentModel.errors?.['required'] && downPaymentModel.touched">
-                  This field is required
-                </span>
+                <!-- <span class="text-danger d-block mt-1" *ngIf="downPaymentModel.errors?.['required'] && downPaymentModel.touched">
+                  This field is requiredbug
+                </span> -->
               </label>     
               
-              <input
-                type="number"
+              <!-- <input
+                type="text"
                 class="form-control"
                 #downPaymentRef
                 [(ngModel)]="newProject.downPayment"
@@ -593,7 +592,21 @@
                 [disabled]="false"
                 (input)="onDownPaymentInput($event)"
                 #downPaymentModel="ngModel"
+              /> -->
+              <input
+                type="text"
+                class="form-control"
+                #downPaymentRef
+                [value]="downPaymentType === 'peso' ? ('₱' + (newProject.downPayment || 0).toLocaleString('en-PH')) : newProject.downPayment"
+                name="downPayment"
+                required
+                [max]="downPaymentType === 'percent' ? 100 : newProject.totalAmount"
+                [min]="0"
+                [disabled]="false"
+                (input)="onDownPaymentInput($event)"
               />
+
+
             </div>
           </div>
         </form>
@@ -848,21 +861,22 @@
 
 
 
+
+
+
+
 <div class="modal fade" #AddPhaseModal tabindex="-1" aria-labelledby="modalLabel" aria-hidden="true" data-bs-backdrop="static" data-bs-keyboard="false">
   <div class="modal-dialog modal-lg">
     <div class="modal-content">
       <div class="modal-body">
         <h6 class="fw-bold" style="font-size: 32px;">Add Project Phase</h6>
-        <!-- <h6 class="fw-bold text-danger" style="font-size: 20px;">
-          Total Balance: ₱
-        </h6> -->
-        <h6 class="total-balance">
+        <!-- <h6 class="total-balance">
           Total Balance: ₱
         </h6>
         
         <h6 class="fw-bold text-danger" style="font-size: 20px;">
           Unallocated Percentage: % (₱)
-        </h6>
+        </h6> -->
         <button type="button" class="btn-close" (click)="closeAddPhaseModal()" style="position: absolute; right: 15px; top: 10px;">
           <i class="fas fa-times"></i>
         </button>
