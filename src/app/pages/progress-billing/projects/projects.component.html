@@ -121,6 +121,12 @@
               </td>
             </tr>
 
+            <tr *ngIf="!isLoadingProjects && filteredProjects.length === 0">
+              <td colspan="12" class="text-center" style="font-style: italic; background-color: #f0f0f0;">
+                No Record Found
+              </td>
+            </tr>
+
             <!-- Show 'No projects available' ONLY if loading is done and the list is empty -->
             <tr *ngIf="!isLoadingProjects && projects.length === 0">
               <td colspan="12" class="text-center" style="font-style: italic; background-color: #f0f0f0;">
