@@ -175,7 +175,7 @@ export class ProjectsService {
     const findUrl = `${this.projectBaseUrl}/_find`;
     const requestBody = {
       selector: { projectId: projectId },
-      fields: ["_id", "_rev", "progress", "projectName", "projectDescription", "clientName", "startDate", "deadline", "totalAmount", "downPayment", "projectId", "downPaymentAmount", "totalBalanceAfterDownPayment"]
+      fields: ["_id", "_rev", "progress", "projectName", "projectDescription", "clientName", "startDate", "deadline", "totalAmount", "downPayment", "projectId", "downPaymentAmount", "totalBalanceAfterDownPayment","unallocatedPercentage","remainingTotalBalance"]
     };
   
     return this.http.post(findUrl, requestBody, { headers: this.headers }).pipe(

@@ -11,6 +11,7 @@ import { Router } from '@angular/router';
 import { NgModel,  } from '@angular/forms';
 import { ChangeDetectorRef } from '@angular/core';
 
+
 @Component({
   selector: 'app-projects',
   templateUrl: './projects.component.html',
@@ -83,6 +84,8 @@ export class ProjectsComponent implements OnInit {
   
   constructor(private toastr: ToastrService, private projectsService: ProjectsService, private router: Router, private route: ActivatedRoute, private cdRef: ChangeDetectorRef) {}
 
+
+  
   get filteredProjects() {
     return this.projects.filter(project =>
       project.projectName.toLowerCase().includes(this.searchTerm.toLowerCase()) ||
@@ -511,8 +514,9 @@ export class ProjectsComponent implements OnInit {
   this.modalInstance.show();
 }
 
-
-// openPhaseModal(): void {
+// //correct code
+// openPhaseModal(projectId: string): void {
+//   console.log('Project ID:', projectId);  // Log the project ID
 //   this.phaseModalInstance = new Modal(this.AddPhaseModal.nativeElement, {
 //     backdrop: 'static',  // Prevents closing the modal when clicking outside
 //     keyboard: false      // Prevents closing the modal when pressing the Escape key
@@ -520,15 +524,65 @@ export class ProjectsComponent implements OnInit {
 //   this.phaseModalInstance.show();
 // }
 
-//correct code
+remainingBalance: number = 0;
+unallocatedPercentage: number = 0;
+totalBalanceAfterDownPayment: number = 0;
+isOpeningPhaseModal: boolean = false;
+
+
+// openPhaseModal(projectId: string): void {
+//   console.log('Project ID:', projectId);
+
+//   this.newPhase = {
+//     percentage: 0,
+//     amountToBill: 0,
+//     // include other fields if needed like name, dates, etc.
+//   };
+
+//   this.projectsService.getProjects().subscribe((res: any) => {
+//     const project = res.rows.find((p: any) => p.doc.projectId === projectId);
+//     if (project) {
+//       const projectDoc = project.doc;
+//       this.remainingBalance = projectDoc.remainingTotalBalance || 0;
+//       this.totalBalanceAfterDownPayment = projectDoc.totalBalanceAfterDownPayment || 0;
+//       this.unallocatedPercentage = projectDoc.unallocatedPercentage || 0;
+//     }
+//     this.phaseModalInstance = new Modal(this.AddPhaseModal.nativeElement, {
+//       backdrop: 'static',
+//       keyboard: false
+//     });
+//     this.phaseModalInstance.show();
+//   });
+// }
+
 openPhaseModal(projectId: string): void {
-  console.log('Project ID:', projectId);  // Log the project ID
-  this.phaseModalInstance = new Modal(this.AddPhaseModal.nativeElement, {
-    backdrop: 'static',  // Prevents closing the modal when clicking outside
-    keyboard: false      // Prevents closing the modal when pressing the Escape key
+  this.isOpeningPhaseModal = true; // Start spinner
+
+  this.newPhase = { percentage: 0, amountToBill: 0 };
+
+  this.projectsService.getProjects().subscribe((res: any) => {
+    const project = res.rows.find((p: any) => p.doc.projectId === projectId);
+    if (project) {
+      const doc = project.doc;
+      this.totalBalanceAfterDownPayment = doc.totalBalanceAfterDownPayment || 0;
+      this.unallocatedPercentage = doc.unallocatedPercentage || 0;
+      this.remainingBalance = doc.remainingTotalBalance || 0;
+    }
+
+    this.phaseModalInstance = new Modal(this.AddPhaseModal.nativeElement, {
+      backdrop: 'static',
+      keyboard: false
+    });
+
+    this.phaseModalInstance.show();
+    this.isOpeningPhaseModal = false; // Stop spinner
+  }, error => {
+    this.toastr.error('Failed to load project data.', 'Error');
+    this.isOpeningPhaseModal = false;
   });
-  this.phaseModalInstance.show();
 }
+
+
 
   toggleExpand(project: any) {
     project.expanded = !project.expanded;
@@ -558,54 +612,27 @@ openPhaseModal(projectId: string): void {
     return (balance * phasePercentage) / 100;
   }
 
+
+  //original code
   // calculateTotalBalance(totalAmount: number, downPaymentPercentage: number): number {
   //   const downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
   //   return totalAmount - downPaymentAmount;
   // }
 
-  
-  calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases: any[]): number {
+
+calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases: any[]): number {
   const downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
   let remainingAmount = totalAmount - downPaymentAmount;
 
-  // Deduct completed phases
   phases.forEach(phase => {
-    if (phase.progress === 100) {
-      const phaseAmount = this.calculatePhaseAmount(totalAmount, downPaymentPercentage, phase.percentage);
-      remainingAmount -= phaseAmount;
-    }
+    const phaseAmount = this.calculatePhaseAmount(totalAmount, downPaymentPercentage, phase.percentage);
+    const completedAmount = (phase.progress / 100) * phaseAmount;
+    remainingAmount -= completedAmount;
   });
 
   return remainingAmount;
 }
 
-
-// calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases: any[]): number {
-//   const downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
-//   let remainingAmount = totalAmount - downPaymentAmount;
-
-//   // Deduct completed phases
-//   phases.forEach(phase => {
-//     if (phase.progress === 100) {
-//       const phaseAmount = this.calculatePhaseAmount(totalAmount, downPaymentPercentage, phase.percentage);
-//       remainingAmount -= phaseAmount;
-//     }
-//   });
-
-//   // Store the remaining balance in localStorage
-//   localStorage.setItem('remainingAmount', remainingAmount.toString());
-
-//   return remainingAmount;
-// }
-
-  
-  
-  
-
-  
-  
-
-  
 
   //phase creation
   newPhases: any[] = [];
@@ -715,6 +742,15 @@ openPhaseModal(projectId: string): void {
         this.newProject.downPaymentAmount = downPaymentAmount;
         this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
         this.newProject.progress = 0;
+
+        // ➡️ Calculate unallocated percentage and remaining balance
+        const unallocatedPercentage = this.getUnallocatedPercentage();
+        const remainingTotalBalance = this.getRemainingTotalBalance();
+
+        // ➡️ Store them inside newProject
+        this.newProject.unallocatedPercentage = unallocatedPercentage.toFixed(2); // Save as string
+        this.newProject.remainingTotalBalance = remainingTotalBalance;
+
 
 
   
@@ -944,6 +980,7 @@ deletingPhaseId: string | null = null;
 
   closeAddPhaseModal() {
     this.phaseModalInstance.hide();
+    this.cancelForm();
 
   }
 
@@ -1765,6 +1802,74 @@ deletingPhaseId: string | null = null;
 
 
 
+  validatePhasePercentage(event: any): void {
+    const input = event.target;
+    if (input.value > this.unallocatedPercentage) {
+      input.value = this.unallocatedPercentage;
+    }
+  }
+  
+
+  limitPhasePercentageForModal(event: any) {
+    let inputValue = event.target.value;
+  
+    if (inputValue === '' || inputValue === null) inputValue = '0';
+    if (inputValue.length > 3) inputValue = inputValue.slice(0, 3);
+  
+    let numericValue = +inputValue;
+  
+    if (numericValue > this.unallocatedPercentage) {
+      this.toastr.warning(
+        `Phase % cannot exceed unallocated: ${this.unallocatedPercentage}%`,
+        'Warning'
+      );
+      numericValue = this.unallocatedPercentage;
+    } else if (numericValue < 0) {
+      numericValue = 0;
+    }
+  
+    event.target.value = numericValue;
+    this.newPhase.percentage = numericValue;
+  
+    this.calculateAmountToBillForModal();
+  }
+
+  calculateAmountToBillForModal(): void {
+    const percentInput = this.newPhase.percentage || 0;
+    const percentOfUnallocated = percentInput / this.unallocatedPercentage;
+  
+    if (percentInput > 0 && this.remainingBalance) {
+      this.newPhase.amountToBill = percentOfUnallocated * this.remainingBalance;
+    } else {
+      this.newPhase.amountToBill = 0;
+    }
+  }
+
+
+  
+  
+  limitMilestoneAmount(event: any) {
+    let inputValue = parseFloat(event.target.value.replace(/[^0-9.]/g, '')) || 0;
+  
+    if (inputValue > this.newPhase.amountToBill) {
+      inputValue = this.newPhase.amountToBill;
+      this.toastr.warning('Milestone Amount cannot exceed the Remaining Amount.', 'Warning');
+    }
+  
+    // Format: No decimal if whole number, 2 decimals if needed
+    if (inputValue % 1 === 0) {
+      event.target.value = '₱' + inputValue.toLocaleString('en-PH', { minimumFractionDigits: 0 });
+    } else {
+      event.target.value = '₱' + inputValue.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+    }
+  }
+  
+
+
+  
+
+
+
   
 
 
@@ -1782,6 +1887,9 @@ deletingPhaseId: string | null = null;
 
 
 
+
+
+  
 
   
   
