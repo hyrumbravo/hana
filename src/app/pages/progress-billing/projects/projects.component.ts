@@ -11,6 +11,11 @@ import { Router } from '@angular/router';
 import { NgModel,  } from '@angular/forms';
 import { ChangeDetectorRef } from '@angular/core';
 
+import { map, switchMap } from 'rxjs/operators';
+
+import { NgForm } from '@angular/forms';
+
+
 
 @Component({
   selector: 'app-projects',
@@ -225,52 +230,110 @@ export class ProjectsComponent implements OnInit {
 
   isLoadingProjects = true;
 
-  loadProjects(callback?: () => void): void {
-    this.isLoadingProjects = true; // Start loading
+  // loadProjects(callback?: () => void): void {
+  //   this.isLoadingProjects = true; // Start loading
 
-    this.projectsService.getProjects().subscribe({
-        next: (response) => {
-            if (response.rows) {
-                // Map the projects and sort them by projectId
-                this.projects = response.rows.map((row: any) => ({
-                    ...row.doc,
-                    expanded: false, // Ensure expanded is false initially
-                    phases: [], // Each project has its own phases array
+  //   this.projectsService.getProjects().subscribe({
+  //       next: (response) => {
+  //           if (response.rows) {
+  //               // Map the projects and sort them by projectId
+  //               this.projects = response.rows.map((row: any) => ({
+  //                   ...row.doc,
+  //                   expanded: false, // Ensure expanded is false initially
+  //                   phases: [], // Each project has its own phases array
                     
-                }));
+  //               }));
 
-                // Sort projects based on the current sort order (ascending/descending)
-                this.sortProjects();
+  //               // Sort projects based on the current sort order (ascending/descending)
+  //               this.sortProjects();
 
-                if (callback) {
-                    callback(); // Run the callback after projects have loaded
-                }
+  //               if (callback) {
+  //                   callback(); // Run the callback after projects have loaded
+  //               }
 
-                // Call this before clearing sessionStorage
-                if (this.showHighlightInfoOnce && this.highlightedProjectIds.length > 0) {
-                  this.highlightCount = this.projects.filter(p =>
-                    this.highlightedProjectIds.includes(p.projectId)
-                  ).length;
+  //               // Call this before clearing sessionStorage
+  //               if (this.showHighlightInfoOnce && this.highlightedProjectIds.length > 0) {
+  //                 this.highlightCount = this.projects.filter(p =>
+  //                   this.highlightedProjectIds.includes(p.projectId)
+  //                 ).length;
 
-                  // 👇 Scroll and highlight here
-                  this.highlightMultipleProjects(this.highlightedProjectIds);
-                }
+  //                 // 👇 Scroll and highlight here
+  //                 this.highlightMultipleProjects(this.highlightedProjectIds);
+  //               }
 
-                // Clear after highlighting
-                if (this.showHighlightInfoOnce) {
-                  sessionStorage.removeItem('highlightCompletedProjects');
-                  sessionStorage.removeItem('showHighlightInfoOnce');
-                }
-            }
-            this.isLoadingProjects = false; // ✅ Stop loading after success
+  //               // Clear after highlighting
+  //               if (this.showHighlightInfoOnce) {
+  //                 sessionStorage.removeItem('highlightCompletedProjects');
+  //                 sessionStorage.removeItem('showHighlightInfoOnce');
+  //               }
+  //           }
+  //           this.isLoadingProjects = false; // ✅ Stop loading after success
 
-        },
-        error: (error) => {
-            this.toastr.error('Failed to load projects', 'Error');
-            console.error('Error fetching projects:', error);
-            this.isLoadingProjects = false; // ✅ Stop loading even if there's an error
+  //       },
+  //       error: (error) => {
+  //           this.toastr.error('Failed to load projects', 'Error');
+  //           console.error('Error fetching projects:', error);
+  //           this.isLoadingProjects = false; // ✅ Stop loading even if there's an error
 
-        },
+  //       },
+  //   });
+  // }
+
+  loadProjects(callback?: () => void): void {
+    this.isLoadingProjects = true;
+  
+    this.projectsService.getProjects().pipe(
+      switchMap((response: any) => {
+        const baseProjects = response.rows.map((row: any) => ({
+          ...row.doc,
+          expanded: false,
+          phases: []
+        }));
+        this.projects = baseProjects;
+  
+        // Fetch all phases for each project
+        const phaseRequests = baseProjects.map(project =>
+          this.projectsService.getPhases(project.projectId).pipe(
+            map((phaseRes: any) => ({
+              projectId: project.projectId,
+              phases: phaseRes.docs || []
+            }))
+          )
+        );
+  
+        return forkJoin(phaseRequests);
+      })
+    ).subscribe({
+      next: (phaseResults) => {
+        (phaseResults as any[]).forEach(({ projectId, phases }) => {
+          const target = this.projects.find(p => p.projectId === projectId);
+          if (target) target.phases = phases;
+        });
+  
+        this.sortProjects();
+  
+        if (callback) callback();
+  
+        if (this.showHighlightInfoOnce && this.highlightedProjectIds.length > 0) {
+          this.highlightCount = this.projects.filter(p =>
+            this.highlightedProjectIds.includes(p.projectId)
+          ).length;
+  
+          this.highlightMultipleProjects(this.highlightedProjectIds);
+        }
+  
+        if (this.showHighlightInfoOnce) {
+          sessionStorage.removeItem('highlightCompletedProjects');
+          sessionStorage.removeItem('showHighlightInfoOnce');
+        }
+  
+        this.isLoadingProjects = false;
+      },
+      error: (error) => {
+        this.toastr.error('Failed to load projects', 'Error');
+        console.error('Error fetching projects or phases:', error);
+        this.isLoadingProjects = false;
+      }
     });
   }
 
@@ -555,8 +618,37 @@ isOpeningPhaseModal: boolean = false;
 //   });
 // }
 
+// openPhaseModal(projectId: string): void {
+//   this.isOpeningPhaseModal = true; // Start spinner
+//   console.log('Project ID:', projectId);
+
+//   this.newPhase = { percentage: 0, amountToBill: 0 };
+
+//   this.projectsService.getProjects().subscribe((res: any) => {
+//     const project = res.rows.find((p: any) => p.doc.projectId === projectId);
+//     if (project) {
+//       const doc = project.doc;
+//       this.totalBalanceAfterDownPayment = doc.totalBalanceAfterDownPayment || 0;
+//       this.unallocatedPercentage = doc.unallocatedPercentage || 0;
+//       this.remainingBalance = doc.remainingTotalBalance || 0;
+//     }
+
+//     this.phaseModalInstance = new Modal(this.AddPhaseModal.nativeElement, {
+//       backdrop: 'static',
+//       keyboard: false
+//     });
+
+//     this.phaseModalInstance.show();
+//     this.isOpeningPhaseModal = false; // Stop spinner
+//   }, error => {
+//     this.toastr.error('Failed to load project data.', 'Error');
+//     this.isOpeningPhaseModal = false;
+//   });
+// }
+
 openPhaseModal(projectId: string): void {
-  this.isOpeningPhaseModal = true; // Start spinner
+  this.activeProjectId = projectId; // ✅ store it for later use
+  this.isOpeningPhaseModal = true;
 
   this.newPhase = { percentage: 0, amountToBill: 0 };
 
@@ -575,12 +667,13 @@ openPhaseModal(projectId: string): void {
     });
 
     this.phaseModalInstance.show();
-    this.isOpeningPhaseModal = false; // Stop spinner
+    this.isOpeningPhaseModal = false;
   }, error => {
     this.toastr.error('Failed to load project data.', 'Error');
     this.isOpeningPhaseModal = false;
   });
 }
+
 
 
 
@@ -978,11 +1071,73 @@ deletingPhaseId: string | null = null;
   }
   
 
-  closeAddPhaseModal() {
-    this.phaseModalInstance.hide();
-    this.cancelForm();
 
+  // cancelAddPhaseForm() {
+  //   this.newPhase = {
+  //     percentage: 0,
+  //     amountToBill: 0
+  //   };
+  
+  //   this.newMilestone = {
+  //     name: '',
+  //     amount: 0
+  //   };
+  
+  //   this.milestones = [];
+  // }
+  cancelAddPhaseForm() {
+    this.newPhase = {
+      name: '',
+      startDate: '',
+      completionDate: '',
+      percentage: 0,
+      amountToBill: 0
+    };
+  
+    this.newMilestone = {
+      name: '',
+      amount: 0
+    };
+  
+    this.milestones = [];
+  
+    // ✅ Clear form validation states
+    if (this.phaseForm) {
+      this.phaseForm.resetForm();
+    }
   }
+
+
+  isCancelling = false;
+  // closeAddPhaseModal() {
+  //   if (this.isCancelling) return;
+  
+  //   this.isCancelling = true;
+  
+  //   setTimeout(() => {
+  //     this.cancelAddPhaseForm(); // reset data
+  //     this.phaseModalInstance.hide(); // close modal
+  //     this.isCancelling = false;
+  //   }, 500); // small delay for smooth UX
+  // }
+  closeAddPhaseModal() {
+    if (this.isCancelling) return;
+  
+    this.isCancelling = true;
+  
+    setTimeout(() => {
+      this.cancelAddPhaseForm(); // reset all data
+      
+      // Reset validation states
+      if (this.phaseForm) this.phaseForm.resetForm();
+      if (this.milestoneForm) this.milestoneForm.resetForm();
+  
+      this.phaseModalInstance.hide();
+      this.isCancelling = false;
+    }, 500);
+  }
+  
+  
 
   addMilestone(phase: any) {
     if (!phase.newMilestone.name || !phase.newMilestone.amount) {
@@ -1171,11 +1326,6 @@ deletingPhaseId: string | null = null;
     
       const newTotal = otherPhasesTotal + phases.percentage;
     
-      // if (newTotal > 100) {
-      //   this.toastr.error(`Total phase percentage cannot exceed 100%. Currently: ${newTotal}%`);
-      //   phases.isSaving = false;
-      //   return;
-      // }
       if (newTotal > 100) {
         const remaining = 100 - otherPhasesTotal;
         this.toastr.error(`You can only assign up to ${remaining}% to this phase.`);
@@ -1691,49 +1841,6 @@ deletingPhaseId: string | null = null;
   }
 
 
-
-
-
-
-
-
-
-  
-  // onDownPaymentInput(event: any): void {
-  //   let inputValue = event.target.value;
-  
-  //   if (inputValue === '') {
-  //     this.newProject.downPayment = ''; // Keep it blank if user deletes the value
-  //     return;
-  //   }
-  
-  //   if (this.downPaymentType === 'percent') {
-  //     inputValue = inputValue.slice(0, 3);
-  //     let percent = Number(inputValue);
-  
-  //     if (percent > 100) {
-  //       percent = 100;
-  //     } else if (percent < 0 || isNaN(percent)) {
-  //       percent = 0;
-  //     }
-  
-  //     this.newProject.downPayment = percent;
-  //     event.target.value = percent;
-  
-  //   } else {
-  //     let pesoAmount = Number(inputValue);
-  
-  //     if (pesoAmount > this.newProject.totalAmount) {
-  //       pesoAmount = this.newProject.totalAmount;
-  //     } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
-  //       pesoAmount = 0;
-  //     }
-  
-  //     this.newProject.downPayment = pesoAmount;
-  //     event.target.value = pesoAmount;
-  //   }
-  // }
-
   onDownPaymentInput(event: any): void {
     let inputValue = event.target.value;
   
@@ -1845,18 +1952,47 @@ deletingPhaseId: string | null = null;
     }
   }
 
+  // limitMilestoneAmount(event: any) {
+  //   let inputValue = parseFloat(event.target.value.replace(/[^0-9.]/g, '')) || 0;
+  
+  //   const remaining = this.getRemainingMilestoneAmount();
+  
+  //   if (inputValue > remaining) {
+  //     inputValue = remaining;
+  //     this.toastr.warning('Milestone Amount cannot exceed the Remaining Amount.', 'Warning');
+  //   }
+  
+  //   // ✅ Update the model with capped value
+  //   this.newMilestone.amount = inputValue;
+  
+  //   // ✅ Re-format input display
+  //   if (inputValue % 1 === 0) {
+  //     event.target.value = '₱' + inputValue.toLocaleString('en-PH', { minimumFractionDigits: 0 });
+  //   } else {
+  //     event.target.value = '₱' + inputValue.toLocaleString('en-PH', { minimumFractionDigits: 2 });
+  //   }
+  // }
 
-  
-  
   limitMilestoneAmount(event: any) {
-    let inputValue = parseFloat(event.target.value.replace(/[^0-9.]/g, '')) || 0;
+    let rawValue = event.target.value.replace(/[^0-9.]/g, '');
   
-    if (inputValue > this.newPhase.amountToBill) {
-      inputValue = this.newPhase.amountToBill;
+    if (rawValue === '') {
+      this.newMilestone.amount = null;
+      event.target.value = '';
+      return;
+    }
+  
+    let inputValue = parseFloat(rawValue);
+  
+    const remaining = this.getRemainingMilestoneAmount();
+  
+    if (inputValue > remaining) {
+      inputValue = remaining;
       this.toastr.warning('Milestone Amount cannot exceed the Remaining Amount.', 'Warning');
     }
   
-    // Format: No decimal if whole number, 2 decimals if needed
+    this.newMilestone.amount = inputValue;
+  
     if (inputValue % 1 === 0) {
       event.target.value = '₱' + inputValue.toLocaleString('en-PH', { minimumFractionDigits: 0 });
     } else {
@@ -1864,14 +2000,233 @@ deletingPhaseId: string | null = null;
     }
   }
   
+  
 
+
+  newMilestone = { name: '', amount: 0 };
+  milestones: any[] = [];
+  isAddingMilestone = false;
+  // @ViewChild('milestoneForm') milestoneForm: NgForm;
+  @ViewChild('milestoneForm') milestoneForm!: NgForm;
 
   
 
 
 
+  // addNewMilestone() {
+  //   if (this.isAddingMilestone || !this.newMilestone.name || this.newMilestone.amount <= 0) return;
+  
+  //   this.isAddingMilestone = true;
+  
+  //   setTimeout(() => {
+  //     this.milestones.push({ ...this.newMilestone });
+  //     this.newMilestone = { name: '', amount: 0 };
+  //     this.isAddingMilestone = false;
+  //   }, 300); // short delay for visual effect
+  // }
+  addNewMilestone() {
+    if (this.isAddingMilestone) return;
+  
+    if (this.milestoneForm.invalid) {
+      Object.values(this.milestoneForm.controls).forEach(control => control.markAsTouched());
+      return;
+    }
+  
+    this.isAddingMilestone = true;
+  
+    setTimeout(() => {
+      this.milestones.push({ ...this.newMilestone });
+      this.newMilestone = { name: '', amount: 0 };
+      this.milestoneForm.resetForm(); // reset field + validation
+      this.isAddingMilestone = false;
+    }, 300);
+  }
+  
+  
+  
+  removingMilestoneIndexes: number[] = [];
+
+  removeMilestone(index: number) {
+    if (this.removingMilestoneIndexes.includes(index)) return;
+  
+    this.removingMilestoneIndexes.push(index);
+  
+    setTimeout(() => {
+      this.milestones.splice(index, 1);
+      this.removingMilestoneIndexes = this.removingMilestoneIndexes.filter(i => i !== index);
+    }, 300); // optional delay for smooth effect
+  }
+  
   
 
+  getRemainingMilestoneAmount(): number {
+    const total = this.milestones.reduce((sum, m) => sum + Number(m.amount), 0);
+    return this.newPhase.amountToBill - total;
+  }
+  
+
+  activeProjectId: string = '';
+
+  // saveNewPhase() {
+  //   if (!this.activeProjectId || this.isSaving) return;
+  
+  //   this.isSaving = true;
+  
+  //   const phaseData = {
+  //     phaseName: this.newPhase.name,
+  //     startDate: this.newPhase.startDate,
+  //     deadline: this.newPhase.completionDate,
+  //     percentage: this.newPhase.percentage,
+  //     amountToBill: this.newPhase.amountToBill,
+  //     progress: 0,
+  //     projectId: this.activeProjectId,
+  //     milestones: this.milestones.map(m => ({
+  //       name: m.name,
+  //       amount: m.amount,
+  //       previousOld: 0,
+  //       previous: 0,
+  //       present: 0,
+  //       presentValue: 0,
+  //       amountDue: 0,
+  //       presentMilestoneDue: 0,
+  //       progress: "Completed",
+  //       isEditing: false,
+  //       isSaving: false
+  //     })),
+  //     expanded: true,
+  //     isEditing: false,
+  //     isSaving: false,
+  //     completed: true
+  //   };
+  
+  //   // this.projectsService.createPhase(phaseData).subscribe({
+  //   //   next: () => {
+  //   //     this.toastr.success('Phase saved successfully');
+  //   //     this.cancelAddPhaseForm();
+  //   //     this.loadProjects(() => {
+  //   //       const target = this.projects.find(p => p.projectId === this.activeProjectId);
+  //   //       if (target) target.expanded = true;
+  //   //     });
+  //   //     this.phaseModalInstance.hide();
+  //   //     this.isSaving = false;
+  //   //   },
+  //   //   error: () => {
+  //   //     this.toastr.error('Failed to save phase');
+  //   //     this.isSaving = false;
+  //   //   }
+  //   // });
+  //   this.projectsService.createPhase(phaseData).subscribe({
+  //     next: () => {
+  //       // ➕ Update project balance & percentage after saving phase
+  //       this.projectsService
+  //         .updateProjectAfterPhase(this.activeProjectId, phaseData.percentage, phaseData.amountToBill)
+  //         .subscribe({
+  //           next: () => {
+  //             this.toastr.success('Phase saved and project updated');
+  //             this.cancelAddPhaseForm();
+  //             this.loadProjects(() => {
+  //               const target = this.projects.find(p => p.projectId === this.activeProjectId);
+  //               if (target) target.expanded = true;
+  //             });
+  //             this.phaseModalInstance.hide();
+  //             this.isSaving = false;
+  //           },
+  //           error: () => {
+  //             this.toastr.error('Saved phase but failed to update project');
+  //             this.isSaving = false;
+  //           }
+  //         });
+  //     },
+  //     error: () => {
+  //       this.toastr.error('Failed to save phase');
+  //       this.isSaving = false;
+  //     }
+  //   });
+    
+  // }
+  
+  
+
+
+
+  
+  @ViewChild('phaseForm') phaseForm: NgForm;
+
+  saveNewPhase() {
+    if (!this.activeProjectId || this.isSaving) return;
+  
+    // 💡 Mark all fields touched to trigger validation messages
+    if (this.phaseForm.invalid) {
+      Object.values(this.phaseForm.controls).forEach(control => {
+        control.markAsTouched();
+      });
+      return;
+    }
+    
+  
+    this.isSaving = true;
+  
+    const phaseData = {
+      phaseName: this.newPhase.name,
+      startDate: this.newPhase.startDate,
+      deadline: this.newPhase.completionDate,
+      percentage: this.newPhase.percentage,
+      amountToBill: this.newPhase.amountToBill,
+      progress: 0,
+      projectId: this.activeProjectId,
+      milestones: this.milestones.map(m => ({
+        name: m.name,
+        amount: m.amount,
+        previousOld: 0,
+        previous: 0,
+        present: 0,
+        presentValue: 0,
+        amountDue: 0,
+        presentMilestoneDue: 0,
+        progress: "Completed",
+        isEditing: false,
+        isSaving: false
+      })),
+      expanded: true,
+      isEditing: false,
+      isSaving: false,
+      completed: true
+    };
+  
+    this.projectsService.createPhase(phaseData).subscribe({
+      next: () => {
+        this.projectsService.updateProjectAfterPhase(this.activeProjectId, phaseData.percentage, phaseData.amountToBill).subscribe({
+          next: () => {
+            this.toastr.success('Phase saved and project updated');
+            this.cancelAddPhaseForm();
+            
+            // this.loadProjects(() => {
+            //   const target = this.projects.find(p => p.projectId === this.activeProjectId);
+            //   if (target) target.expanded = true;
+            // });
+            // this.phaseModalInstance.hide();
+            // this.isSaving = false;
+            this.loadProjects(() => {
+              const target = this.projects.find(p => p.projectId === this.activeProjectId);
+              if (target) target.expanded = true;
+    
+              this.phaseModalInstance.hide(); // ✅ Only hide after reload finishes
+              this.isSaving = false;
+            });
+          },
+          error: () => {
+            this.toastr.error('Saved phase but failed to update project');
+            this.isSaving = false;
+          }
+        });
+      },
+      error: () => {
+        this.toastr.error('Failed to save phase');
+        this.isSaving = false;
+      }
+    });
+  }
+  
 
 
 

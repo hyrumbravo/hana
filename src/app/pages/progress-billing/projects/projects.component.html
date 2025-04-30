@@ -495,8 +495,8 @@
           <div class="mb-3">
             <label class="form-label fw-bold">
               PROJECT DESCRIPTION <span class="text-danger">*</span>
-              <span class="text-danger" *ngIf="projectDescriptionModel.invalid && projectDescriptionModel.touched">This field is required</span>
             </label>
+            <span class="text-danger" *ngIf="projectDescriptionModel.invalid && projectDescriptionModel.touched">This field is required</span>
             <textarea
               class="form-control"
               rows="3"
@@ -512,8 +512,8 @@
           <div class="mb-3">
             <label class="form-label fw-bold">
               CLIENT NAME <span class="text-danger">*</span>
-              <span class="text-danger" *ngIf="clientNameModel.invalid && clientNameModel.touched">This field is required</span>
             </label>
+            <span class="text-danger" *ngIf="clientNameModel.invalid && clientNameModel.touched">This field is required</span>
             <input type="text" class="form-control" #clientNameRef [(ngModel)]="newProject.clientName" name="clientName" required #clientNameModel="ngModel" />
           </div>
         
@@ -521,15 +521,15 @@
             <div class="col-md-6">
               <label class="form-label fw-bold">
                 START DATE <span class="text-danger">*</span>
-                <span class="text-danger" *ngIf="startDateModel.invalid && startDateModel.touched">This field is required</span>
               </label>
+              <span class="text-danger" *ngIf="startDateModel.invalid && startDateModel.touched">This field is required</span>
               <input type="date" class="form-control" #startDateRef [(ngModel)]="newProject.startDate" name="startDate" required #startDateModel="ngModel" />
             </div>
             <div class="col-md-6">
               <label class="form-label fw-bold">
                 COMPLETION DATE <span class="text-danger">*</span>
-                <span class="text-danger" *ngIf="deadlineModel.invalid && deadlineModel.touched">This field is required</span>
               </label>
+              <span class="text-danger" *ngIf="deadlineModel.invalid && deadlineModel.touched">This field is required</span>
               <input type="date" class="form-control" #deadlineRef [(ngModel)]="newProject.deadline" name="deadline" required #deadlineModel="ngModel" />
             </div>
           </div>
@@ -538,8 +538,8 @@
             <div class="col-md-6">
               <label class="form-label fw-bold">
                 TOTAL PROJECT AMOUNT <span class="text-danger">*</span>
-                <span class="text-danger" *ngIf="totalAmountModel.invalid && totalAmountModel.touched">This field is required</span>
               </label>
+              <span class="text-danger" *ngIf="totalAmountModel.invalid && totalAmountModel.touched">This field is required</span>
               <input type="text" class="form-control" #totalAmountRef [(ngModel)]="newProject.totalAmount" name="totalAmount" required #totalAmountModel="ngModel" appPesoFormat/>
             </div>
 
@@ -849,44 +849,44 @@
         <h6 class="total-balance">
           Total Balance: ₱{{ totalBalanceAfterDownPayment | number: '1.2-2' }}
         </h6>
-        
-        
         <h6 class="fw-bold text-danger" style="font-size: 20px;">
           Unallocated Percentage: {{ unallocatedPercentage }}% (₱{{ remainingBalance | number }})
         </h6>
-
-        
         <button type="button" class="btn-close" (click)="closeAddPhaseModal()" style="position: absolute; right: 15px; top: 10px;">
           <i class="fas fa-times"></i>
         </button>
 
-        <form>
+        <form #phaseForm="ngForm">
           <div class="mb-2">
-            <label class="form-label fw-bold">PHASE NAME</label>
-            <input type="text" class="form-control" name="phaseName">
+            <label class="form-label fw-bold">PHASE NAME <span class="text-danger">*</span></label> <span class="text-danger" *ngIf="phaseNameModel.invalid && phaseNameModel.touched">This field is required</span>
+            <input type="text" class="form-control" name="phaseName" [(ngModel)]="newPhase.name" required #phaseNameModel="ngModel">
           </div>
 
           <div class="row">
             <div class="col-md-6">
-              <label class="form-label fw-bold">START DATE</label>
-              <input type="date" class="form-control" name="phaseStartDate">
+              <label class="form-label fw-bold">START DATE <span class="text-danger">*</span></label><span class="text-danger" *ngIf="NewstartDateModel.invalid && NewstartDateModel.touched">This field is required</span>
+              <input type="date" class="form-control" name="NewphaseStartDate" [(ngModel)]="newPhase.startDate" required #NewstartDateModel="ngModel">
+              
             </div>
             <div class="col-md-6">
-              <label class="form-label fw-bold">COMPLETION DATE</label>
-              <input type="date" class="form-control" name="phaseCompletionDate">
+              <label class="form-label fw-bold">COMPLETION DATE <span class="text-danger">*</span></label><span class="text-danger" *ngIf="completionDateModel.invalid && completionDateModel.touched">This field is required</span>
+              <input type="date" class="form-control" name="phaseCompletionDate" [(ngModel)]="newPhase.completionDate" required #completionDateModel="ngModel">
             </div>
           </div>
 
           <div class="row mt-2">
             <div class="col-md-6">
-              <label class="form-label fw-bold">PHASE (%)</label>
+              <label class="form-label fw-bold">PHASE (%) <span class="text-danger">*</span></label><span class="text-danger" *ngIf="phasePercentageModel.invalid && phasePercentageModel.touched">This field is required</span>
               <input
                 type="number"
                 class="form-control"
                 [(ngModel)]="newPhase.percentage"
                 name="modalPhasePercentage"
+                required min="1" max="100"
+                #phasePercentageModel="ngModel"
                 (input)="limitPhasePercentageForModal($event)"
               />
+
             </div>
           
             <div class="col-md-6">
@@ -906,28 +906,46 @@
         <div class="p-2 mb-3">
           <h6 class="fw-bold" style="font-size: 32px;">Add Milestone</h6> 
           <h6 class="fw-bold text-danger" style="font-size: 20px;">
-            Remaining Amount: ₱{{ newPhase.amountToBill | number:'1.2-2' }}
+            Remaining Amount: ₱{{ getRemainingMilestoneAmount() | number:'1.2-2' }}
           </h6>
-          <div class="row align-items-center">
-            <div class="col-md-5 mb-2">
-              <label class="form-label fw-bold">MILESTONE NAME</label>
-              <input type="text" class="form-control">
+          <form #milestoneForm="ngForm">
+            <div class="row align-items-end">
+              <div class="col-md-5 mb-2">
+                <label class="form-label fw-bold">MILESTONE NAME <span class="text-danger">*</span></label>
+                <span class="text-danger" *ngIf="milestoneNameModel.invalid && milestoneNameModel.touched">This field is required</span>
+                <input type="text" class="form-control" name="milestoneName" [(ngModel)]="newMilestone.name" required #milestoneNameModel="ngModel">
+              </div>
+            
+              <div class="col-md-5 mb-2">
+                <label class="form-label fw-bold">MILESTONE AMOUNT <span class="text-danger">*</span></label>
+                <span class="text-danger" *ngIf="milestoneAmountModel.invalid && milestoneAmountModel.touched">This field is required</span>
+                <input type="text" class="form-control" name="milestoneAmount" [(ngModel)]="newMilestone.amount" required #milestoneAmountModel="ngModel"
+                       (input)="limitMilestoneAmount($event)" appPesoFormat>
+              </div>
+            
+              <div class="col-md-2 mb-2">
+                <label class="d-block invisible">Add</label> <!-- Invisible label for spacing alignment -->
+                <!-- <button class="btn btn-primary btn-sm w-100"
+                        type="button"
+                        [disabled]="isAddingMilestone"
+                        (click)="addNewMilestone()">
+                  <span *ngIf="!isAddingMilestone"><i class="fas fa-plus"></i> Add</span>
+                  <span *ngIf="isAddingMilestone"><i class="fas fa-spinner fa-spin"></i> Adding...</span>
+                </button> -->
+                <button class="btn btn-primary btn-sm w-100"
+                  type="button"
+                  [disabled]="isAddingMilestone || getRemainingMilestoneAmount() <= 0"
+                  (click)="addNewMilestone()">
+                  <span *ngIf="!isAddingMilestone"><i class="fas fa-plus"></i> Add</span>
+                  <span *ngIf="isAddingMilestone"><i class="fas fa-spinner fa-spin"></i> Adding...</span>
+                </button>
+
+              </div>
             </div>
-            <div class="col-md-5 mb-2">
-              <label class="form-label fw-bold">MILESTONE AMOUNT</label>
-              <input 
-                type="text" 
-                class="form-control"
-                (input)="limitMilestoneAmount($event)"
-                appPesoFormat
-              >
-            </div>
-            <div class="col-md-2 mb-2 d-flex justify-content-center align-items-end">
-              <button class="btn btn-primary btn-sm w-100">
-                <i class="fas fa-plus"></i> Add
-              </button>
-            </div>
-          </div>
+            
+          </form>
+          
+          
           <hr class="my-3" style="height: 3px; background-color: black; border: none;">
         </div>
         
@@ -943,31 +961,40 @@
                 <th style="width: 20%; text-align: center;">Action</th>
               </tr>
             </thead>
-            <tbody>           
-              <tr>
-                <td>1</td>
-                <td>Example Milestone</td>
-                <td>₱1,000.00</td>
+            <tbody>
+              <tr *ngFor="let m of milestones; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td>{{ m.name }}</td>
+                <td>₱{{ m.amount | number: '1.2-2' }}</td>
                 <td class="text-center">
-                  <button class="btn btn-sm cancel-btn">
-                    <i class="far fa-trash-alt"></i> Delete
+                  <button class="btn btn-sm cancel-btn" [disabled]="removingMilestoneIndexes.includes(i)" (click)="removeMilestone(i)">
+                    <span *ngIf="!removingMilestoneIndexes.includes(i)">
+                      <i class="far fa-trash-alt"></i>
+                    </span>
+                    <span *ngIf="removingMilestoneIndexes.includes(i)">
+                      <i class="fas fa-spinner fa-spin"></i>
+                    </span>
                   </button>
+                  
                 </td>
               </tr>
             </tbody>
+            
           </table>
         </div>
-        
-        
-        
-        
-        
       </div>
       <div class="modal-footer">
-        <button type="button" class="phase-action-btn cancel-btn" (click)="closeAddPhaseModal()">Cancel</button>
-        <button type="button" class="phase-action-btn save-btn" disabled>
-          <span><i class="fas fa-save"></i> Save</span>
+        <button type="button" class="phase-action-btn cancel-btn" [disabled]="isCancelling" (click)="closeAddPhaseModal()">
+          <span *ngIf="!isCancelling"><i class="fas fa-times"></i> Cancel</span>
+          <span *ngIf="isCancelling"><i class="fas fa-spinner fa-spin"></i> Cancelling...</span>
         </button>
+        
+        <button type="button" class="phase-action-btn save-btn" [disabled]="isSaving" (click)="saveNewPhase()">
+          <span *ngIf="!isSaving"><i class="fas fa-save"></i> Save</span>
+          <span *ngIf="isSaving"><i class="fas fa-spinner fa-spin"></i> Saving...</span>
+        </button>
+        
+        
       </div>
     </div>
   </div>

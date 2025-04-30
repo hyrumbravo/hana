@@ -258,8 +258,38 @@ export class ProjectsService {
   }
 
 
+  updateProjectAfterPhase(projectId: string, phasePercentage: number, amountToBill: number) {
+    const findUrl = `${this.projectBaseUrl}/_find`;
+    const requestBody = {
+      selector: { projectId: projectId },
+      limit: 1
+    };
+  
+    return this.http.post(findUrl, requestBody, { headers: this.headers }).pipe(
+      switchMap((response: any) => {
+        const project = response.docs[0];
+        if (!project) return of(null);
+  
+        const updatedProject = {
+          ...project,
+          unallocatedPercentage: Math.max((+project.unallocatedPercentage || 0) - phasePercentage, 0),
+          remainingTotalBalance: Math.max((+project.remainingTotalBalance || 0) - amountToBill, 0)
+        };
+  
+        return this.http.put(`${this.projectBaseUrl}/${project._id}?rev=${project._rev}`, updatedProject, { headers: this.headers });
+      })
+    );
+  }
+  
 
 
+
+
+  
+
+
+
+  
 
 
   
