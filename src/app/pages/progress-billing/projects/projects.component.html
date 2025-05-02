@@ -183,10 +183,8 @@
               <tr *ngIf="item.expanded" [class.expanded-row]="item.expanded">
                 <td style="background-color: #d6d4d4;" colspan="12">
                   <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-                    <!-- <button (click)="openPhaseModal(item.projectId)" class="btn btn-sm btn-success">
-                      <i class="fas fa-plus"></i> Add Phase
-                    </button> -->
-                    <button 
+
+                    <!-- <button 
                       (click)="openPhaseModal(item.projectId)" 
                       class="btn btn-sm btn-success" 
                       [disabled]="isOpeningPhaseModal"
@@ -197,7 +195,22 @@
                       <span *ngIf="isOpeningPhaseModal">
                         <i class="fas fa-spinner fa-spin"></i> Loading...
                       </span>
-                    </button>
+                    </button> -->
+                    <ng-container *ngIf="item.unallocatedPercentage > 0">
+                      <button 
+                        (click)="openPhaseModal(item.projectId)" 
+                        class="btn btn-sm btn-success" 
+                        [disabled]="isOpeningPhaseModal"
+                      >
+                        <span *ngIf="!isOpeningPhaseModal">
+                          <i class="fas fa-plus"></i> Add Phase
+                        </span>
+                        <span *ngIf="isOpeningPhaseModal">
+                          <i class="fas fa-spinner fa-spin"></i> Loading...
+                        </span>
+                      </button>
+                    </ng-container>
+                    
 
                   </div>
                   <table width="100%" class="phases-table" >
@@ -478,8 +491,8 @@
             <label class="form-label fw-bold">
               PROJECT NAME 
               <span class="text-danger">*</span>
-              <span class="text-danger" *ngIf="projectNameModel.invalid && projectNameModel.touched">This field is required</span>
             </label>
+            <span class="text-danger" *ngIf="projectNameModel.invalid && projectNameModel.touched">This field is required</span>
             <input
               type="text"
               class="form-control"
@@ -581,11 +594,26 @@
                 </span> -->
               </label>     
               
+              <!-- <input
+                type="text"
+                class="form-control"
+                #downPaymentRef
+                [value]="downPaymentType === 'peso' ? ('₱' + (newProject.downPayment ).toLocaleString('en-PH')) : newProject.downPayment"
+                name="downPayment"
+                required
+                [max]="downPaymentType === 'percent' ? 100 : newProject.totalAmount"
+                [min]="0"
+                [disabled]="false"
+                (input)="onDownPaymentInput($event)"
+              /> -->
               <input
                 type="text"
                 class="form-control"
                 #downPaymentRef
-                [value]="downPaymentType === 'peso' ? ('₱' + (newProject.downPayment || 0).toLocaleString('en-PH')) : newProject.downPayment"
+                [value]="downPaymentType === 'peso' 
+                ? ('₱' + newProject.downPayment.toLocaleString('en-PH')) 
+                : newProject.downPayment + '%'"
+              
                 name="downPayment"
                 required
                 [max]="downPaymentType === 'percent' ? 100 : newProject.totalAmount"
@@ -593,9 +621,6 @@
                 [disabled]="false"
                 (input)="onDownPaymentInput($event)"
               />
-
-
-
             </div>
           </div>
         </form>
@@ -695,10 +720,6 @@
                   <td>{{ phase.percentage }}%</td>
                   <td>₱{{ phase.amountToBill | number }}</td>
                   <td style="display: flex; justify-content: center; align-items: center; height: 100%;">
-                    <!-- <button class="delete-btn delete-phase-btn" (click)="deletePhase(phase.phaseId)" >Delete Phase</button>    -->
-                    <!-- <button class="delete-btn delete-confirm-btn" (click)="deletePhase(phase.phaseId)">
-                      <i class="far fa-trash-alt"></i>
-                    </button> -->
                     <button 
                       class="delete-btn delete-confirm-btn" 
                       (click)="deletePhase(phase.phaseId)" 
@@ -724,6 +745,7 @@
                     </h6>
                     <div class="row">
                       <div class="col-md-5">
+                        
                         <input type="text" class="form-control" [(ngModel)]="phase.newMilestone.name" placeholder="Milestone Name">
                       </div>
                       <div class="col-md-5">
@@ -748,6 +770,8 @@
                     </div>
                   </td>
                 </tr>
+                
+                
                 
           
                 <tr>
@@ -846,9 +870,9 @@
     <div class="modal-content">
       <div class="modal-body">
         <h6 class="fw-bold" style="font-size: 32px;">Add Project Phase</h6>
-        <h6 class="total-balance">
+        <!-- <h6 class="total-balance">
           Total Balance: ₱{{ totalBalanceAfterDownPayment | number: '1.2-2' }}
-        </h6>
+        </h6> -->
         <h6 class="fw-bold text-danger" style="font-size: 20px;">
           Unallocated Percentage: {{ unallocatedPercentage }}% (₱{{ remainingBalance | number }})
         </h6>

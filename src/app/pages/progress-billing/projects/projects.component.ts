@@ -713,18 +713,39 @@ openPhaseModal(projectId: string): void {
   // }
 
 
-calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases: any[]): number {
-  const downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
-  let remainingAmount = totalAmount - downPaymentAmount;
+  // calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases: any[]): number {
+  //   const downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
+  //   let remainingAmount = totalAmount - downPaymentAmount;
 
-  phases.forEach(phase => {
-    const phaseAmount = this.calculatePhaseAmount(totalAmount, downPaymentPercentage, phase.percentage);
-    const completedAmount = (phase.progress / 100) * phaseAmount;
-    remainingAmount -= completedAmount;
-  });
+  //   phases.forEach(phase => {
+  //     const phaseAmount = this.calculatePhaseAmount(totalAmount, downPaymentPercentage, phase.percentage);
+  //     const completedAmount = (phase.progress / 100) * phaseAmount;
+  //     remainingAmount -= completedAmount;
+  //   });
 
-  return remainingAmount;
-}
+  //   return remainingAmount;
+  // }
+
+  calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases: any[]): number {
+    const downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
+    let remainingAmount = totalAmount - downPaymentAmount;
+  
+    phases.forEach(phase => {
+      if (phase.progress === 100) {
+        remainingAmount -= phase.amountToBill || 0;
+      } else if (Array.isArray(phase.milestones)) {
+        phase.milestones.forEach((milestone: any) => {
+          if (milestone.progress === 'Completed') {
+            remainingAmount -= milestone.amount || 0;
+          }
+        });
+      }
+    });
+  
+    return remainingAmount;
+  }
+  
+  
 
 
   //phase creation
@@ -744,6 +765,271 @@ calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases
   isSaving = false; // Flag to track saving state
 
   isPercentage: boolean = true;
+
+  // saveProject() {
+  //   if (this.isSaving) return;
+  
+  //   this.isSaving = true;
+  
+  //   const clearErrorStyles = (ref: ElementRef) => {
+  //     if (ref.nativeElement && ref.nativeElement.classList) {
+  //       ref.nativeElement.classList.remove('ng-touched', 'ng-invalid');
+  //     }
+  //   };
+  
+  //   const refs = [
+  //     this.projectNameRef,
+  //     this.projectDescriptionRef,
+  //     this.clientNameRef,
+  //     this.startDateRef,
+  //     this.deadlineRef,
+  //     this.totalAmountRef,
+  //     this.downPaymentRef
+  //   ];
+  
+  //   refs.forEach(clearErrorStyles);
+  
+  //   const models = [
+  //     this.projectNameModel,
+  //     this.projectDescriptionModel,
+  //     this.clientNameModel,
+  //     this.startDateModel,
+  //     this.deadlineModel,
+  //     this.totalAmountModel,
+  //     this.downPaymentModel
+  //   ];
+  
+  //   // models.forEach((model) => model.control.markAsTouched());
+  //   models.forEach((model) => {
+  //     if (model && model.control) {
+  //       model.control.markAsTouched();
+  //     }
+  //   });
+    
+  
+  //   const requiredFields = [
+  //     { value: this.newProject.projectName, ref: this.projectNameRef },
+  //     { value: this.newProject.projectDescription, ref: this.projectDescriptionRef },
+  //     { value: this.newProject.clientName, ref: this.clientNameRef },
+  //     { value: this.newProject.startDate, ref: this.startDateRef },
+  //     { value: this.newProject.deadline, ref: this.deadlineRef },
+  //     { value: this.newProject.totalAmount, ref: this.totalAmountRef },
+  //     { value: this.newProject.downPayment, ref: this.downPaymentRef }
+  //   ];
+  
+  //   for (const field of requiredFields) {
+  //     if (field.value == null || field.value === '') {
+  //       this.scrollTo(field.ref);
+  //       this.isSaving = false;
+  //       return;
+  //     }
+  //   }
+  
+  //   this.projectsService.getProjects().subscribe({
+  //     next: (response) => {
+  //       const projects = response.rows.map((row: any) => row.doc);
+  //       const maxId = projects.reduce((max: number, project: any) =>
+  //         project.projectId && !isNaN(Number(project.projectId)) ?
+  //           Math.max(max, Number(project.projectId)) : max, 0);
+  
+  //       const newProjectId = (maxId + 1).toString().padStart(4, '0');
+  //       this.newProject.projectId = newProjectId;
+  
+
+  //       const totalAmount = this.newProject.totalAmount || 0;
+  //       const inputValue = this.newProject.downPayment || 0;
+  //       let downPaymentAmount = 0;
+  //       let downPaymentPercentage = 0;
+
+  //       if (this.downPaymentType === 'percent') {
+  //         downPaymentPercentage = inputValue;
+  //         downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
+  //       } else if (this.downPaymentType === 'peso') {
+  //         downPaymentAmount = inputValue;
+  //         downPaymentPercentage = (inputValue / totalAmount) * 100;
+  //       }
+
+  //       // Store percentage in CouchDB as requested
+  //       this.newProject.downPayment = downPaymentPercentage.toFixed(2); // Save as string percentage (e.g., "50.00")
+
+  //       // Save both calculated values
+  //       this.newProject.downPaymentAmount = downPaymentAmount;
+  //       this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
+  //       this.newProject.progress = 0;
+
+  //       // ➡️ Calculate unallocated percentage and remaining balance
+  //       const unallocatedPercentage = this.getUnallocatedPercentage();
+  //       const remainingTotalBalance = this.getRemainingTotalBalance();
+
+  //       // ➡️ Store them inside newProject
+  //       this.newProject.unallocatedPercentage = unallocatedPercentage.toFixed(2); // Save as string
+  //       this.newProject.remainingTotalBalance = remainingTotalBalance;
+
+
+
+  
+  //       this.projectsService.createProject(this.newProject).subscribe({
+  //         next: (projectResponse) => {
+  //           this.toastr.success('Project saved successfully', 'Success');
+  //           this.loadProjects();
+  
+  //           this.newPhases.forEach((phase) => {
+  //             const phaseData = {
+  //               ...phase,
+  //               projectId: newProjectId
+  //             };
+  
+  //             this.projectsService.createPhase(phaseData).subscribe({
+  //               next: (phaseResponse) => console.log('Phase saved:', phaseResponse),
+  //               error: (phaseError) => {
+  //                 console.error('Error saving phase:', phaseError);
+  //                 this.toastr.error('Failed to save phase', 'Error');
+  //               }
+  //             });
+  //           });
+  
+  //           this.cancelForm();
+  //           this.modalInstance.hide();
+  //           this.isSaving = false;
+  //         },
+  //         error: (error) => {
+  //           console.error(error);
+  //           this.toastr.error('Failed to save project', 'Error');
+  //           this.isSaving = false;
+  //         }
+  //       });
+  //     },
+  //     error: (error) => {
+  //       console.error(error);
+  //       this.toastr.error('Failed to fetch projects', 'Error');
+  //       this.isSaving = false;
+  //     }
+  //   });
+  // }
+
+  // saveProject() {
+  //   if (this.isSaving) return;
+  
+  //   this.isSaving = true;
+  
+  //   const clearErrorStyles = (ref: ElementRef) => {
+  //     if (ref.nativeElement && ref.nativeElement.classList) {
+  //       ref.nativeElement.classList.remove('ng-touched', 'ng-invalid');
+  //     }
+  //   };
+  
+  //   const refs = [
+  //     this.projectNameRef,
+  //     this.projectDescriptionRef,
+  //     this.clientNameRef,
+  //     this.startDateRef,
+  //     this.deadlineRef,
+  //     this.totalAmountRef,
+  //     this.downPaymentRef
+  //   ];
+  //   refs.forEach(clearErrorStyles);
+  
+  //   const models = [
+  //     this.projectNameModel,
+  //     this.projectDescriptionModel,
+  //     this.clientNameModel,
+  //     this.startDateModel,
+  //     this.deadlineModel,
+  //     this.totalAmountModel,
+  //     this.downPaymentModel
+  //   ];
+  //   models.forEach((model) => {
+  //     if (model && model.control) model.control.markAsTouched();
+  //   });
+  
+  //   const requiredFields = [
+  //     { value: this.newProject.projectName, ref: this.projectNameRef },
+  //     { value: this.newProject.projectDescription, ref: this.projectDescriptionRef },
+  //     { value: this.newProject.clientName, ref: this.clientNameRef },
+  //     { value: this.newProject.startDate, ref: this.startDateRef },
+  //     { value: this.newProject.deadline, ref: this.deadlineRef },
+  //     { value: this.newProject.totalAmount, ref: this.totalAmountRef },
+  //     { value: this.newProject.downPayment, ref: this.downPaymentRef }
+  //   ];
+  
+  //   for (const field of requiredFields) {
+  //     if (field.value === null || field.value === '') {
+
+  //       this.scrollTo(field.ref);
+  //       this.isSaving = false;
+  //       return;
+  //     }
+  //   }
+  
+  //   this.projectsService.getProjects().subscribe({
+  //     next: (response) => {
+  //       const projects = response.rows.map((row: any) => row.doc);
+  //       const maxId = projects.reduce((max: number, project: any) =>
+  //         project.projectId && !isNaN(Number(project.projectId)) ?
+  //           Math.max(max, Number(project.projectId)) : max, 0);
+  
+  //       const newProjectId = (maxId + 1).toString().padStart(4, '0');
+  //       this.newProject.projectId = newProjectId;
+  
+  //       const totalAmount = this.newProject.totalAmount || 0;
+  //       const inputValue = this.newProject.downPayment || 0;
+  //       let downPaymentAmount = 0;
+  //       let downPaymentPercentage = 0;
+  
+  //       if (this.downPaymentType === 'percent') {
+  //         downPaymentPercentage = inputValue;
+  //         downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
+  //       } else if (this.downPaymentType === 'peso') {
+  //         downPaymentAmount = inputValue;
+  //         downPaymentPercentage = (inputValue / totalAmount) * 100;
+  //       }
+  
+  //       this.newProject.downPayment = downPaymentPercentage.toFixed(2);
+  //       this.newProject.downPaymentAmount = downPaymentAmount;
+  //       this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
+  //       this.newProject.progress = 0;
+  //       this.newProject.unallocatedPercentage = this.getUnallocatedPercentage().toFixed(2);
+  //       this.newProject.remainingTotalBalance = this.getRemainingTotalBalance();
+  
+  //       this.projectsService.createProject(this.newProject).subscribe({
+  //         next: (projectResponse) => {
+  //           this.toastr.success('Project saved successfully', 'Success');
+  //           this.loadProjects();
+  
+  //           this.newPhases.forEach((phase, index) => {
+  //             const phaseData = {
+  //               ...phase,
+  //               projectId: newProjectId,
+  //               order: index // 🔥 preserve order
+  //             };
+  
+  //             this.projectsService.createPhase(phaseData).subscribe({
+  //               next: (phaseResponse) => console.log('Phase saved:', phaseResponse),
+  //               error: (phaseError) => {
+  //                 console.error('Error saving phase:', phaseError);
+  //                 this.toastr.error('Failed to save phase', 'Error');
+  //               }
+  //             });
+  //           });
+  
+  //           this.cancelForm();
+  //           this.modalInstance.hide();
+  //           this.isSaving = false;
+  //         },
+  //         error: (error) => {
+  //           console.error(error);
+  //           this.toastr.error('Failed to save project', 'Error');
+  //           this.isSaving = false;
+  //         }
+  //       });
+  //     },
+  //     error: (error) => {
+  //       console.error(error);
+  //       this.toastr.error('Failed to fetch projects', 'Error');
+  //       this.isSaving = false;
+  //     }
+  //   });
+  // }
 
   saveProject() {
     if (this.isSaving) return;
@@ -765,7 +1051,6 @@ calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases
       this.totalAmountRef,
       this.downPaymentRef
     ];
-  
     refs.forEach(clearErrorStyles);
   
     const models = [
@@ -777,14 +1062,9 @@ calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases
       this.totalAmountModel,
       this.downPaymentModel
     ];
-  
-    // models.forEach((model) => model.control.markAsTouched());
     models.forEach((model) => {
-      if (model && model.control) {
-        model.control.markAsTouched();
-      }
+      if (model && model.control) model.control.markAsTouched();
     });
-    
   
     const requiredFields = [
       { value: this.newProject.projectName, ref: this.projectNameRef },
@@ -797,8 +1077,17 @@ calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases
     ];
   
     for (const field of requiredFields) {
-      if (field.value == null || field.value === '') {
+      if (field.value === null || field.value === '') {
         this.scrollTo(field.ref);
+        this.isSaving = false;
+        return;
+      }
+    }
+  
+    // ❌ Block if any milestone form has remaining amount
+    for (const phase of this.newPhases) {
+      if (phase.showMilestoneForm && this.getRemainingAmount(phase) > 0) {
+        this.toastr.error('Each milestone must fully allocate its amount before saving.');
         this.isSaving = false;
         return;
       }
@@ -808,18 +1097,18 @@ calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases
       next: (response) => {
         const projects = response.rows.map((row: any) => row.doc);
         const maxId = projects.reduce((max: number, project: any) =>
-          project.projectId && !isNaN(Number(project.projectId)) ?
-            Math.max(max, Number(project.projectId)) : max, 0);
+          project.projectId && !isNaN(Number(project.projectId))
+            ? Math.max(max, Number(project.projectId))
+            : max, 0);
   
         const newProjectId = (maxId + 1).toString().padStart(4, '0');
         this.newProject.projectId = newProjectId;
   
-
         const totalAmount = this.newProject.totalAmount || 0;
         const inputValue = this.newProject.downPayment || 0;
         let downPaymentAmount = 0;
         let downPaymentPercentage = 0;
-
+  
         if (this.downPaymentType === 'percent') {
           downPaymentPercentage = inputValue;
           downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
@@ -827,35 +1116,24 @@ calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases
           downPaymentAmount = inputValue;
           downPaymentPercentage = (inputValue / totalAmount) * 100;
         }
-
-        // Store percentage in CouchDB as requested
-        this.newProject.downPayment = downPaymentPercentage.toFixed(2); // Save as string percentage (e.g., "50.00")
-
-        // Save both calculated values
+  
+        this.newProject.downPayment = downPaymentPercentage.toFixed(2);
         this.newProject.downPaymentAmount = downPaymentAmount;
         this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
         this.newProject.progress = 0;
-
-        // ➡️ Calculate unallocated percentage and remaining balance
-        const unallocatedPercentage = this.getUnallocatedPercentage();
-        const remainingTotalBalance = this.getRemainingTotalBalance();
-
-        // ➡️ Store them inside newProject
-        this.newProject.unallocatedPercentage = unallocatedPercentage.toFixed(2); // Save as string
-        this.newProject.remainingTotalBalance = remainingTotalBalance;
-
-
-
+        this.newProject.unallocatedPercentage = this.getUnallocatedPercentage().toFixed(2);
+        this.newProject.remainingTotalBalance = this.getRemainingTotalBalance();
   
         this.projectsService.createProject(this.newProject).subscribe({
-          next: (projectResponse) => {
+          next: () => {
             this.toastr.success('Project saved successfully', 'Success');
             this.loadProjects();
   
-            this.newPhases.forEach((phase) => {
+            this.newPhases.forEach((phase, index) => {
               const phaseData = {
                 ...phase,
-                projectId: newProjectId
+                projectId: newProjectId,
+                order: index
               };
   
               this.projectsService.createPhase(phaseData).subscribe({
@@ -885,6 +1163,8 @@ calculateTotalBalance(totalAmount: number, downPaymentPercentage: number, phases
       }
     });
   }
+  
+  
 
   
 
@@ -1068,23 +1348,12 @@ deletingPhaseId: string | null = null;
     this.newPhases = [];
     this.totalPhasePercentage = 0;
     this.isLoading = false;
+    this.newProject.downPayment = 0;
+
   }
   
 
 
-  // cancelAddPhaseForm() {
-  //   this.newPhase = {
-  //     percentage: 0,
-  //     amountToBill: 0
-  //   };
-  
-  //   this.newMilestone = {
-  //     name: '',
-  //     amount: 0
-  //   };
-  
-  //   this.milestones = [];
-  // }
   cancelAddPhaseForm() {
     this.newPhase = {
       name: '',
@@ -1109,17 +1378,8 @@ deletingPhaseId: string | null = null;
 
 
   isCancelling = false;
-  // closeAddPhaseModal() {
-  //   if (this.isCancelling) return;
-  
-  //   this.isCancelling = true;
-  
-  //   setTimeout(() => {
-  //     this.cancelAddPhaseForm(); // reset data
-  //     this.phaseModalInstance.hide(); // close modal
-  //     this.isCancelling = false;
-  //   }, 500); // small delay for smooth UX
-  // }
+
+
   closeAddPhaseModal() {
     if (this.isCancelling) return;
   
@@ -1373,6 +1633,9 @@ deletingPhaseId: string | null = null;
         }
       });
     }
+
+
+    
     
   
 
@@ -1841,6 +2104,43 @@ deletingPhaseId: string | null = null;
   }
 
 
+  // onDownPaymentInput(event: any): void {
+  //   let inputValue = event.target.value;
+  
+  //   if (inputValue === '') {
+  //     this.newProject.downPayment = '';
+  //     return;
+  //   }
+  
+  //   if (this.downPaymentType === 'percent') {
+  //     inputValue = inputValue.slice(0, 3).replace(/[^\d]/g, '');
+  //     let percent = Number(inputValue);
+  
+  //     if (percent > 100) {
+  //       percent = 100;
+  //     } else if (percent < 0 || isNaN(percent)) {
+  //       percent = 0;
+  //     }
+  
+  //     this.newProject.downPayment = percent;
+  //     event.target.value = percent;
+  
+  //   } else {
+  //     // Remove non-digit characters
+  //     const numericOnly = inputValue.replace(/[^\d]/g, '');
+  //     let pesoAmount = Number(numericOnly);
+  
+  //     if (pesoAmount > this.newProject.totalAmount) {
+  //       pesoAmount = this.newProject.totalAmount;
+  //     } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
+  //       pesoAmount = 0;
+  //     }
+  
+  //     this.newProject.downPayment = pesoAmount;
+  //     event.target.value = '₱' + pesoAmount.toLocaleString('en-PH');
+  //   }
+  // }
+
   onDownPaymentInput(event: any): void {
     let inputValue = event.target.value;
   
@@ -1850,20 +2150,19 @@ deletingPhaseId: string | null = null;
     }
   
     if (this.downPaymentType === 'percent') {
-      inputValue = inputValue.slice(0, 3).replace(/[^\d]/g, '');
+      // Strip everything except digits
+      inputValue = inputValue.replace(/[^\d]/g, '');
       let percent = Number(inputValue);
   
-      if (percent > 100) {
-        percent = 100;
-      } else if (percent < 0 || isNaN(percent)) {
-        percent = 0;
-      }
+      if (percent > 100) percent = 100;
+      if (percent < 0 || isNaN(percent)) percent = 0;
   
       this.newProject.downPayment = percent;
-      event.target.value = percent;
   
+      // 💡 Reapply `%` for display
+      event.target.value = percent + '%';
     } else {
-      // Remove non-digit characters
+      // Strip non-digits
       const numericOnly = inputValue.replace(/[^\d]/g, '');
       let pesoAmount = Number(numericOnly);
   
@@ -1877,6 +2176,7 @@ deletingPhaseId: string | null = null;
       event.target.value = '₱' + pesoAmount.toLocaleString('en-PH');
     }
   }
+  
   
 
 
@@ -2183,7 +2483,7 @@ deletingPhaseId: string | null = null;
         presentValue: 0,
         amountDue: 0,
         presentMilestoneDue: 0,
-        progress: "Completed",
+        progress: "Not Started",
         isEditing: false,
         isSaving: false
       })),

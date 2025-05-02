@@ -280,6 +280,31 @@ export class ProjectsService {
       })
     );
   }
+
+  updateProjectAfterPhaseEdit(projectId: string, unallocatedPercentage: number, remainingTotalBalance: number) {
+    const findUrl = `${this.projectBaseUrl}/_find`;
+    const requestBody = {
+      selector: { projectId: projectId },
+      limit: 1
+    };
+  
+    return this.http.post(findUrl, requestBody, { headers: this.headers }).pipe(
+      switchMap((response: any) => {
+        const project = response.docs[0];
+        if (!project) return of(null);
+  
+        const updatedProject = {
+          ...project,
+          unallocatedPercentage: unallocatedPercentage.toFixed(2),
+          remainingTotalBalance: Math.round(remainingTotalBalance)
+        };
+  
+        return this.http.put(`${this.projectBaseUrl}/${project._id}?rev=${project._rev}`, updatedProject, { headers: this.headers });
+      })
+    );
+  }
+  
+  
   
 
 
