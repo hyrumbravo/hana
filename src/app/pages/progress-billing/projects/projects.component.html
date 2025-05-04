@@ -587,25 +587,9 @@
                     <label class="form-check-label" for="downPaymentPeso" style="font-weight: normal;">₱</label>
                   </div>
                 </span>
-              
 
-                <!-- <span class="text-danger d-block mt-1" *ngIf="downPaymentModel.errors?.['required'] && downPaymentModel.touched">
-                  This field is required
-                </span> -->
               </label>     
-              
-              <!-- <input
-                type="text"
-                class="form-control"
-                #downPaymentRef
-                [value]="downPaymentType === 'peso' ? ('₱' + (newProject.downPayment ).toLocaleString('en-PH')) : newProject.downPayment"
-                name="downPayment"
-                required
-                [max]="downPaymentType === 'percent' ? 100 : newProject.totalAmount"
-                [min]="0"
-                [disabled]="false"
-                (input)="onDownPaymentInput($event)"
-              /> -->
+        
               <input
                 type="text"
                 class="form-control"
@@ -624,7 +608,7 @@
             </div>
           </div>
         </form>
-        
+
         <hr class="my-4" style="height: 3px; background-color: black; border: none;"> 
 
         <!-- project phases -->

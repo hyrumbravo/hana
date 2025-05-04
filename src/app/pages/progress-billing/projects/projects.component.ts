@@ -907,130 +907,15 @@ openPhaseModal(projectId: string): void {
   //   });
   // }
 
-  // saveProject() {
-  //   if (this.isSaving) return;
-  
-  //   this.isSaving = true;
-  
-  //   const clearErrorStyles = (ref: ElementRef) => {
-  //     if (ref.nativeElement && ref.nativeElement.classList) {
-  //       ref.nativeElement.classList.remove('ng-touched', 'ng-invalid');
-  //     }
-  //   };
-  
-  //   const refs = [
-  //     this.projectNameRef,
-  //     this.projectDescriptionRef,
-  //     this.clientNameRef,
-  //     this.startDateRef,
-  //     this.deadlineRef,
-  //     this.totalAmountRef,
-  //     this.downPaymentRef
-  //   ];
-  //   refs.forEach(clearErrorStyles);
-  
-  //   const models = [
-  //     this.projectNameModel,
-  //     this.projectDescriptionModel,
-  //     this.clientNameModel,
-  //     this.startDateModel,
-  //     this.deadlineModel,
-  //     this.totalAmountModel,
-  //     this.downPaymentModel
-  //   ];
-  //   models.forEach((model) => {
-  //     if (model && model.control) model.control.markAsTouched();
-  //   });
-  
-  //   const requiredFields = [
-  //     { value: this.newProject.projectName, ref: this.projectNameRef },
-  //     { value: this.newProject.projectDescription, ref: this.projectDescriptionRef },
-  //     { value: this.newProject.clientName, ref: this.clientNameRef },
-  //     { value: this.newProject.startDate, ref: this.startDateRef },
-  //     { value: this.newProject.deadline, ref: this.deadlineRef },
-  //     { value: this.newProject.totalAmount, ref: this.totalAmountRef },
-  //     { value: this.newProject.downPayment, ref: this.downPaymentRef }
-  //   ];
-  
-  //   for (const field of requiredFields) {
-  //     if (field.value === null || field.value === '') {
 
-  //       this.scrollTo(field.ref);
-  //       this.isSaving = false;
-  //       return;
-  //     }
-  //   }
-  
-  //   this.projectsService.getProjects().subscribe({
-  //     next: (response) => {
-  //       const projects = response.rows.map((row: any) => row.doc);
-  //       const maxId = projects.reduce((max: number, project: any) =>
-  //         project.projectId && !isNaN(Number(project.projectId)) ?
-  //           Math.max(max, Number(project.projectId)) : max, 0);
-  
-  //       const newProjectId = (maxId + 1).toString().padStart(4, '0');
-  //       this.newProject.projectId = newProjectId;
-  
-  //       const totalAmount = this.newProject.totalAmount || 0;
-  //       const inputValue = this.newProject.downPayment || 0;
-  //       let downPaymentAmount = 0;
-  //       let downPaymentPercentage = 0;
-  
-  //       if (this.downPaymentType === 'percent') {
-  //         downPaymentPercentage = inputValue;
-  //         downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
-  //       } else if (this.downPaymentType === 'peso') {
-  //         downPaymentAmount = inputValue;
-  //         downPaymentPercentage = (inputValue / totalAmount) * 100;
-  //       }
-  
-  //       this.newProject.downPayment = downPaymentPercentage.toFixed(2);
-  //       this.newProject.downPaymentAmount = downPaymentAmount;
-  //       this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
-  //       this.newProject.progress = 0;
-  //       this.newProject.unallocatedPercentage = this.getUnallocatedPercentage().toFixed(2);
-  //       this.newProject.remainingTotalBalance = this.getRemainingTotalBalance();
-  
-  //       this.projectsService.createProject(this.newProject).subscribe({
-  //         next: (projectResponse) => {
-  //           this.toastr.success('Project saved successfully', 'Success');
-  //           this.loadProjects();
-  
-  //           this.newPhases.forEach((phase, index) => {
-  //             const phaseData = {
-  //               ...phase,
-  //               projectId: newProjectId,
-  //               order: index // 🔥 preserve order
-  //             };
-  
-  //             this.projectsService.createPhase(phaseData).subscribe({
-  //               next: (phaseResponse) => console.log('Phase saved:', phaseResponse),
-  //               error: (phaseError) => {
-  //                 console.error('Error saving phase:', phaseError);
-  //                 this.toastr.error('Failed to save phase', 'Error');
-  //               }
-  //             });
-  //           });
-  
-  //           this.cancelForm();
-  //           this.modalInstance.hide();
-  //           this.isSaving = false;
-  //         },
-  //         error: (error) => {
-  //           console.error(error);
-  //           this.toastr.error('Failed to save project', 'Error');
-  //           this.isSaving = false;
-  //         }
-  //       });
-  //     },
-  //     error: (error) => {
-  //       console.error(error);
-  //       this.toastr.error('Failed to fetch projects', 'Error');
-  //       this.isSaving = false;
-  //     }
-  //   });
-  // }
 
+
+
+
+
+  
+
+  //fix peso radio button issue(working code)
   saveProject() {
     if (this.isSaving) return;
   
@@ -1051,6 +936,7 @@ openPhaseModal(projectId: string): void {
       this.totalAmountRef,
       this.downPaymentRef
     ];
+  
     refs.forEach(clearErrorStyles);
   
     const models = [
@@ -1062,6 +948,7 @@ openPhaseModal(projectId: string): void {
       this.totalAmountModel,
       this.downPaymentModel
     ];
+  
     models.forEach((model) => {
       if (model && model.control) model.control.markAsTouched();
     });
@@ -1077,17 +964,8 @@ openPhaseModal(projectId: string): void {
     ];
   
     for (const field of requiredFields) {
-      if (field.value === null || field.value === '') {
+      if (field.value == null || field.value === '') {
         this.scrollTo(field.ref);
-        this.isSaving = false;
-        return;
-      }
-    }
-  
-    // ❌ Block if any milestone form has remaining amount
-    for (const phase of this.newPhases) {
-      if (phase.showMilestoneForm && this.getRemainingAmount(phase) > 0) {
-        this.toastr.error('Each milestone must fully allocate its amount before saving.');
         this.isSaving = false;
         return;
       }
@@ -1097,43 +975,44 @@ openPhaseModal(projectId: string): void {
       next: (response) => {
         const projects = response.rows.map((row: any) => row.doc);
         const maxId = projects.reduce((max: number, project: any) =>
-          project.projectId && !isNaN(Number(project.projectId))
-            ? Math.max(max, Number(project.projectId))
-            : max, 0);
+          project.projectId && !isNaN(Number(project.projectId)) ?
+            Math.max(max, Number(project.projectId)) : max, 0);
   
         const newProjectId = (maxId + 1).toString().padStart(4, '0');
         this.newProject.projectId = newProjectId;
   
-        const totalAmount = this.newProject.totalAmount || 0;
-        const inputValue = this.newProject.downPayment || 0;
+        const totalAmount = parseFloat(this.newProject.totalAmount) || 0;
+        const rawInput = parseFloat(this.newProject.downPayment) || 0;
+  
         let downPaymentAmount = 0;
         let downPaymentPercentage = 0;
   
         if (this.downPaymentType === 'percent') {
-          downPaymentPercentage = inputValue;
+          downPaymentPercentage = rawInput;
           downPaymentAmount = (totalAmount * downPaymentPercentage) / 100;
-        } else if (this.downPaymentType === 'peso') {
-          downPaymentAmount = inputValue;
-          downPaymentPercentage = (inputValue / totalAmount) * 100;
+        } else {
+          downPaymentAmount = rawInput;
+          downPaymentPercentage = (downPaymentAmount / totalAmount) * 100;
         }
   
-        this.newProject.downPayment = downPaymentPercentage.toFixed(2);
-        this.newProject.downPaymentAmount = downPaymentAmount;
-        this.newProject.totalBalanceAfterDownPayment = totalAmount - downPaymentAmount;
+        this.newProject.downPaymentAmount = parseFloat(downPaymentAmount.toFixed(2));
+        this.newProject.downPayment = parseFloat(downPaymentPercentage.toFixed(2)).toString();
+        this.newProject.totalBalanceAfterDownPayment = parseFloat((totalAmount - downPaymentAmount).toFixed(2));
         this.newProject.progress = 0;
+
         this.newProject.unallocatedPercentage = this.getUnallocatedPercentage().toFixed(2);
-        this.newProject.remainingTotalBalance = this.getRemainingTotalBalance();
+
+        this.newProject.remainingTotalBalance = parseFloat((totalAmount - downPaymentAmount).toFixed(2));
   
         this.projectsService.createProject(this.newProject).subscribe({
-          next: () => {
+          next: (projectResponse) => {
             this.toastr.success('Project saved successfully', 'Success');
             this.loadProjects();
   
-            this.newPhases.forEach((phase, index) => {
+            this.newPhases.forEach((phase) => {
               const phaseData = {
                 ...phase,
-                projectId: newProjectId,
-                order: index
+                projectId: newProjectId
               };
   
               this.projectsService.createPhase(phaseData).subscribe({
@@ -1164,6 +1043,8 @@ openPhaseModal(projectId: string): void {
     });
   }
   
+
+
   
 
   
@@ -1572,42 +1453,132 @@ deletingPhaseId: string | null = null;
   }
   
 
-    savesPhase(phases: any, project: any) {
-      if (!phases._id) {
-        console.error("Phase ID is missing!");
-        return;
-      }
+    // savesPhase(phases: any, project: any) {
+    //   if (!phases._id) {
+    //     console.error("Phase ID is missing!");
+    //     return;
+    //   }
     
-      phases.isSaving = true; // Start loading
+    //   phases.isSaving = true; // Start loading
     
-      const otherPhasesTotal = project.phases
-        .filter((p: any) => p._id !== phases._id)
-        .reduce((sum: number, p: any) => sum + p.percentage, 0);
+    //   const otherPhasesTotal = project.phases
+    //     .filter((p: any) => p._id !== phases._id)
+    //     .reduce((sum: number, p: any) => sum + p.percentage, 0);
     
-      const newTotal = otherPhasesTotal + phases.percentage;
+    //   const newTotal = otherPhasesTotal + phases.percentage;
     
-      if (newTotal > 100) {
-        const remaining = 100 - otherPhasesTotal;
-        this.toastr.error(`You can only assign up to ${remaining}% to this phase.`);
-        phases.isSaving = false;
-        return;
-      }
+    //   if (newTotal > 100) {
+    //     const remaining = 100 - otherPhasesTotal;
+    //     this.toastr.error(`You can only assign up to ${remaining}% to this phase.`);
+    //     phases.isSaving = false;
+    //     return;
+    //   }
       
     
-      this.projectsService.getPhaseById(phases._id).subscribe({
-        next: (latestPhase: any) => {
-          if (latestPhase._rev) {
-            phases._rev = latestPhase._rev;
-            delete phases.originalData;
+    //   this.projectsService.getPhaseById(phases._id).subscribe({
+    //     next: (latestPhase: any) => {
+    //       if (latestPhase._rev) {
+    //         phases._rev = latestPhase._rev;
+    //         delete phases.originalData;
     
-            this.projectsService.updatePhase(phases).subscribe({
-              next: (response: any) => {
-                console.log("Phase updated successfully:", response);
-                this.toastr.success("Phase updated successfully!");
+    //         this.projectsService.updatePhase(phases).subscribe({
+    //           next: (response: any) => {
+    //             console.log("Phase updated successfully:", response);
+    //             this.toastr.success("Phase updated successfully!");
     
+    //             this.projectsService.updateProjectProgress(project.projectId).subscribe({
+    //               next: (projectUpdateResponse) => {
+    //                 console.log("Project progress updated successfully:", projectUpdateResponse);
+    //                 phases.isEditing = false;
+    //                 phases.isSaving = false;
+    //               },
+    //               error: (err) => {
+    //                 console.error("Error updating project progress:", err);
+    //                 phases.isSaving = false;
+    //               }
+    //             });
+    //           },
+    //           error: (err) => {
+    //             console.error("Error updating phase:", err);
+    //             phases.isSaving = false;
+    //           }
+    //         });
+    //       } else {
+    //         console.error("Failed to fetch latest revision (_rev).");
+    //         phases.isSaving = false;
+    //       }
+    //     },
+    //     error: (err) => {
+    //       console.error("Error fetching latest _rev:", err);
+    //       phases.isSaving = false;
+    //     }
+    //   });
+    // }
+
+
+
+
+
+savesPhase(phases: any, project: any) {
+  if (!phases._id) {
+    console.error("Phase ID is missing!");
+    return;
+  }
+
+  phases.isSaving = true;
+
+  const otherPhasesTotal = project.phases
+    .filter((p: any) => p._id !== phases._id)
+    .reduce((sum: number, p: any) => sum + p.percentage, 0);
+
+  const newTotal = otherPhasesTotal + phases.percentage;
+
+  if (newTotal > 100) {
+    const remaining = 100 - otherPhasesTotal;
+    this.toastr.error(`You can only assign up to ${remaining}% to this phase.`);
+    phases.isSaving = false;
+    return;
+  }
+
+  this.projectsService.getPhaseById(phases._id).subscribe({
+    next: (latestPhase: any) => {
+      if (latestPhase._rev) {
+        phases._rev = latestPhase._rev;
+        delete phases.originalData;
+
+        const latestPercentage = latestPhase.percentage || 0;
+        const latestAmountToBill = latestPhase.amountToBill || 0;
+
+        // Only recalculate if percentage was changed
+        if (phases.percentage !== latestPercentage) {
+          const newAmountToBill = (phases.percentage / 100) * project.totalAmount;
+          const addedAmount = newAmountToBill - latestAmountToBill;
+          phases.amountToBill = newAmountToBill;
+
+          if (phases.milestones && phases.milestones.length > 0 && addedAmount !== 0) {
+            const additionalPerMilestone = addedAmount / phases.milestones.length;
+
+            phases.milestones = phases.milestones.map((m: any) => ({
+              ...m,
+              amount: (m.amount || 0) + additionalPerMilestone
+            }));
+          }
+        }
+
+        this.projectsService.updatePhase(phases).subscribe({
+          next: () => {
+            const updatedUnallocated = 100 - newTotal;
+            const updatedRemaining = (updatedUnallocated / 100) * project.totalAmount;
+
+            this.projectsService.updateProjectAfterPhaseEdit(
+              project.projectId,
+              updatedUnallocated,
+              updatedRemaining
+            ).subscribe({
+              next: () => {
                 this.projectsService.updateProjectProgress(project.projectId).subscribe({
-                  next: (projectUpdateResponse) => {
-                    console.log("Project progress updated successfully:", projectUpdateResponse);
+                  next: () => {
+                    this.toastr.success("Phase and project updated successfully!");
                     phases.isEditing = false;
                     phases.isSaving = false;
                   },
@@ -1618,21 +1589,33 @@ deletingPhaseId: string | null = null;
                 });
               },
               error: (err) => {
-                console.error("Error updating phase:", err);
+                console.error("Error updating project fields:", err);
+                this.toastr.error("Phase updated but failed to update project");
                 phases.isSaving = false;
               }
             });
-          } else {
-            console.error("Failed to fetch latest revision (_rev).");
+          },
+          error: (err) => {
+            console.error("Error updating phase:", err);
+            this.toastr.error("Failed to update phase");
             phases.isSaving = false;
           }
-        },
-        error: (err) => {
-          console.error("Error fetching latest _rev:", err);
-          phases.isSaving = false;
-        }
-      });
+        });
+      } else {
+        console.error("Failed to fetch latest revision (_rev).");
+        phases.isSaving = false;
+      }
+    },
+    error: (err) => {
+      console.error("Error fetching latest _rev:", err);
+      phases.isSaving = false;
     }
+  });
+}
+
+
+
+
 
 
     
@@ -2141,6 +2124,42 @@ deletingPhaseId: string | null = null;
   //   }
   // }
 
+  // onDownPaymentInput(event: any): void {
+  //   let inputValue = event.target.value;
+  
+  //   if (inputValue === '') {
+  //     this.newProject.downPayment = '';
+  //     return;
+  //   }
+  
+  //   if (this.downPaymentType === 'percent') {
+  //     // Strip everything except digits
+  //     inputValue = inputValue.replace(/[^\d]/g, '');
+  //     let percent = Number(inputValue);
+  
+  //     if (percent > 100) percent = 100;
+  //     if (percent < 0 || isNaN(percent)) percent = 0;
+  
+  //     this.newProject.downPayment = percent;
+  
+  //     // 💡 Reapply `%` for display
+  //     event.target.value = percent + '%';
+  //   } else {
+  //     // Strip non-digits
+  //     const numericOnly = inputValue.replace(/[^\d]/g, '');
+  //     let pesoAmount = Number(numericOnly);
+  
+  //     if (pesoAmount > this.newProject.totalAmount) {
+  //       pesoAmount = this.newProject.totalAmount;
+  //     } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
+  //       pesoAmount = 0;
+  //     }
+  
+  //     this.newProject.downPayment = pesoAmount;
+  //     event.target.value = '₱' + pesoAmount.toLocaleString('en-PH');
+  //   }
+  // }
+
   onDownPaymentInput(event: any): void {
     let inputValue = event.target.value;
   
@@ -2150,32 +2169,31 @@ deletingPhaseId: string | null = null;
     }
   
     if (this.downPaymentType === 'percent') {
-      // Strip everything except digits
-      inputValue = inputValue.replace(/[^\d]/g, '');
-      let percent = Number(inputValue);
+      inputValue = inputValue.replace(/[^\d.]/g, '');
+      let percent = parseFloat(inputValue);
   
+      if (isNaN(percent) || percent < 0) percent = 0;
       if (percent > 100) percent = 100;
-      if (percent < 0 || isNaN(percent)) percent = 0;
   
       this.newProject.downPayment = percent;
-  
-      // 💡 Reapply `%` for display
-      event.target.value = percent + '%';
+      event.target.value = percent.toFixed(2) + '%';
     } else {
-      // Strip non-digits
-      const numericOnly = inputValue.replace(/[^\d]/g, '');
-      let pesoAmount = Number(numericOnly);
+      inputValue = inputValue.replace(/[^\d.]/g, '');
+      let pesoAmount = parseFloat(inputValue);
   
-      if (pesoAmount > this.newProject.totalAmount) {
-        pesoAmount = this.newProject.totalAmount;
-      } else if (pesoAmount < 0 || isNaN(pesoAmount)) {
-        pesoAmount = 0;
-      }
+      if (isNaN(pesoAmount) || pesoAmount < 0) pesoAmount = 0;
+      if (pesoAmount > this.newProject.totalAmount) pesoAmount = this.newProject.totalAmount;
   
       this.newProject.downPayment = pesoAmount;
-      event.target.value = '₱' + pesoAmount.toLocaleString('en-PH');
+      event.target.value = '₱' + pesoAmount.toLocaleString('en-PH', { minimumFractionDigits: 2 });
     }
   }
+  
+
+
+  
+
+  
   
   
 
